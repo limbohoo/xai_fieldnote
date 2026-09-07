@@ -1,6 +1,336 @@
 @import 'tailwindcss';
 @import 'tw-animate-css';
 @import 'shadcn/tailwind.css';
+
+/* Reading edition: preserve the white editorial shell, open up the text. */
+.reading-intro {
+  display: grid;
+  grid-template-columns: 1.65fr 1fr;
+  gap: 64px;
+  padding: 45px 0 25px;
+  align-items: start;
+}
+.reading-prose h3,
+.reading-essay h3,
+.comparison h3,
+.situated-reading h3 {
+  font-size: 25px;
+  line-height: 1.5;
+  font-weight: 550;
+  letter-spacing: -0.035em;
+  margin: 14px 0 18px;
+}
+.reading-prose p,
+.reading-essay p {
+  margin: 0 0 18px;
+  line-height: 1.95;
+}
+.reading-intro .margin-note {
+  margin-top: 42px;
+}
+.margin-note {
+  padding: 20px 0 15px 22px;
+  border-left: 2px solid #bdcafa;
+  margin: 30px 0 0;
+  background: transparent;
+}
+.note-kicker {
+  font-size: 10px;
+  letter-spacing: 0.1em;
+  color: #7080a0;
+}
+.margin-note > p {
+  font-size: 15px;
+  line-height: 1.95;
+  margin-top: 8px;
+  color: #586781;
+}
+.margin-note details {
+  max-width: 740px;
+}
+.margin-note summary {
+  font-size: 13px;
+  color: #234fe5;
+  padding: 12px 0 4px;
+  justify-content: flex-start;
+  gap: 15px;
+}
+.margin-note .note-input {
+  margin-top: 12px;
+  min-height: 108px;
+  background: #fff;
+}
+.note-status {
+  display: block;
+  font-size: 11px;
+  color: #687284;
+  margin-top: 7px;
+}
+.reading-essay {
+  display: grid;
+  grid-template-columns: 1.35fr 1fr;
+  gap: 70px;
+  margin: 50px 0 0;
+}
+.reading-questions {
+  margin: 0;
+}
+.reading-questions > div {
+  padding: 15px 0;
+  border-bottom: 1px solid #e5e9ef;
+}
+.reading-questions dt {
+  font-weight: 550;
+  font-size: 15px;
+  color: #25334c;
+  margin-bottom: 5px;
+}
+.reading-questions dd {
+  margin: 0;
+  font-size: 15px;
+  color: #586273;
+  line-height: 1.85;
+}
+.comparison {
+  margin-top: 38px;
+}
+.comparison > p {
+  margin: 0 0 20px;
+  font-size: 15px;
+}
+.comparison table th,
+.comparison table td {
+  white-space: normal;
+  line-height: 1.85;
+  padding: 16px;
+  vertical-align: top;
+}
+.comparison table th:first-child,
+.comparison table td:first-child {
+  min-width: 145px;
+}
+.comparison table th {
+  background: #f6f8fb;
+  font-size: 13px;
+}
+.comparison table td {
+  color: #586273;
+  font-size: 14px;
+  min-width: 200px;
+}
+.comparison table caption {
+  text-align: left;
+  font-size: 12px;
+}
+.method-example {
+  margin-top: 22px;
+  line-height: 1.9;
+}
+.rich-cases .case-card > p {
+  margin: 16px 0;
+  font-size: 15px;
+  line-height: 1.95;
+}
+.rich-cases .case-card h3 {
+  font-size: 25px;
+}
+.rich-cases .case-terms {
+  font-size: 12px !important;
+  color: #61759c !important;
+  margin: 0 0 22px !important;
+}
+.paper-result {
+  padding: 22px;
+  background: #f5f7fb;
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 16px;
+  margin: 22px 0;
+}
+.paper-result > span {
+  grid-column: 1/-1;
+  font-size: 11px;
+  color: #6d7890;
+}
+.paper-result b {
+  display: block;
+  font-size: 34px;
+  line-height: 1.3;
+  font-weight: 450;
+  color: #234fe5;
+  letter-spacing: -0.04em;
+}
+.paper-result p {
+  font-size: 12px;
+  margin-top: 6px;
+}
+.engineering-result {
+  grid-template-columns: repeat(3, 1fr);
+}
+.reading-location {
+  font-size: 13px !important;
+  border-top: 1px solid #e5e9ef;
+  padding-top: 18px;
+  color: #677995 !important;
+}
+.concept-pair {
+  padding: 18px 0;
+  display: grid;
+  gap: 15px;
+  margin: 20px 0;
+  border-block: 1px solid #e5e9ef;
+}
+.concept-pair div {
+  display: flex;
+  justify-content: space-between;
+  gap: 15px;
+  align-items: center;
+}
+.concept-pair span {
+  font-size: 12px;
+  color: #71809a;
+}
+.concept-pair strong {
+  font-size: 15px;
+  font-weight: 500;
+  color: #234fe5;
+}
+.case-design {
+  font-size: 14px !important;
+  color: #63728a !important;
+}
+.case-design b {
+  font-weight: 550;
+  color: #435675;
+}
+.secondary-cases {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 50px;
+  margin-top: 45px;
+  padding-top: 35px;
+  border-top: 1px solid #dfe4eb;
+}
+.secondary-cases h3 {
+  font-size: 22px;
+  margin: 15px 0;
+}
+.secondary-cases p {
+  font-size: 15px;
+  line-height: 1.95;
+  margin-bottom: 15px;
+}
+.source-access {
+  font-size: 12px !important;
+  color: #788293 !important;
+}
+.workflow-origin {
+  display: flex;
+  align-items: center;
+  gap: 35px;
+  padding: 25px 28px;
+  background: #f5f7fb;
+  margin-bottom: 30px;
+}
+.workflow-origin strong {
+  font-size: 14px;
+  font-weight: 550;
+}
+.workflow-origin p {
+  font-size: 14px;
+  margin-top: 6px;
+}
+.workflow-origin > a {
+  flex-shrink: 0;
+  font-size: 13px;
+}
+.workflow-deep {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 55px;
+  margin: 45px 0 0;
+}
+.workflow-deep .reading-prose {
+  font-size: 15px;
+}
+.workflow-deep .method-flow {
+  margin: 25px 0;
+}
+.reading-detail {
+  border-bottom: 1px solid #e5e9ef;
+}
+.reading-detail summary {
+  font-size: 14px;
+  color: #536987;
+}
+.reading-detail p {
+  font-size: 14px;
+}
+.situated-reading {
+  margin: 50px 0 0;
+  padding: 35px 0 0;
+  border-top: 1px solid #dfe4eb;
+}
+.situated-reading > div:first-child {
+  max-width: 760px;
+  margin-bottom: 25px;
+}
+.situated-reading > div:first-child p {
+  font-size: 15px;
+}
+.situated-grid {
+  display: grid;
+  grid-template-columns: repeat(3, 1fr);
+  gap: 30px;
+}
+.situated-grid h4 {
+  font-size: 15px;
+  font-weight: 550;
+  margin-bottom: 8px;
+}
+.situated-grid p {
+  font-size: 14px;
+  line-height: 1.95;
+}
+.reading-rounds {
+  display: grid;
+  grid-template-columns: repeat(4, 1fr);
+  gap: 30px;
+}
+.reading-rounds article {
+  border-top: 2px solid #d5def5;
+  padding-top: 20px;
+}
+.reading-rounds article > span {
+  font-size: 12px;
+  color: #61769c;
+}
+.reading-rounds h3 {
+  font-size: 19px;
+  font-weight: 550;
+  margin: 13px 0;
+}
+.reading-rounds p {
+  font-size: 14px;
+  line-height: 1.9;
+}
+.reading-rounds .route-reading {
+  font-size: 12px;
+  color: #61769c;
+  min-height: 45px;
+  margin-bottom: 15px;
+}
+.reading-rounds .cites {
+  margin: 15px 0 0;
+}
+.notes-footer strong {
+  font-weight: 500;
+  font-size: 20px;
+}
+.notes-footer p {
+  font-size: 13px;
+  margin: 8px 0;
+}
 @theme inline {
   --color-background: var(--background);
   --color-foreground: var(--foreground);
@@ -390,7 +720,7 @@ summary > span:last-child {
   width: 100% !important;
   height: auto !important;
   display: grid !important;
-  grid-template-columns: repeat(7, minmax(0, 1fr));
+  grid-template-columns: repeat(4, minmax(0, 1fr));
   gap: 0 !important;
   padding: 0 !important;
   background: white !important;
@@ -1219,5 +1549,93 @@ summary > span:last-child {
   }
   .map-grid {
     grid-template-columns: repeat(3, 1fr);
+  }
+}
+
+.ten-steps {
+  row-gap: 30px;
+}
+.method-tablist {
+  overflow: visible;
+}
+@media (max-width: 1050px) {
+  .reading-intro,
+  .reading-essay {
+    gap: 35px;
+  }
+  .reading-rounds,
+  .situated-grid {
+    grid-template-columns: repeat(2, 1fr);
+  }
+  .workflow-deep {
+    gap: 30px;
+  }
+}
+@media (max-width: 760px) {
+  .reading-intro,
+  .reading-essay,
+  .workflow-deep,
+  .secondary-cases {
+    grid-template-columns: 1fr;
+    gap: 24px;
+  }
+  .reading-intro .margin-note {
+    margin-top: 0;
+  }
+  .workflow-origin {
+    align-items: flex-start;
+    flex-direction: column;
+    gap: 18px;
+    padding: 20px;
+  }
+  .situated-grid,
+  .reading-rounds {
+    grid-template-columns: 1fr;
+    gap: 25px;
+  }
+  .reading-rounds .route-reading {
+    min-height: 0;
+  }
+  .method-tablist {
+    overflow-x: auto;
+  }
+  .method-trigger {
+    flex-basis: 155px !important;
+  }
+  .frontier-list > article > p {
+    grid-column: 2;
+  }
+  .concept-pair div {
+    align-items: flex-start;
+    flex-direction: column;
+    gap: 5px;
+  }
+  .paper-result {
+    padding: 18px;
+  }
+  .engineering-result b {
+    font-size: 29px;
+  }
+  .rich-cases .case-card {
+    padding: 22px;
+  }
+  .reading-prose h3,
+  .reading-essay h3,
+  .comparison h3 {
+    font-size: 23px;
+  }
+}
+@media print {
+  .reading-intro,
+  .reading-essay,
+  .workflow-deep {
+    grid-template-columns: 1fr;
+  }
+  .section {
+    break-inside: auto;
+  }
+  .margin-note details,
+  .notes-footer button {
+    display: none;
   }
 }

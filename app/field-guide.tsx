@@ -7,7 +7,7 @@ const nav = [
   ['cases', '论文案例'],
   ['process', '设计流程'],
   ['frontiers', '研究前沿'],
-  ['studio', '思考空间'],
+  ['studio', '阅读路线'],
 ];
 function Cite({ ids }: { ids: number[] }) {
   return (
@@ -101,8 +101,8 @@ export function FieldGuide() {
           </div>
           <div className="hero-footer">
             <span>6 个学习视角</span>
-            <span>21 篇研究与报告</span>
-            <span>中英关键词 · 论文案例 · 设计反思</span>
+            <span>{sources.length} 项文献与资料</span>
+            <span>论文细读 · 十步参考 · 随读札记</span>
             <span className="right">资料核验 2026.09.07</span>
           </div>
         </section>
@@ -155,8 +155,9 @@ export function FieldGuide() {
           <div className="editor-note">
             <span>阅读立场 / READING LENS</span>
             <p>
-              解释应帮助人形成准确理解，并在需要时采取行动。可解释性是可信 AI
-              的一部分，不能单独证明系统公平、安全或可靠。
+              可以把 XAI
+              想成一座桥：一端是系统做判断的依据，另一端是人当下的问题。
+              先顺着案例理解它能帮上什么忙，再回到方法与评估，慢慢建立自己的判断。
               <Cite ids={[1, 5]} />
             </p>
           </div>

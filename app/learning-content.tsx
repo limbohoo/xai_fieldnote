@@ -755,7 +755,7 @@ export function LearningContent() {
           </article>
         </div>
         <MarginNote name="evaluation">
-          回想狼与雪的实验：研究者把“有没有发现雪”变成了可记录的结果。你的研究里，有没有一个同样具体的“读懂了”的表现？先记下行为，再决定用什么量表。
+          回想狼与哈士奇的实验：研究者把“有没有发现雪”变成了可记录的结果。你的研究里，有没有一个同样具体的“读懂了”的表现？先记下行为，再决定用什么量表。
         </MarginNote>
         <article className="situated-reading">
           <div>

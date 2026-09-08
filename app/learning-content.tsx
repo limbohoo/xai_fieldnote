@@ -472,7 +472,7 @@ export function LearningContent() {
               <span>01 / MODEL DEBUGGING</span>
               <span>KDD · 2016</span>
             </div>
-            <h3>狼，还是雪？</h3>
+            <h3>狼，还是哈士奇？</h3>
             <p className="case-terms">
               虚假相关 Spurious correlation · 局部解释 Local explanation
             </p>

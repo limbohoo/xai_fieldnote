@@ -160,6 +160,7 @@ const steps = [
     '把场景写成一段会发生的事情：谁正在做什么，AI 在哪一步参与，出错后会怎样。医疗、教育或机器人只是领域名称，还可以继续落到一个具体任务。',
     '留下：一段使用情境与关键时刻。',
     [3, 4],
+    '情境与需求',
   ],
   [
     '识别目标用户',
@@ -167,6 +168,7 @@ const steps = [
     '把开发者、操作者、领域专家和受影响的人分开。工程师可能要查信号；普通使用者可能只想知道此刻是否该采纳建议。',
     '留下：不同角色各自要完成的判断。',
     [2, 3],
+    '情境与需求',
   ],
   [
     '发现解释需求',
@@ -174,6 +176,7 @@ const steps = [
     '从观察、访谈和失败时刻收集原话：“为什么停了？”“为什么不是另一个选项？”“我改哪里有用？”将问题与任务连起来。',
     '留下：优先回答的用户问题。',
     [3],
+    '情境与需求',
   ],
   [
     '定义解释对象',
@@ -181,6 +184,7 @@ const steps = [
     '确定这次解释的是数据、单次预测、整体模型，还是机器人目标和行动计划。对象清楚后，才知道该找什么证据。',
     '留下：一句“解释什么”的定义。',
     [1, 4, 11],
+    '情境与需求',
   ],
   [
     '判断数据与模型类型',
@@ -188,6 +192,7 @@ const steps = [
     '分两层记录：输入是表格、图像、文本、时序还是动作数据？模型是规则、树模型还是深度网络？同时记下能否访问参数、梯度或只能查询输出。',
     '留下：数据、模型、访问条件的小档案。',
     [4, 22],
+    '模型与算法',
   ],
   [
     '选择 XAI 方法',
@@ -195,6 +200,7 @@ const steps = [
     '用当前问题缩小选择：路径贡献可看 TreeInterpreter，树模型归因可看 TreeSHAP，局部近似可看 LIME，图像区域可看 Grad-CAM，替代方案可看反事实。',
     '留下：一个主方法和一个比较方案。',
     [7, 8, 21, 22, 26],
+    '模型与算法',
   ],
   [
     '生成解释数据',
@@ -202,6 +208,7 @@ const steps = [
     '保存贡献值、参考值、路径、区域图或反事实样本，同时保留对应输入、预测结果和模型版本。这是后续表达能够回溯的依据。',
     '留下：结构化解释记录及对应案例。',
     [4, 6, 22],
+    '模型与算法',
   ],
   [
     '转译成人能理解的表达',
@@ -209,6 +216,7 @@ const steps = [
     '根据任务选择图表、短句、对话、声音、动作或学习反馈。可以让 LLM 把结构化结果组织成文字，也可以把行动意图转成具身线索。',
     '留下：表达原型和解释触发时机。',
     [3, 11, 24, 25],
+    '设计与表达',
   ],
   [
     '技术验证',
@@ -216,6 +224,7 @@ const steps = [
     '检查解释是否忠实于所解释的模型，输入微变后是否稳定，重复计算是否一致，以及运行时间是否适合当前任务。具体测试要与方法相配。',
     '留下：技术检查结果与适用条件。',
     [4, 15, 20],
+    '测试与验证',
   ],
   [
     '用户验证与迭代',
@@ -223,6 +232,7 @@ const steps = [
     '让目标用户实际使用：能否理解、判断下一步、发现错误、有效完成任务？结合行为记录和访谈，再回到需求、方法或表达继续调整。',
     '留下：理解与任务表现证据、下一轮修改。',
     [14, 20],
+    '测试与验证',
   ],
 ] as const;
 export function LearningContent() {
@@ -618,9 +628,9 @@ export function LearningContent() {
       <section id="process" className="section">
         <Head
           no="03"
-          en="YOUR TEN-STEP REFERENCE"
-          title="保留你的十步，把它用成一张学习路线图。"
-          desc="这套顺序很适合把零散术语串起来：从场景与人出发，经过模型、方法和表达，最后回到技术与用户验证。下面保留原笔记的十个步骤，再补上每步可以留下的产出。"
+          en="A REFERENCE FRAMEWORK"
+          title="这不是死板的十步，而是一个可供借鉴的框架。"
+          desc="这套顺序很适合把零散的术语串起来：从场景与人出发，经过模型、方法和表达，最后回到技术与用户验证。下面保留原笔记中的十个锚点，并补上每步可以留下的产出。"
         />
         <div className="workflow-origin">
           <div>
@@ -639,16 +649,27 @@ export function LearningContent() {
           </a>
         </div>
         <div className="process-grid ten-steps">
-          {steps.map(([cn, en, body, result, refs], i) => (
-            <article className="process-step" key={cn}>
-              <span className="step-no">{String(i + 1).padStart(2, '0')}</span>
-              <h3>{cn}</h3>
-              <span className="en-label">{en}</span>
-              <p>{body}</p>
-              <p className="step-result">{result}</p>
-              <Cite ids={[...refs]} />
-            </article>
-          ))}
+          {steps.map(([cn, en, body, result, refs, tag], i) => {
+            const colors: Record<string, string> = {
+              '情境与需求': 'var(--color-blue, #3b82f6)',
+              '模型与算法': 'var(--color-green, #10b981)',
+              '设计与表达': 'var(--color-orange, #f59e0b)',
+              '测试与验证': 'var(--color-purple, #8b5cf6)',
+            };
+            return (
+              <article className="process-step" key={cn} style={{ borderTop: `4px solid ${colors[tag]}` }}>
+                <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '0.5rem' }}>
+                  <span className="step-no">{String(i + 1).padStart(2, '0')}</span>
+                  <span style={{ fontSize: '0.75rem', fontWeight: 600, color: colors[tag], background: `${colors[tag]}15`, padding: '2px 8px', borderRadius: '12px' }}>{tag}</span>
+                </div>
+                <h3>{cn}</h3>
+                <span className="en-label">{en}</span>
+                <p>{body}</p>
+                <p className="step-result">{result}</p>
+                <Cite ids={[...refs]} />
+              </article>
+            );
+          })}
         </div>
         <div className="workflow-deep">
           <article className="reading-prose">

@@ -1,4 +1,4 @@
-import Link from 'next/link';
+/* oxlint-disable next/no-html-link-for-pages */
 import type { Metadata } from 'next';
 import { SiteHeader } from '../site-header';
 import {
@@ -42,7 +42,7 @@ export default function GlossaryPage() {
           <p>
             定义采用入门释义，并链接对应论文或官方资料；不同研究语境下的用法会单独说明。例子与应用提示为本页自拟。
           </p>
-          <Link href="/#methods">带着术语回看方法与案例 ↗</Link>
+          <a href="/#methods">带着术语回看方法与案例 ↗</a>
         </div>
         <details className="alphabet-index">
           <summary>
@@ -164,12 +164,12 @@ export default function GlossaryPage() {
           </details>
           <p className="caption">
             词典整理：2026.09.08 · 中文为学习用释义，英文原词保留以便检索。
-            <Link href="/">返回 XAI 学习指南 ↗</Link>
+            <a href="/">返回 XAI 学习指南 ↗</a>
           </p>
         </section>
       </main>
       <footer className="footer">
-        <Link href="/">XAI FIELDNOTES</Link>
+        <a href="/">XAI FIELDNOTES</a>
         <span>定义 · 联系 · 回到情境</span>
         <a href="#glossary-top">回到顶部 ↑</a>
       </footer>

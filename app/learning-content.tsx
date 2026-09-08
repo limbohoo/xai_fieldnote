@@ -1,5 +1,5 @@
 'use client';
-import Link from 'next/link';
+/* oxlint-disable next/no-html-link-for-pages */
 import { Tabs, TabsList, TabsTrigger, TabsContent } from '@/components/ui/tabs';
 import {
   Table,
@@ -454,10 +454,10 @@ export function LearningContent() {
         </MarginNote>
         <div className="glossary-bridge">
           <span>遇到陌生词？</span>
-          <Link href="/glossary#feature">特征 Feature ↗</Link>
-          <Link href="/glossary#treeinterpreter">TreeInterpreter ↗</Link>
-          <Link href="/glossary#shap">SHAP ↗</Link>
-          <Link href="/glossary#local-global">局部与全局 ↗</Link>
+          <a href="/glossary#feature">特征 Feature ↗</a>
+          <a href="/glossary#treeinterpreter">TreeInterpreter ↗</a>
+          <a href="/glossary#shap">SHAP ↗</a>
+          <a href="/glossary#local-global">局部与全局 ↗</a>
         </div>
         <div id="cases" className="subchapter">
           <span className="eyebrow">READING THE PAPERS</span>
@@ -864,7 +864,7 @@ export function LearningContent() {
           <h3>不用一次读完，可以这样往前走。</h3>
           <p>
             每轮留下一个小产出，慢慢把自己的项目放进这张地图。基础术语可以随时到{' '}
-            <Link href="/glossary">Glossary 词典 ↗</Link> 查阅。
+            <a href="/glossary">Glossary 词典 ↗</a> 查阅。
           </p>
         </div>
         <div className="reading-rounds">

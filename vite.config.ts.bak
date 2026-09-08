@@ -1,0 +1,5 @@
+// This vite config is only used for local tooling.
+// Next.js handles the build for production (Vercel deployment).
+import { defineConfig } from 'vite';
+
+export default defineConfig({});

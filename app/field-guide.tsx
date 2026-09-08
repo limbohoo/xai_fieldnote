@@ -1,5 +1,5 @@
 'use client';
-import Link from 'next/link';
+/* oxlint-disable next/no-html-link-for-pages */
 import { sources } from './sources';
 import { LearningContent } from './learning-content';
 import { SiteHeader } from './site-header';
@@ -137,10 +137,10 @@ export function FieldGuide() {
           </div>
           <div className="glossary-bridge">
             <span>从基础开始</span>
-            <Link href="/glossary#ai">人工智能 AI ↗</Link>
-            <Link href="/glossary#supervised">监督学习 ↗</Link>
-            <Link href="/glossary#llm">大语言模型 LLM ↗</Link>
-            <Link href="/glossary#mlops">MLOps ↗</Link>
+            <a href="/glossary#ai">人工智能 AI ↗</a>
+            <a href="/glossary#supervised">监督学习 ↗</a>
+            <a href="/glossary#llm">大语言模型 LLM ↗</a>
+            <a href="/glossary#mlops">MLOps ↗</a>
             <a href="#sources">文献索引 ↗</a>
           </div>
         </section>

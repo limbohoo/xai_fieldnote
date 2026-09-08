@@ -1,14 +1,8 @@
 'use client';
+import Link from 'next/link';
 import { sources } from './sources';
 import { LearningContent } from './learning-content';
-const nav = [
-  ['mapping', '研究地图'],
-  ['methods', '技术工具'],
-  ['cases', '论文案例'],
-  ['process', '设计流程'],
-  ['frontiers', '研究前沿'],
-  ['studio', '阅读路线'],
-];
+import { SiteHeader } from './site-header';
 function Cite({ ids }: { ids: number[] }) {
   return (
     <span className="cites">
@@ -53,27 +47,7 @@ export function FieldGuide() {
       <a className="skip" href="#mapping">
         跳到研究地图
       </a>
-      <header className="topbar">
-        <a className="brand" href="#intro">
-          <span className="brand-mark">
-            x<span>ai</span>
-          </span>
-          <span>
-            FIELDNOTES
-            <span className="brand-sub">DESIGN × HUMAN–AI INTERACTION</span>
-          </span>
-        </a>
-        <nav aria-label="章节导航">
-          {nav.map(([id, label]) => (
-            <a href={'#' + id} key={id}>
-              {label}
-            </a>
-          ))}
-        </nav>
-        <a className="source-nav" href="#sources">
-          文献索引 ↗
-        </a>
-      </header>
+      <SiteHeader />
       <main>
         <section className="hero" id="intro">
           <div className="hero-top">
@@ -93,17 +67,17 @@ export function FieldGuide() {
               <br />
               从模型依据到人的判断，从一次解释到一段协作。
               <br />
-              面向工业产品设计与人机交互的研究地图。
+              面向工业产品设计与人机交互的学习指南。
             </p>
             <a className="primary-link" href="#mapping">
               展开学习地图 <span>↘</span>
             </a>
           </div>
           <div className="hero-footer">
-            <span>6 个学习视角</span>
+            <span>4 个阅读章节</span>
             <span>{sources.length} 项文献与资料</span>
             <span>论文细读 · 十步参考 · 随读札记</span>
-            <span className="right">资料核验 2026.09.07</span>
+            <span className="right">阅读版 / 2026.09</span>
           </div>
         </section>
         <section id="mapping" className="section">
@@ -160,6 +134,14 @@ export function FieldGuide() {
               先顺着案例理解它能帮上什么忙，再回到方法与评估，慢慢建立自己的判断。
               <Cite ids={[1, 5]} />
             </p>
+          </div>
+          <div className="glossary-bridge">
+            <span>从基础开始</span>
+            <Link href="/glossary#ai">人工智能 AI ↗</Link>
+            <Link href="/glossary#supervised">监督学习 ↗</Link>
+            <Link href="/glossary#llm">大语言模型 LLM ↗</Link>
+            <Link href="/glossary#mlops">MLOps ↗</Link>
+            <a href="#sources">文献索引 ↗</a>
           </div>
         </section>
         <LearningContent />

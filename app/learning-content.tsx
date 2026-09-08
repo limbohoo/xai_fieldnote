@@ -1,4 +1,5 @@
 'use client';
+import Link from 'next/link';
 import { Tabs, TabsList, TabsTrigger, TabsContent } from '@/components/ui/tabs';
 import {
   Table,
@@ -369,7 +370,7 @@ export function LearningContent() {
         <Head
           no="02"
           en="METHODS, MADE READABLE"
-          title="八个入口，慢慢看懂解释是怎么来的。"
+          title="从方法到案例，看懂解释是怎么来的。"
           desc="先选一个与你的项目最接近的方法。每个入口都按“怎么做—看到什么—怎样用于设计”展开，可以随时切换比较。"
         />
         <Tabs defaultValue="treeinterpreter" className="method-tabs">
@@ -451,14 +452,20 @@ export function LearningContent() {
         <MarginNote name="evidence">
           试着拿一个输出值问：“它相对什么发生变化？”找到基准以后，再看贡献条形图通常会清楚很多。你还会想同时查看哪一个原始输入？
         </MarginNote>
-      </section>
-      <section id="cases" className="section">
-        <Head
-          no="03"
-          en="READING THE PAPERS"
-          title="把论文打开，看研究者具体做了什么。"
-          desc="从问题、实验和图表进入原文。这里用自己的语言转述研究，并把可继续发展的设计想法单独标出。"
-        />
+        <div className="glossary-bridge">
+          <span>遇到陌生词？</span>
+          <Link href="/glossary#feature">特征 Feature ↗</Link>
+          <Link href="/glossary#treeinterpreter">TreeInterpreter ↗</Link>
+          <Link href="/glossary#shap">SHAP ↗</Link>
+          <Link href="/glossary#local-global">局部与全局 ↗</Link>
+        </div>
+        <div id="cases" className="subchapter">
+          <span className="eyebrow">READING THE PAPERS</span>
+          <h3>把方法放回论文，看研究者具体做了什么。</h3>
+          <p>
+            下面接着读实验、图表和设计启发。论文发现与可继续发展的设计想法分别标注。
+          </p>
+        </div>
         <div className="case-grid rich-cases">
           <article className="case-card">
             <div className="case-meta">
@@ -649,7 +656,7 @@ export function LearningContent() {
       </section>
       <section id="process" className="section">
         <Head
-          no="04"
+          no="03"
           en="YOUR TEN-STEP REFERENCE"
           title="保留你的十步，把它用成一张学习路线图。"
           desc="这套顺序很适合把零散术语串起来：从场景与人出发，经过模型、方法和表达，最后回到技术与用户验证。下面保留原笔记的十个步骤，再补上每步可以留下的产出。"
@@ -803,9 +810,9 @@ export function LearningContent() {
       </section>
       <section id="frontiers" className="section">
         <Head
-          no="05"
+          no="04"
           en="WHERE TO READ NEXT"
-          title="前沿可以从你已经熟悉的问题继续长出来。"
+          title="沿着问题，继续阅读。"
           desc="以下以 2020—2025 年代表性研究为入口，帮助选择下一步阅读方向；不是对全部最新研究的穷尽清单。"
         />
         <div className="frontier-list">
@@ -852,14 +859,14 @@ export function LearningContent() {
             </article>
           ))}
         </div>
-      </section>
-      <section id="studio" className="section">
-        <Head
-          no="06"
-          en="A READING ROUTE"
-          title="不用一次读完，可以这样往前走。"
-          desc="以下是本页为设计与 HCI 学习者安排的阅读路线。每轮留下一个小产出，慢慢把自己的项目放进这张地图。"
-        />
+        <div id="studio" className="subchapter">
+          <span className="eyebrow">A READING ROUTE</span>
+          <h3>不用一次读完，可以这样往前走。</h3>
+          <p>
+            每轮留下一个小产出，慢慢把自己的项目放进这张地图。基础术语可以随时到{' '}
+            <Link href="/glossary">Glossary 词典 ↗</Link> 查阅。
+          </p>
+        </div>
         <div className="reading-rounds">
           {[
             [
@@ -901,14 +908,13 @@ export function LearningContent() {
           ))}
         </div>
         <NotesExport />
-      </section>
-      <section id="sources" className="section sources-section">
-        <Head
-          no="↗"
-          en="THE READING SHELF"
-          title="所有入口，都可以回到来源。"
-          desc="正文编号直接打开原始来源。以下区分论文、综述、研究报告与软件文档；无法访问全文的条目单独说明。原笔记中的参考流程也保留在页面里。"
-        />
+        <div id="sources" className="subchapter sources-section">
+          <span className="eyebrow">THE READING SHELF</span>
+          <h3>所有入口，都可以回到来源。</h3>
+          <p>
+            正文编号打开原始来源；词典中的定义也各自链接到对应论文或官方资料。
+          </p>
+        </div>
         <details className="source-index" open>
           <summary>
             全部 {sources.length} 项文献与资料 <span>收起 / 展开索引 ＋</span>

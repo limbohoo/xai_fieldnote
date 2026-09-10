@@ -2,6 +2,23 @@
 @import 'tw-animate-css';
 @import 'shadcn/tailwind.css';
 
+/* The reading route is a compact table of contents until the reader chooses a chapter. */
+.chapter { border-top:1px solid var(--border); margin:0 auto; max-width:1180px; scroll-margin-top:96px; }
+.chapter > summary { cursor:pointer; list-style:none; display:grid; grid-template-columns:64px minmax(0,1fr) auto; gap:18px; align-items:center; padding:28px 0; }
+.chapter > summary::-webkit-details-marker { display:none; }
+.chapter-no { color:#234fe5; font:500 13px/1.2 var(--font-mono, monospace); letter-spacing:.08em; }
+.chapter-copy { display:grid; gap:6px; }
+.chapter-copy strong { color:#172033; font-size:22px; font-weight:520; letter-spacing:-.025em; }
+.chapter-copy small { color:#647187; font-size:14px; line-height:1.55; max-width:760px; }
+.chapter-action { color:#234fe5; font-size:14px; white-space:nowrap; }
+.chapter-action b { display:inline-block; font-size:18px; font-weight:400; transition:transform .2s ease; }
+.chapter[open] .chapter-action { font-size:0; }
+.chapter[open] .chapter-action::before { content:'收起'; font-size:14px; }
+.chapter[open] .chapter-action b { transform:rotate(180deg); }
+.chapter > summary:focus-visible { outline:3px solid #234fe5; outline-offset:-3px; }
+.chapter-body { padding-bottom:24px; }
+.chapter-body > .section { padding-top:25px; }
+
 /* Independent, source-backed method atlas. */
 .atlas-index { display:flex; flex-wrap:wrap; gap:12px 28px; margin:24px 0 36px; color:var(--blue, #234fe5); font-size:14px; }
 .atlas-card { border-top:1px solid #dce2eb; padding:36px 0 14px; margin-bottom:34px; scroll-margin-top:110px; }
@@ -20,7 +37,7 @@
 .atlas-expand summary { cursor:pointer; padding:22px 0; display:flex; gap:18px; justify-content:space-between; align-items:center; font-size:16px; color:#234fe5; list-style:none; }
 .atlas-expand summary::-webkit-details-marker { display:none; }
 .atlas-expand summary > span { font-size:24px; }
-.atlas-expand[open] summary > span { transform:rotate(45deg); }
+.atlas-expand[open] summary > span { transform:rotate(180deg); }
 .atlas-expand summary:focus-visible, .atlas-controls button:focus-visible, .atlas-index a:focus-visible { outline:3px solid #234fe5; outline-offset:5px; }
 .atlas-expanded { padding:10px 0 24px; }
 .atlas-flow { display:grid; grid-template-columns:repeat(4,minmax(0,1fr)); padding:0; margin:0 0 20px; list-style:none; gap:22px; }
@@ -49,6 +66,9 @@
 .atlas-coalition b { color:#234fe5; font-size:14px; font-weight:500; }
 .atlas-coalition em { font-size:14px; font-style:normal; }
 @media(max-width:760px) {
+  .chapter > summary { grid-template-columns:40px minmax(0,1fr); gap:12px; padding:21px 0; }
+  .chapter-action { grid-column:2; }
+  .chapter-copy strong { font-size:19px; }
   .atlas-tree-demo, .atlas-two { grid-template-columns:1fr; gap:24px; }
   .atlas-flow { grid-template-columns:1fr 1fr; }
   .atlas-tree-demo { padding:16px; }

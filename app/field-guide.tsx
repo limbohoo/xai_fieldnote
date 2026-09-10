@@ -2,6 +2,7 @@
 /* oxlint-disable next/no-html-link-for-pages */
 import { sources } from './sources';
 import { LearningContent } from './learning-content';
+import { Chapter } from './chapter';
 import { SiteHeader } from './site-header';
 function Cite({ ids }: { ids: number[] }) {
   return (
@@ -74,17 +75,17 @@ export function FieldGuide() {
             </a>
           </div>
           <div className="hero-footer">
-            <span>4 个阅读章节</span>
+            <span>5 个阅读章节</span>
             <span>{sources.length} 项文献与资料</span>
             <span>论文细读 · 十步参考 · 随读札记</span>
             <span className="right">阅读版 / 2026.09</span>
           </div>
         </section>
-        <section id="mapping" className="section">
+        <Chapter id="mapping" number="01" title="领域、问题与阅读坐标" summary="从系统依据、人的理解到真实情境，建立选择解释方法前的判断框架。">
           <Head
             no="01"
             en="MAPPING THE FIELD"
-            title="先找到问题，再选择解释。"
+            title="先建立领域坐标，再选择解释。"
             desc="这是一张跨层次的学习地图。算法、人的理解与实际情境，共同决定解释是否有用。"
           />
           <div className="map-grid">
@@ -143,7 +144,7 @@ export function FieldGuide() {
             <a href="/glossary#mlops">MLOps ↗</a>
             <a href="#sources">文献索引 ↗</a>
           </div>
-        </section>
+        </Chapter>
         <LearningContent />
       </main>
       <footer className="footer">

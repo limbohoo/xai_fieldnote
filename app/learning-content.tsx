@@ -13,6 +13,7 @@ import {
 import { ReadingNotes, MarginNote, NotesExport } from './reading-notes';
 import { sources } from './sources';
 import { MethodAtlas } from './method-atlas';
+import { Chapter } from './chapter';
 function Cite({ ids }: { ids: number[] }) {
   return (
     <span className="cites">
@@ -344,11 +345,11 @@ export function LearningContent() {
       <MarginNote name="question">
         如果你的产品只能先回答一个问题，用户最常问的会是哪一句？用用户的话写，暂时不用“透明性”“可解释性”这些研究术语。
       </MarginNote>
-      <section id="methods" className="section">
+      <Chapter id="methods" number="02" title="解释方法与论文案例" summary="比较模型、路径、归因与局部代理，并回到论文看它们如何支持判断。">
         <Head
           no="02"
           en="METHODS, MADE READABLE"
-          title="从方法到案例，看懂解释是怎么来的。"
+          title="解释方法、适用条件与论文案例。"
           desc="先选一个与你的项目最接近的方法。每个入口都按“怎么做—看到什么—怎样用于设计”展开，可以随时切换比较。"
         />
         <Tabs defaultValue="treeinterpreter" className="method-tabs">
@@ -625,13 +626,13 @@ export function LearningContent() {
             </p>
           </article>
         </div>
-      </section>
+      </Chapter>
       <MethodAtlas />
-      <section id="process" className="section">
+      <Chapter id="process" number="04" title="从场景到验证：十步参考" summary="保留原始学习流程，并把场景、模型、表达与验证串成可回访的工作框架。">
         <Head
           no="03"
           en="A REFERENCE FRAMEWORK"
-          title="这不是死板的十步，而是一个可供借鉴的框架。"
+          title="从场景到验证的十步参考。"
           desc="这套顺序很适合把零散的术语串起来：从场景与人出发，经过模型、方法和表达，最后回到技术与用户验证。下面保留原笔记中的十个锚点，并补上每步可以留下的产出。"
         />
         <div className="workflow-origin">
@@ -791,12 +792,12 @@ export function LearningContent() {
             ))}
           </div>
         </article>
-      </section>
-      <section id="frontiers" className="section">
+      </Chapter>
+      <Chapter id="frontiers" number="05" title="研究前沿与下一步阅读" summary="从交互解释、具身行为、机制可解释性到可信语言解释，选择下一篇该读什么。">
         <Head
           no="04"
           en="WHERE TO READ NEXT"
-          title="沿着问题，继续阅读。"
+          title="研究前沿与下一步阅读。"
           desc="以下以 2020—2025 年代表性研究为入口，帮助选择下一步阅读方向；不是对全部最新研究的穷尽清单。"
         />
         <div className="frontier-list">
@@ -931,7 +932,7 @@ export function LearningContent() {
             《XAI 可解释性研究和设计流程 · 参考版》↗
           </a>
         </p>
-      </section>
+      </Chapter>
     </ReadingNotes>
   );
 }

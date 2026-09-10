@@ -1,6 +1,7 @@
 'use client';
 
 import { useState } from 'react';
+import { Chapter } from './chapter';
 
 const limeSource = 'https://arxiv.org/html/1602.04938v3#S6.SS4';
 const treeSource = 'https://blog.datadive.net/interpreting-random-forests/';
@@ -41,14 +42,14 @@ function TreeWalk() {
 }
 
 export function MethodAtlas() {
-  return <section id="atlas" className="section method-atlas" aria-labelledby="atlas-title">
+  return <Chapter id="atlas" number="03" title="三种解释策略图解" summary="用 LIME、TreeInterpreter 与 SHAP 的原始案例，看见解释如何生成与被误读。"><section className="section method-atlas" aria-labelledby="atlas-title">
     <div className="section-head"><div className="eyebrow">VISUAL FIELD GUIDE / 独立图鉴</div><h2 id="atlas-title">看见解释是怎样产生的。</h2><p>三个方法，三个适合它的案例。先看图建立直觉，再展开追踪输入、操作与结果。不需要先读懂公式。</p></div>
     <div className="atlas-index"><a href="#atlas-lime">01 · LIME 看扰动</a><a href="#atlas-tree">02 · TreeInterpreter 走路径</a><a href="#atlas-shap">03 · SHAP 读贡献</a></div>
 
     <article id="atlas-lime" className="atlas-card">
       <header><span className="eyebrow">01 / LIME · 局部代理 LOCAL SURROGATE</span><h3>它识别的是狼，还是雪？</h3><p className="atlas-takeaway"><b>核心：</b>改变输入的局部区域，看黑盒输出怎样变；这里暴露的是模型借用了雪地背景。</p></header>
       <figure className="atlas-paper-pair"><div><img src="https://arxiv.org/html/1602.04938v3/husky.png" alt="LIME论文图11a：雪地中的哈士奇，被分类器误判为狼" width="300" height="225" loading="lazy" /><span>输入 Input · 真实类别：哈士奇</span></div><div><img src="https://arxiv.org/html/1602.04938v3/exp_husky.png" alt="LIME论文图11b：解释显示与狼预测相关的雪地背景区域" width="300" height="225" loading="lazy" /><span>解释 Explanation · 背景成为线索</span></div><figcaption>论文原图 11(a–b)，不是本站运行结果。<Source href={limeSource}>Ribeiro 等，2016，§6.4</Source></figcaption></figure>
-      <details className="atlas-expand"><summary>展开案例细节（点击保持打开）<span aria-hidden="true">＋</span></summary><div className="atlas-expanded">
+      <details className="atlas-expand"><summary>展开 <span aria-hidden="true">⌄</span></summary><div className="atlas-expanded">
         <Flow items={[
           ['划分区域 / Superpixels', '将照片分为小区域，用“保留／遮挡”表示它们。区域不一定对应完整的动物或物体。'],
           ['生成扰动 / Perturbation', '遮挡不同区域组合，构造许多变体；逐个交给原分类器，记录目标类别的输出。'],
@@ -65,7 +66,7 @@ export function MethodAtlas() {
       <header><span className="eyebrow">02 / TREEINTERPRETER · 树路径分解</span><h3>从根到叶，把每一次变化记下来。</h3><p className="atlas-takeaway"><b>核心：</b>沿实际经过的树路径，把每个节点值的变化归到当次分裂使用的特征。</p></header>
       <TreeWalk />
       <p className="atlas-caption">依据作者案例简化重绘。20、26、23和两次分裂均为教学设定，不是原树数值、真实房价或实验复现；图中只展开一条路径。<Source href={treeSource}>Saabas，2014</Source></p>
-      <details className="atlas-expand"><summary>展开案例细节（点击保持打开）<span aria-hidden="true">＋</span></summary><div className="atlas-expanded">
+      <details className="atlas-expand"><summary>展开 <span aria-hidden="true">⌄</span></summary><div className="atlas-expanded">
         <Flow items={[
           ['读取基准 / Bias', '从已经训练好的树取根节点预测值。'],
           ['追踪路径 / Decision path', '按该样本的特征值走向叶节点，记录每一步子节点值减父节点值。'],
@@ -82,7 +83,7 @@ export function MethodAtlas() {
       <header><span className="eyebrow">03 / SHAP · 特征归因 FEATURE ATTRIBUTION</span><h3>一次收入预测，如何偏离参考基准？</h3><p className="atlas-takeaway"><b>核心：</b>从参考输出出发，把特征在不同组合中的边际贡献汇总为一次预测的归因。</p></header>
       <figure className="atlas-shap-figure"><img src="https://shap.readthedocs.io/en/latest/_images/example_notebooks_api_examples_plots_waterfall_3_0.png" alt="SHAP官方收入预测瀑布图：从底部基准逐项累加特征贡献，到达顶部单个样本的模型输出；红色为正贡献、蓝色为负贡献" width="900" height="650" loading="lazy" /><figcaption>官方示例原图；按原图从下往上读。横轴单位是对数几率 Log-odds，不是收入或概率百分点。<Source href={shapSource}>SHAP waterfall 文档</Source></figcaption></figure>
       <div className="atlas-reading-key"><span>① 底部：参考背景上的期望输出</span><span>② 正／负条：推高／拉低输出</span><span>③ 顶部：这个样本的最终输出</span></div>
-      <details className="atlas-expand"><summary>展开案例细节（点击保持打开）<span aria-hidden="true">＋</span></summary><div className="atlas-expanded">
+      <details className="atlas-expand"><summary>展开 <span aria-hidden="true">⌄</span></summary><div className="atlas-expanded">
         <Flow items={[
           ['确定对象 / Target', '固定要解释的样本、模型与输出尺度。本例解释的是收入分类模型的原始分数。'],
           ['定义参考 / Background', '确定背景数据与缺失特征的处理方式。“未加入”不是一律把特征改成0。'],
@@ -95,5 +96,5 @@ export function MethodAtlas() {
         <p className="atlas-limit">记住：SHAP 的分配性质不等于社会公平或因果证明。选定的模型、参考背景与解释设定，是读这张图的前提。</p>
       </div></details>
     </article>
-  </section>;
+  </section></Chapter>;
 }

@@ -14,6 +14,7 @@ export function SiteHeader({ glossary = false }: { glossary?: boolean }) {
       <nav aria-label="主要导航">
         <a href="/#mapping">领域与问题</a>
         <a href="/#methods">方法与案例</a>
+        <a href="/#atlas">方法图鉴</a>
         <a href="/#process">流程与验证</a>
         <a href="/#frontiers">延伸阅读</a>
       </nav>

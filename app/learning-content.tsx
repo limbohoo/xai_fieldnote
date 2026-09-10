@@ -12,6 +12,7 @@ import {
 } from '@/components/ui/table';
 import { ReadingNotes, MarginNote, NotesExport } from './reading-notes';
 import { sources } from './sources';
+import { MethodAtlas } from './method-atlas';
 function Cite({ ids }: { ids: number[] }) {
   return (
     <span className="cites">
@@ -625,6 +626,7 @@ export function LearningContent() {
           </article>
         </div>
       </section>
+      <MethodAtlas />
       <section id="process" className="section">
         <Head
           no="03"

@@ -126,7 +126,7 @@ export function ReadingNotes({ children }: { children: ReactNode }) {
             '## ' + title + '\n\n' + (notes[key] || '（留待下次阅读）'),
         )
         .join('\n\n') +
-      '\n\nhttps://xai-fieldnotes-design.limboh.chatgpt.site\n';
+      '\n\nhttps://xai-fieldnotes.vercel.app\n';
     const url = URL.createObjectURL(
       new Blob([text], { type: 'text/markdown;charset=utf-8' }),
     );

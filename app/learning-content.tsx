@@ -593,7 +593,7 @@ export function LearningContent() {
         </div>
         <div className="secondary-cases">
           <article>
-            <span className="eyebrow">05 / YOUR ORIGINAL READING</span>
+            <span className="eyebrow">05 / FROM MY READING LIST</span>
             <h3>抓取失败：为什么要比较三种解释器？</h3>
             <p>
               Alvanpour 等的研究把 LIME、TreeSHAP 和 TreeInterpreter
@@ -612,7 +612,7 @@ export function LearningContent() {
             <h3>解释也可能是一段教学。</h3>
             <p>
               Fiok 等把 XAI
-              放到教育与培训语境中讨论，是你原始书单中的另一个入口。对 HCI
+              放到教育与培训语境中讨论，是我原始书单中的另一个入口。对 HCI
               研究者，可以带着两个学习目标读它：使用者是在学“这个 AI
               如何判断”，还是在借反馈学习领域知识？两者会带来不同的交互与评估需求。
               <Cite ids={[17]} />
@@ -630,16 +630,16 @@ export function LearningContent() {
       <MethodAtlas />
       <Chapter id="process" number="04" title="从场景到验证：十步参考" summary="保留原始学习流程，并把场景、模型、表达与验证串成可回访的工作框架。">
         <Head
-          no="03"
+          no="04"
           en="A REFERENCE FRAMEWORK"
           title="从场景到验证的十步参考。"
-          desc="这套顺序很适合把零散的术语串起来：从场景与人出发，经过模型、方法和表达，最后回到技术与用户验证。下面保留原笔记中的十个锚点，并补上每步可以留下的产出。"
+          desc="这套顺序很适合把零散的术语串起来：从场景与人出发，经过模型、方法和表达，最后回到技术与用户验证。下面保留我最初笔记中的十个锚点，并补上每步可以留下的产出。"
         />
         <div className="workflow-origin">
           <div>
-            <strong>原始参考 / Original learning notes</strong>
+            <strong>我的原始笔记 / Original learning notes</strong>
             <p>
-              十步名称与顺序来自你提供的两页笔记；展开解释由本页结合文献补充。它是一套可反复回访的综合参考，实践中可以跳转与迭代。
+              十步名称与顺序来自我最初整理的两页笔记；展开解释由本页结合文献补充。它是一套可反复回访的综合参考，实践中可以跳转与迭代。
             </p>
           </div>
           <a
@@ -679,10 +679,10 @@ export function LearningContent() {
             <span className="eyebrow">把第 7、8 步接起来</span>
             <h3>SHAP + LLM：先有解释材料，再组织成语言。</h3>
             <p>
-              你原笔记记录了 Hsu 等的文字解释示例：模型预测 → SHAP 全局图 →
+              我的原笔记记录了 Hsu 等的文字解释示例：模型预测 → SHAP 全局图 →
               提取特征重要性及特征值与 SHAP 值的相关关系 → 整理表格 → 交给
               ChatGPT API 生成约 100
-              词的解释。这条链保留下来，作为认识“解释数据”和“解释表达”两层工作的一种参考。具体操作来自原笔记；本页核对了论文书目信息，未重新验证全文中的每个操作细节。
+              词的解释。这条链保留下来，作为认识“解释数据”和“解释表达”两层工作的一种参考。具体操作来自我的原笔记；本页核对了论文书目信息，未重新验证全文中的每个操作细节。
               <Cite ids={[24]} />
             </p>
             <div className="method-flow">
@@ -735,11 +735,11 @@ export function LearningContent() {
             </dl>
             <details className="reading-detail">
               <summary>
-                原笔记中的排序指标，怎样读？ <span>＋</span>
+                我笔记里的排序指标，怎样读？ <span>＋</span>
               </summary>
               <p>
                 Kendall’s Tau 关注排序次序的对应，RBO
-                关注排序列表的重合并可更重视前部；运行时间关注解释开销。你原笔记将它们放在抓取方法比较旁边。它们适合回答“方法给出的顺序相近吗、算得快吗”，而理解测验能继续回答“人读懂了吗”。这里是对原笔记指标用途的释义，具体公式与实验设定请回到原论文。
+                关注排序列表的重合并可更重视前部；运行时间关注解释开销。我的原笔记把它们放在抓取方法比较旁边。它们适合回答“方法给出的顺序相近吗、算得快吗”，而理解测验能继续回答“人读懂了吗”。这里是对我笔记中指标用途的释义，具体公式与实验设定请回到原论文。
                 <Cite ids={[13]} />
               </p>
             </details>
@@ -795,7 +795,7 @@ export function LearningContent() {
       </Chapter>
       <Chapter id="frontiers" number="05" title="研究前沿与下一步阅读" summary="从交互解释、具身行为、机制可解释性到可信语言解释，选择下一篇该读什么。">
         <Head
-          no="04"
+          no="05"
           en="WHERE TO READ NEXT"
           title="研究前沿与下一步阅读。"
           desc="以下以 2020—2025 年代表性研究为入口，帮助选择下一步阅读方向；不是对全部最新研究的穷尽清单。"
@@ -923,7 +923,7 @@ export function LearningContent() {
           </ol>
         </details>
         <p className="caption">
-          资料整理：2026.09.07。论文内容均以转述呈现；教学算例、阅读建议与设计延伸已在相应位置说明。原始学习笔记：
+          资料整理：2026.09.07 · 最近修订：2026.10.13。论文内容均以转述呈现；教学算例、阅读建议与设计延伸已在相应位置说明。原始学习笔记：
           <a
             href="/xai-learning-workflow-reference.pdf"
             target="_blank"

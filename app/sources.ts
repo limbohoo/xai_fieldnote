@@ -249,7 +249,7 @@ export const sources = [
     venue: 'ICCE-Taiwan 2024 · 197–198',
     url: 'https://doi.org/10.1109/ICCE-Taiwan62264.2024.10674465',
     type: '会议论文 Conference',
-    use: '原笔记中的 SHAP + LLM 示例。已核对书目信息；具体操作链依据用户提供的流程笔记，未重新核验全文。',
+    use: '我笔记中的 SHAP + LLM 示例。已核对书目信息；具体操作链依据我自己的流程笔记，未重新核验全文。',
   },
   {
     id: 25,

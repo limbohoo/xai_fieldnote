@@ -28,7 +28,7 @@ const declarations = file.statements
 const methods = declarations.find(
   (d) => d.name.getText(file) === 'methods',
 ).initializer;
-assert.equal(methods.elements.length, 8);
+assert.equal(methods.elements.length, 6);
 const steps = declarations.find((d) => d.name.getText(file) === 'steps')
   .initializer.expression;
 const titles = steps.elements.map((row) => row.elements[0].text);
@@ -86,7 +86,7 @@ assert.equal(
 );
 assert(content.includes('/xai-learning-workflow-reference.pdf'));
 console.log(
-  'Content checks passed: 27 sources, 8 methods, original 10 steps, 6 preserved inline-note keys, PDF asset and literal citations.',
+  'Content checks passed: 27 sources, 6 methods, original 10 steps, 6 preserved inline-note keys, PDF asset and literal citations.',
 );
 const sourceUrl =
   'data:text/javascript;base64,' +
@@ -117,15 +117,33 @@ for (const path of ['app/field-guide.tsx', 'app/learning-content.tsx']) {
 }
 for (const id of ['cases', 'studio', 'sources'])
   assert(content.includes('id="' + id + '"'), 'Legacy anchor missing ' + id);
-assert.equal(
-  (content.match(/<section /g) || []).length,
-  3,
-  'Main guide should have three chapters here plus mapping',
-);
 console.log(
   'Glossary checks passed: 138 bilingual entries in 8 groups, ' +
     new Set(allTerms.map((t) => t.source)).size +
-    ' definition sources, all related links valid; four main chapters and legacy anchors retained.',
+    ' definition sources, all related links valid; legacy anchors retained.',
+);
+let chapterCount = 0;
+for (const path of [
+  'app/field-guide.tsx',
+  'app/learning-content.tsx',
+  'app/method-atlas.tsx',
+]) {
+  const src = read(path);
+  chapterCount += (src.match(/<Chapter\s/g) || []).length;
+  // A chapter's own heading must carry the chapter's number.
+  for (const m of src.matchAll(
+    /<Chapter\b[^>]*\snumber="(\d+)"(?:(?!<Chapter\b)[\s\S])*?<Head\s+no="(\d+)"/g,
+  ))
+    assert.equal(m[2], m[1], 'Heading number differs from chapter ' + m[1]);
+}
+assert.equal(chapterCount, 5, 'Hero advertises five reading chapters');
+assert(read('app/field-guide.tsx').includes('5 个阅读章节'));
+assert(
+  read('app/field-guide.tsx').includes('<ChapterHashOpener />'),
+  'Collapsed chapters must open when an in-page link targets them',
+);
+console.log(
+  'Chapter checks passed: five chapters, heading numbers match, hash links open collapsed chapters.',
 );
 for (const path of [
   'app/site-header.tsx',

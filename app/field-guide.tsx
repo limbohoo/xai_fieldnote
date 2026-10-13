@@ -4,6 +4,7 @@ import { sources } from './sources';
 import { LearningContent } from './learning-content';
 import { Chapter } from './chapter';
 import { SiteHeader } from './site-header';
+import { ChapterHashOpener } from './chapter-hash';
 function Cite({ ids }: { ids: number[] }) {
   return (
     <span className="cites">
@@ -49,6 +50,7 @@ export function FieldGuide() {
         跳到研究地图
       </a>
       <SiteHeader />
+      <ChapterHashOpener />
       <main>
         <section className="hero" id="intro">
           <div className="hero-top">
@@ -78,7 +80,7 @@ export function FieldGuide() {
             <span>5 个阅读章节</span>
             <span>{sources.length} 项文献与资料</span>
             <span>论文细读 · 十步参考 · 随读札记</span>
-            <span className="right">阅读版 / 2026.09</span>
+            <span className="right">阅读版 / 2026.10</span>
           </div>
         </section>
         <Chapter id="mapping" number="01" title="领域、问题与阅读坐标" summary="从系统依据、人的理解到真实情境，建立选择解释方法前的判断框架。">

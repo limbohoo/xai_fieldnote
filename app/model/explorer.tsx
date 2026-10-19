@@ -8,7 +8,7 @@ import { useLang } from '../i18n';
 import { ViewBaseline, ViewCheck, ViewDetect, ViewFeatures, GuessLab, ViewKeypoints, ViewRules, ViewSmooth, ViewVote, worked } from './model-lab';
 import { DEFAULTS, STAGE_IDS, childrenOf, nodeById } from './nodes';
 import { createScene, type SceneApi } from './scene';
-import { HAND, ORIGIN, PARAMS, getStages, getSymbols } from './stages';
+import { HAND, ORIGIN, PARAMS, getStages, getSymbols, getUse } from './stages';
 import { Tex } from './tex';
 import { NODE_WHY, REFS, STAGE_REFS } from './refs';
 import { KIND, LOGIC, UNSUP_NOTE, XAI } from './xai';
@@ -78,7 +78,7 @@ function Inner({ clip, events }: { clip: ClipData; events: EventRec[] }) {
   const views: Record<string, ReactNode> = {
     detect: <ViewDetect clip={clip} f={f} />, keypoints: <ViewKeypoints />, smooth: <ViewSmooth clip={clip} fi={fi} feat={feat} setFeat={setFeat} />,
     features: <ViewFeatures f={clip.frames[kfi]} fi={kfi} minConf={0.25} />, baseline: <ViewBaseline clip={clip} base={base} out={out} fi={fi} feat={feat} setFeat={setFeat} calib={calib} setCalib={setCalib} />,
-    rules: <ViewRules step={step} prev={prev} setPrev={setPrevO} />, vote: <ViewVote out={out} fi={fi} fps={clip.fps} />, guess: <GuessLab label={gl} setLabel={setGl} cues={gc} setCues={setGc} col={col} setCol={setCol} />, check: <ViewCheck events={events} ev={ev} setEv={setEv} />,
+    rules: <ViewRules step={step} prev={prev} setPrev={setPrevO} />, vote: <ViewVote out={out} fi={fi} fps={clip.fps} />, guess: <GuessLab label={gl} setLabel={setGl} cues={gc} setCues={setGc} col={col} setCol={setCol} events={events} />, check: <ViewCheck events={events} ev={ev} setEv={setEv} />,
   };
   const wk = worked(S.id, { base, step, f: clip.frames[kfi], fi, feat, minConf: 0.25, t, lang });
   const baselineTex = (() => {
@@ -173,6 +173,7 @@ function Inner({ clip, events }: { clip: ClipData; events: EventRec[] }) {
         {tab === 'explain' ? <>
           {D.story ? <p className="ex-story"><b>{t('先看一个例子　', 'A quick example  ')}</b>{D.story[lang]}</p> : null}
           <p className="ex-text">{S.text}</p>
+          {getUse(lang)[S.id] ? <div className="ex-use"><b>{t('在系统里怎么用', 'How the running system uses it')}</b><ol>{getUse(lang)[S.id].map((x, i) => <li key={i}>{x}</li>)}</ol></div> : null}
           <div className="ex-dims"><div><small>{t('输入', 'INPUT')}</small>{S.inDim}</div><div><small>{t('输出', 'OUTPUT')}</small>{S.outDim}</div></div>
           <div className="ex-params"><span>{t('参数', 'PARAMETERS')}</span><b>{pv}</b><em>{pn}</em></div>
           <p className="ex-origin"><i className={'dot ' + S.origin} />{ORIGIN[lang][S.origin][0]}. {S.params}</p>
@@ -202,7 +203,7 @@ function Inner({ clip, events }: { clip: ClipData; events: EventRec[] }) {
         {tab === 'numbers' ? <div className="ex-nums">
           <p className="ex-note">{t('下面用 3D 里正在显示的这一帧，把真实的数字代进公式。拖动底部的时间条，数字跟着变。', 'The numbers below come from the frame shown in 3D. Drag the time slider and they change.')}</p>
           {baselineTex ? <Tex tex={baselineTex} /> : null}
-          {S.id === 'guess' ? <div className="cl-widget ex-light"><GuessLab label={gl} setLabel={setGl} cues={gc} setCues={setGc} col={col} setCol={setCol} /></div> : null}
+          {S.id === 'guess' ? <div className="cl-widget ex-light"><GuessLab label={gl} setLabel={setGl} cues={gc} setCues={setGc} col={col} setCol={setCol} events={events} /></div> : null}
           {wk ? <div className="ex-worked">{wk}</div> : null}
           {S.id === 'check' ? <div className="cl-widget ex-light">{views.check}</div> : null}
           {!wk && !baselineTex && S.id !== 'guess' && S.id !== 'check' ? <p className="ex-note">{t('这一层没有逐帧的数字代入。点“2D / 动手视图”拖动滑块来试。', 'This stage has no per-frame substitution. Open the 2D view and drag the sliders instead.')}</p> : null}

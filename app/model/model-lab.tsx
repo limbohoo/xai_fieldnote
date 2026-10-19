@@ -262,9 +262,9 @@ export function ViewVote({ out, fi, fps }: { out: Step[]; fi: number; fps: numbe
   );
 }
 
-export interface GuessState { label: string; setLabel: (k: string) => void; cues: string[]; setCues: (c: string[]) => void; col: number; setCol: (c: number) => void }
+export interface GuessState { label: string; setLabel: (k: string) => void; cues: string[]; setCues: (c: string[]) => void; col: number; setCol: (c: number) => void; events?: EventRec[] }
 /* step 08 as a calculation table: every column is one state, click it to see its own arithmetic */
-export function GuessLab({ label, setLabel, cues, setCues, col, setCol }: GuessState) {
+export function GuessLab({ label, setLabel, cues, setCues, col, setCol, events = [] }: GuessState) {
   const { t, lang } = useT();
   const names = Object.keys(PRIOR), [fv, setFv] = useState(0.8);
   const toggle = (c: string) => setCues(cues.includes(c) ? cues.filter((y) => y !== c) : [...cues, c]);
@@ -308,6 +308,19 @@ export function GuessLab({ label, setLabel, cues, setCues, col, setCol }: GuessS
       <p className="gl-step"><b>6</b>{t('如果手设的数字不准，结论稳不稳？', 'If the hand-set numbers are off, does the conclusion hold?')}</p>
       <p className="gl-eq">{t(`把 55 个手设数字各自随机放大或缩小最多 25%，重算 ${rb.n} 次：领先的状态不变占 `, `Scale each of the 55 hand-set numbers by up to ±25% at random and recompute ${rb.n} times: the leader is unchanged in `)}<b>{Math.round(rb.kept * 100)}%</b>{t('；仍然给出推测（把握够）占 ', '; a guess is still shown (enough confidence) in ')}<b>{Math.round(rb.shown * 100)}%</b>。</p>
       <p className="cl-note">{t('上面的概率是模型内部算出来的，不是“猜对的概率”：55 个数都是手设，没有被标注检验过，线索之间的独立性也只是近似。', 'The probabilities above are the model\'s internal numbers, not "the probability of being right": all 55 are hand-set and unvalidated, and independence between cues is only an approximation.')}</p>
+      {events.some((e) => e.interp) ? <>
+        <p className="gl-step"><b>7</b>{t('这段视频里真实发生的推测：点“载入”，把当时的标签、线索和脸可见比例放进上面的表', 'The guesses the system actually made in this clip: press "Load" to put that moment\'s label, cues and face share into the table above')}</p>
+        <div className="gl-wrap"><table className="gl-real">
+          <thead><tr><th>{t('时刻', 'Time')}</th><th>{t('标签', 'Label')}</th><th>{t('随后的线索', 'Cues afterwards')}</th><th>{t('脸可见', 'Face')}</th><th>{t('结论', 'Result')}</th><th /></tr></thead>
+          <tbody>{events.map((e, i) => { const it = e.interp; if (!it) return null; const r = guess(e.reaction, it.cues, it.face_visible), on = label === e.reaction && fv === it.face_visible && cues.length === it.cues.length && it.cues.every((c) => cues.includes(c));
+            return <tr key={i} className={on ? 'on' : ''}>
+              <td className="num">{mmss(e.start_s)}</td><td>{rp(lang, e.reaction)}</td><td>{it.cues.map((c) => cueName(lang, c)).join(t('、', ', ')) || '—'}</td><td className="num">{Math.round(it.face_visible * 100)}%</td>
+              <td className={r?.show ? '' : 'silent'}>{r ? (r.show ? t(`像“${stateShort(lang, r.top)}”，把握${bandName(r.band)}`, `Like "${stateShort(lang, r.top)}", ${bandName(r.band)}`) : t(`把握低，不说（最高是“${stateShort(lang, r.top)}” ${r.p1.toFixed(2)}）`, `Low, silent (top "${stateShort(lang, r.top)}" ${r.p1.toFixed(2)})`)) : '—'}</td>
+              <td><button aria-pressed={on} onClick={() => { setLabel(e.reaction); setCues([...it.cues]); setFv(it.face_visible); }}>{t('载入', 'Load')}</button></td>
+            </tr>; })}</tbody>
+        </table></div>
+        {(() => { const d = events.find((e) => e.interp && guess(e.reaction, e.interp.cues, 1)?.band === '高' && guess(e.reaction, e.interp.cues, e.interp.face_visible)?.band !== '高'); return <p className="cl-note">{t('这几行用的就是上面同一套公式和门槛，第 09 步会再重算一遍核对。', 'These rows use exactly the formula and bars above; step 09 recomputes them to check.')}{d ? t(`注意 ${mmss(d.start_s)} 那次：概率已经够“高”，但脸只看见 ${Math.round(d.interp!.face_visible * 100)}%，所以把握降了一级。`, ` Note the one at ${mmss(d.start_s)}: the probability is enough for "high", but only ${Math.round(d.interp!.face_visible * 100)}% of the face was visible, so the band drops a level.`) : null}</p>; })()}
+      </> : null}
       <details className="cl-more"><summary><span>{t('看两张手设的完整表（矩阵视图）', 'See the two full hand-set tables (matrix view)')}</span><b aria-hidden="true">＋</b></summary>
         <div className="cl-more-body">
           <p className="cl-small">{t('起始概率：行是标签，列是状态', 'Starting probability: rows are labels, columns are states')}</p>

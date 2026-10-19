@@ -105,3 +105,26 @@ const SE: Record<string, [string, string][]> = {
   check: [['z = 0', '"Usual". Setting a feature to 0 asks: if it had not deviated, would the conclusion still hold?']],
 };
 export const getSymbols = (l: Lang) => (l === 'en' ? SE : SZ);
+
+/* how a stage is used inside the running system, in order; shown on the Explain tab */
+const UZ: Record<string, string[]> = {
+  guess: [
+    '什么时候算：只有第 06、07 步给出“耳朵压低 / 突然不动 / 注意到了什么 / 动起来了”这 4 个标签之一时才开始一次推测。其余标签（比如“没有明显变化”）不推测，因为起始概率表里没有它们的行。',
+    '收集线索：事件发生后，记下猫随后做了什么（躲开、跑开、靠近、扑玩、平静下来、保持不动），以及之前小车是不是刚动过。只记“出现了”的线索，同时记下这段时间里脸能看清的比例。',
+    '算概率：按这个标签取 5 种状态的起始概率，每条出现的线索乘一次它那一行的比例，再除以总和。输出 5 个加起来为 1 的数。',
+    '决定说不说：最高的 p₁ 要够高、并和第二名 p₂ 拉开，才有“高 / 中”把握；否则是“低”，系统不写情绪，只写看到的行为。来自脸的标签（前三个）在脸可见不到 30% 时直接记为“低”；把握“高”但脸可见不到 30% 时降为“中”。',
+    '交给主人：主人手机上的卡片写“看起来像 ×× ，把握 高 / 中”，如果有一条线索拿掉后结论就会变，卡片会把它标成“关键的一步”。',
+    '事后复查：第 09 步用记下的标签、线索和脸可见比例重算一遍，最可能的状态和把握都必须和当时一致。',
+  ],
+};
+const UE: Record<string, string[]> = {
+  guess: [
+    'When it runs: only when steps 06–07 produce one of 4 labels, "ears back / froze / noticed something / moving". Other labels (such as "no clear change") get no guess, because the starting-odds table has no row for them.',
+    'Collect cues: after the event, record what the cat did next (moved away, ran off, approached, pounced, calmed down, stayed still) and whether the robot had just moved. Only cues that occurred are recorded, together with the share of that time the face was visible.',
+    'Compute: take the 5 starting probabilities for this label, multiply once by each occurring cue\'s row, divide by the total. The output is 5 numbers that add to 1.',
+    'Decide whether to speak: the top p₁ must be high enough and clear of the runner-up p₂ to give "high / medium"; otherwise it is "low", and the system writes only the behaviour, no emotion. For the face-based labels (the first three) the band is "low" outright if the face was visible under 30% of the time; a "high" band with the face visible under 30% drops to "medium".',
+    'Hand to the owner: the card on the owner\'s phone says "looks like ×× , confidence high / medium" and, if removing one cue would change the conclusion, marks that cue as the "key step".',
+    'Check afterwards: step 09 recomputes from the recorded label, cues and face share; the top state and the band must match what was shown.',
+  ],
+};
+export const getUse = (l: Lang) => (l === 'en' ? UE : UZ);

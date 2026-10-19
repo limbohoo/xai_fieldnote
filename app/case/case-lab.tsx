@@ -7,6 +7,7 @@ import {
 } from './core';
 import { usePhotoAvailable, type Layers } from './viewer';
 import { MiniBar, Panel } from './panel';
+import { CatMap } from './catmap';
 
 import { COLAB_URL, CUES, DPLAIN, FEAT, FIDX, LCOL, RPLAIN, STATE_TEXT, TELL, VIDEO_ID, amount, driverText, fmt, mmss } from './vocab';
 
@@ -405,7 +406,7 @@ function fixedPrior(reaction: string, labels: Record<number, { verdict: 'right' 
 }
 
 function OwnerStep({ L, onWatch }: { L: L; onWatch: (i: number) => void }) {
-  const [view, setView] = useState<'home' | 'card'>('card');
+  const [view, setView] = useState<'home' | 'card'>('home');
   const [labels, setLabels] = useState<Record<number, { verdict: 'right' | 'wrong' | 'unsure'; actual?: State }>>({});
   const e = L.events[L.ev];
   const g = ownerGuess(e);
@@ -482,6 +483,7 @@ function OwnerStep({ L, onWatch }: { L: L; onWatch: (i: number) => void }) {
                   <div><dt>system_guess<small>情绪标签</small></dt><dd style={g && g.show ? { color: STATE_COL[g.top] } : undefined}>{g && g.show ? STATE_TEXT[g.top] : '— 不给出'}</dd></div>
                   <div><dt>confidence<small>把握</small></dt><dd>{g && g.show ? g.band : '低'}</dd></div>
                 </dl>
+                <div className="cl-phone-card"><p className="cl-phone-h">系统在猫身上看到的</p><CatMap z={zEvent(e)} compact /></div>
                 <button className="cl-play" onClick={() => onWatch(L.ev)}>▶ 看这一段视频（上面的画面会跳到这里）<span className="cl-num">④</span></button>
                 <div className="cl-phone-card">
                   <p className="cl-phone-concl" style={{ color: g && g.show ? STATE_COL[g.top] : '#667083' }}>
@@ -743,7 +745,7 @@ function Lab({ clip, events, children }: { clip: ClipData; events: EventRec[]; c
         usePhoto={usePhoto} onScrub={onScrub} barRef={miniRef} />
       {children}
       <nav className="cl-nav cl-nav-top" aria-label="步骤">
-        {[['s1', '1 找到猫'], ['s2', '2 量数字'], ['s3', '3 和自己比'], ['s4', '4 规则'], ['s5', '5 之后发生了什么'], ['s6', '6 解释是真的吗'], ['s7', '7 给主人的报告'], ['s8', '局限']].map(([id, n]) => <a key={id} href={'#' + id}>{n}</a>)}
+        {[['s1', '1 找到猫'], ['s2', '2 量数字'], ['s3', '3 和自己比'], ['s4', '4 规则'], ['s5', '5 之后发生了什么'], ['s6', '6 解释是真的吗'], ['s7', '7 给主人的报告'], ['s8', '8 手机 App'], ['s9', '局限']].map(([id, n]) => <a key={id} href={'#' + id}>{n}</a>)}
       </nav>
       <Step1M L={L} />
       <Step2M L={L} />
@@ -752,8 +754,140 @@ function Lab({ clip, events, children }: { clip: ClipData; events: EventRec[]; c
       <Step5M L={L} />
       <Step6M L={L} />
       <OwnerStepM L={L} onWatch={watchEvent} />
+      <AppStep L={L} onWatch={watchEvent} />
       <Limits />
     </>
+  );
+}
+
+
+/* ---------- step 8: the phone app ---------- */
+type Verdict = 'right' | 'wrong' | 'unsure';
+function AppStep({ L, onWatch }: { L: L; onWatch: (i: number) => void }) {
+  const [tab, setTab] = useState<'today' | 'moments' | 'usual'>('today');
+  const [filter, setFilter] = useState<'all' | 'guess' | 'behavior'>('all');
+  const [open, setOpen] = useState<number | null>(null);
+  const [fb, setFb] = useState<Record<number, Verdict>>({});
+  const rows = useMemo(() => L.events.map((e, i) => { const g = ownerGuess(e); return { i, e, g, ok: !!g && g.show }; }), [L.events]);
+  const shown = rows.filter((r) => r.ok);
+  const latest = shown[shown.length - 1];
+  const cnt: Record<string, number> = {}; let tot = 0;
+  L.out.forEach((o, i) => { if (o.calibrating) return; const k = L.clip.frames[i].box ? o.label : 'absent'; cnt[k] = (cnt[k] || 0) + 1; tot++; });
+  const budget = Object.entries(cnt).sort((a, b) => b[1] - a[1]);
+  const list = rows.filter((r) => filter === 'all' || (filter === 'guess' ? r.ok : !r.ok));
+  const cur = open === null ? null : rows[open];
+  const curChk = cur ? checkEvent(cur.e) : null;
+  const nFb = Object.keys(fb).length;
+  const go = (t: typeof tab) => { setTab(t); setOpen(null); };
+  const Badge = ({ r }: { r: (typeof rows)[number] }) => r.ok
+    ? <span className="cl-app-badge" style={{ color: STATE_COL[r.g!.top] }}>推测 · 把握{r.g!.band}</span>
+    : <span className="cl-app-badge muted">只看到行为</span>;
+
+  return (
+    <section className="cl-step" id="s8">
+      <Head no="08" en="THE PHONE APP" title="把报告做成手机 App：只放数据真能判断的东西" desc="前面的卡片是一张静态页面。真正的 App 要让主人来回翻、筛选、点开、回答。下面是按“系统到底算得出什么”来安排的界面，右边可以点。" />
+      <div className="cl-grid">
+        <div className="cl-prose">
+          <p>设计从一张账开始：系统能算出什么，界面里就放什么；算不出的，不放，也不假装。</p>
+          <table className="cl-table">
+            <thead><tr><th>系统算得出</th><th>在 App 里的位置</th></tr></thead>
+            <tbody>
+              <tr><td>每一段时间的行为（平静、活跃、警觉、耳朵后压、僵住）</td><td>「今天」里的时间条</td></tr>
+              <tr><td>某个时刻的情绪推测，带把握程度</td><td>「今天」顶部的<b>看起来像</b>，和「时刻」里每一行</td></tr>
+              <tr><td>耳朵、身体比它平时变了多少</td><td>点开时刻后的“为什么”</td></tr>
+              <tr><td>主人的回答（对 / 不对 / 说不准）</td><td>每个时刻底部的按钮，回头修正系统</td></tr>
+            </tbody>
+          </table>
+          <p><b>不放的东西：</b>尾巴、胡须、瞳孔、叫声，这个系统看不到，所以没有对应的界面，也不会出现在推测里。把握不够的时刻，只写看到的行为，不给情绪。</p>
+          <ol className="cl-steps-list">
+            <li><b>今天：</b>先回答“它现在像什么”，再给时间分布。</li>
+            <li><b>时刻：</b>能筛选“有推测 / 只看到行为”，点开才是完整卡片。</li>
+            <li><b>平常：</b>说明系统看什么、不看什么，和你教了它多少。</li>
+          </ol>
+          <Evidence kind="hand" note="界面是设计稿，还没有给主人用过" />
+        </div>
+        <div className="cl-widget">
+          <div className="cl-phone cl-app" aria-label="手机 App 原型">
+            <div className="cl-app-screen">
+              {tab === 'today' ? (
+                <div className="cl-phone-body">
+                  <p className="cl-phone-title">你不在的时候</p>
+                  {latest ? (
+                    <button className="cl-app-hero" style={{ borderColor: STATE_COL[latest.g!.top] }} onClick={() => { setTab('moments'); setOpen(latest.i); }}>
+                      <small>最近一次 · 片段 {latest.i} · {mmss(latest.e.start_s)}</small>
+                      <b style={{ color: STATE_COL[latest.g!.top] }}>看起来像：{STATE_TEXT[latest.g!.top]}</b>
+                      <Badge r={latest} />
+                    </button>
+                  ) : <p className="cl-phone-lead">这段时间没有把握足够高的推测，只记录了行为。</p>}
+                  <div className="cl-phone-card">
+                    <p className="cl-phone-h">它的时间都花在哪里</p>
+                    <div className="cl-budget">{budget.map(([k, n]) => <span key={k} style={{ flex: n, background: BUDGET_COL[k] }} />)}</div>
+                    <p className="cl-phone-legend">{budget.slice(0, 4).map(([k, n]) => <span key={k}><i style={{ background: BUDGET_COL[k] }} />{BUDGET_NAME[k]} <b>{Math.round((n / tot) * 100)}%</b></span>)}</p>
+                  </div>
+                  <p className="cl-phone-fold">共 {rows.length} 个时刻，其中 {shown.length} 个给出了推测。</p>
+                </div>
+              ) : null}
+              {tab === 'moments' && cur === null ? (
+                <div className="cl-phone-body">
+                  <p className="cl-phone-title">时刻</p>
+                  <div className="cl-seg" role="group" aria-label="筛选">
+                    {([['all', '全部'], ['guess', '有推测'], ['behavior', '只看到行为']] as const).map(([k, n]) => <button key={k} aria-pressed={filter === k} onClick={() => setFilter(k)}>{n}</button>)}
+                  </div>
+                  {list.map((r) => (
+                    <button key={r.i} className="cl-phone-row" style={r.ok ? { borderLeftColor: STATE_COL[r.g!.top] } : undefined} onClick={() => setOpen(r.i)}>
+                      <span className="t">片段 {r.i} · {mmss(r.e.start_s)}</span>
+                      <span className="g" style={{ color: r.ok ? STATE_COL[r.g!.top] : '#667083' }}>{r.ok ? `看起来像：${STATE_TEXT[r.g!.top]}` : RPLAIN[r.e.reaction]}</span>
+                      <Badge r={r} />
+                    </button>))}
+                  {list.length === 0 ? <p className="cl-phone-fold">这一类没有时刻。</p> : null}
+                </div>
+              ) : null}
+              {tab === 'moments' && cur && curChk ? (
+                <div className="cl-phone-body">
+                  <button className="cl-app-back" onClick={() => setOpen(null)}>‹ 时刻</button>
+                  <p className="cl-phone-time">片段 {cur.i} · {mmss(cur.e.start_s)}</p>
+                  <div className="cl-phone-card">
+                    <p className="cl-phone-concl" style={{ color: cur.ok ? STATE_COL[cur.g!.top] : '#667083' }}>{cur.ok ? `看起来像：${STATE_TEXT[cur.g!.top]}` : RPLAIN[cur.e.reaction]}</p>
+                    <Badge r={cur} />
+                    {cur.ok ? <p className="cl-phone-p">也可能是：<b>{STATE_TEXT[cur.g!.second]}</b></p> : <p className="cl-phone-p">把握不够，系统只写看到的行为，不给情绪。</p>}
+                  </div>
+                  <div className="cl-phone-card"><p className="cl-phone-h">系统在猫身上看到的</p><CatMap z={zEvent(cur.e)} compact /></div>
+                  <button className="cl-play" onClick={() => onWatch(cur.i)}>▶ 看这一段视频</button>
+                  <div className="cl-phone-card">
+                    <p className="cl-phone-h">为什么标为「{RPLAIN[cur.e.reaction]}」</p>
+                    {curChk.cited.slice(0, 2).map((k) => <p className="cl-phone-p" key={k}>{driverText({ feature: k, z: cur.e.z[k] ?? 0 })}</p>)}
+                  </div>
+                  <div className="cl-phone-card fb">
+                    <p className="cl-phone-h">{cur.ok ? '这个推测对吗？' : '你觉得它当时怎么了？'}</p>
+                    <div className="cl-fbrow">{(['right', 'wrong', 'unsure'] as const).map((v) => <button key={v} aria-pressed={fb[cur.i] === v} onClick={() => setFb({ ...fb, [cur.i]: v })}>{v === 'right' ? '对' : v === 'wrong' ? '不对' : '说不准'}</button>)}</div>
+                  </div>
+                </div>
+              ) : null}
+              {tab === 'usual' ? (
+                <div className="cl-phone-body">
+                  <p className="cl-phone-title">平常</p>
+                  <div className="cl-phone-card">
+                    <p className="cl-phone-h">系统在看</p>
+                    <p className="cl-phone-p">耳朵的高度和朝向、眼睛睁开的程度、身体动得多不多。每一项都和<b>它自己的平时</b>比。</p>
+                  </div>
+                  <div className="cl-phone-card">
+                    <p className="cl-phone-h">系统看不到</p>
+                    <p className="cl-phone-p">尾巴、胡须、瞳孔、叫声。所以推测不会提到它们。</p>
+                  </div>
+                  <div className="cl-phone-card">
+                    <p className="cl-phone-h">你教了它</p>
+                    <p className="cl-phone-p">{nFb ? `已回答 ${nFb} 个时刻。` : '还没有回答。在「时刻」里点开一个，告诉系统对不对。'}</p>
+                  </div>
+                </div>
+              ) : null}
+            </div>
+            <div className="cl-app-tabs" role="tablist" aria-label="App 底部导航">
+              {([['today', '今天'], ['moments', '时刻'], ['usual', '平常']] as const).map(([k, n]) => <button key={k} role="tab" aria-selected={tab === k} onClick={() => go(k)}>{n}</button>)}
+            </div>
+          </div>
+        </div>
+      </div>
+    </section>
   );
 }
 
@@ -766,8 +900,8 @@ function Limits() {
     ['只在一个领域里演示过', '可迁移的是设计模式：替不会说话的对象向第三方解释时，（1）和它自己的平常比；（2）把可核对的依据放在结论旁；（3）把握不够就不下结论；（4）读者的纠正变成标签。这些模式在其他领域是否有效，需要另外的研究。'],
   ];
   return (
-    <section className="cl-step" id="s8">
-      <Head no="08" en="LIMITS" title="这个案例不能说明什么" desc="解释忠实于规则，不代表规则对这只猫的判断是对的。这只猫当时是被吓到的，不是在玩。" />
+    <section className="cl-step" id="s9">
+      <Head no="09" en="LIMITS" title="这个案例不能说明什么" desc="解释忠实于规则，不代表规则对这只猫的判断是对的。这只猫当时是被吓到的，不是在玩。" />
       <div className="cl-limits">
         {items.map(([t, b], i) => (<article key={t}><span className="num">{String(i + 1).padStart(2, '0')}</span><h3>{t}</h3><p>{b}</p></article>))}
       </div>

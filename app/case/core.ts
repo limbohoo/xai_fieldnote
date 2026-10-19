@@ -208,7 +208,7 @@ export function guess(reaction: string, cues: string[], faceVisible: number): Gu
 
 // ---------- faithfulness: counterfactual checks on a recorded event ----------
 export interface EventRec {
-  start_s: number; reaction: Reaction; z: ZMap; prev_reaction: string; drivers: Driver[]; changes: [FeatureKey, number][];
+  start_s: number; end_s?: number | null; triggers?: ('sound' | 'motion')[]; notes?: string[]; reaction: Reaction; z: ZMap; prev_reaction: string; drivers: Driver[]; changes: [FeatureKey, number][];
   interp: { top: State; band: Band; cues: string[]; face_visible: number } | null;
 }
 export const USED: FeatureKey[] = ['ear_height', 'ear_angle', 'eye_aperture', 'activity'];

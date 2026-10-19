@@ -56,11 +56,11 @@ function offReason(k: FeatureKey, f: Frame, calibrating: boolean): string {
 }
 
 export function Panel({ clip, out, fi, kpFrame, kpStep, layers, setLayers, minConf, geoFeature, usePhoto, photoOk, wantPhoto, setWantPhoto,
-  showVideo, setShowVideo, iframeRef, videoStart, onIframeLoad, playing, onPlayPause, onScrub, runs, calib, panelRef, kpFi }: {
+  showVideo, setShowVideo, iframeRef, videoStart, onIframeLoad, playing, onPlayPause, onScrub, syncing, runs, calib, panelRef, kpFi }: {
   clip: ClipData; out: Step[]; fi: number; kpFrame: Frame; kpStep: Step; kpFi: number; layers: Layers; setLayers: (l: Layers) => void; minConf: number;
   geoFeature: FeatureKey | null; usePhoto: boolean; photoOk: boolean; wantPhoto: boolean; setWantPhoto: (v: boolean) => void;
   showVideo: boolean; setShowVideo: (v: boolean) => void; iframeRef: RefObject<HTMLIFrameElement | null>; videoStart: number; onIframeLoad: () => void;
-  playing: boolean; onPlayPause: () => void; onScrub: (fi: number) => void; runs: [number, number, string][]; calib: number; panelRef: RefObject<HTMLElement | null>;
+  playing: boolean; onPlayPause: () => void; onScrub: (fi: number) => void; syncing?: boolean; runs: [number, number, string][]; calib: number; panelRef: RefObject<HTMLElement | null>;
 }) {
   const f = clip.frames[fi], r = out[fi];
   const total = clip.frames[clip.frames.length - 1].t;
@@ -76,7 +76,7 @@ export function Panel({ clip, out, fi, kpFrame, kpStep, layers, setLayers, minCo
           <span className="cl-panel-eyebrow">CASE LAB · 案例实验室 · 实时分析演示</span>
           <h1>一只猫的耳朵压低了，<span>系统是怎么判断的？</span></h1>
         </div>
-        <p className="cl-panel-hint">按播放键，下面的数字会随着视频每一帧实时变化。</p>
+        <p className="cl-panel-hint">左边是监控录像，右边是系统在同一时刻画出的关键点，下面的数字随之变化。拖动进度条，两边始终是同一帧。</p>
       </div>
       <div className="cl-panel-grid">
         <div className="cl-panel-media">
@@ -86,11 +86,11 @@ export function Panel({ clip, out, fi, kpFrame, kpStep, layers, setLayers, minCo
                 src={`https://www.youtube-nocookie.com/embed/twzzFMcScww?enablejsapi=1&playsinline=1&rel=0&start=${videoStart}`}
                 allow="encrypted-media; picture-in-picture" referrerPolicy="strict-origin-when-cross-origin" allowFullScreen />
             ) : <div className="cl-p-off"><button className="cl-p-btn" onClick={() => setShowVideo(true)}>显示原视频（YouTube）</button></div>}
-            <span className="cl-p-cap">原视频</span>
+            <span className="cl-p-cap">监控录像{syncing ? ' · 对齐中…' : ''}</span>
           </div>
           <div className="cl-p-tile cl-p-skel">
-            <Viewer fi={kpFi} frame={kpFrame} step={kpStep} size={clip.size} layers={layers} minConf={minConf} geoFeature={geoFeature} usePhoto={usePhoto} />
-            <span className="cl-p-cap">系统看到的</span>
+            <Viewer fi={kpFi} frame={kpFrame} step={kpStep} size={clip.size} layers={layers} minConf={minConf} geoFeature={geoFeature} usePhoto={false} light full={!geoFeature} />
+            <span className="cl-p-cap">系统视觉分析</span>
           </div>
         </div>
         <div className="cl-panel-read">
@@ -122,8 +122,7 @@ export function Panel({ clip, out, fi, kpFrame, kpStep, layers, setLayers, minCo
       <div className="cl-p-opts" role="group" aria-label="画面上显示什么">
         {([['box', '猫的框'], ['face', '脸 48 点'], ['body', '身体 20 点'], ['basis', '判断依据（红圈）']] as const).map(([k, n]) =>
           <label key={k}><input type="checkbox" checked={layers[k]} onChange={(e) => setLayers({ ...layers, [k]: e.target.checked })} />{n}</label>)}
-        <label><input type="checkbox" checked={showVideo} onChange={(e) => setShowVideo(e.target.checked)} />加载原视频（YouTube）</label>
-        {photoOk ? <label><input type="checkbox" checked={wantPhoto} onChange={(e) => setWantPhoto(e.target.checked)} />真实画面（仅本地）</label> : null}
+        <label><input type="checkbox" checked={showVideo} onChange={(e) => setShowVideo(e.target.checked)} />加载监控录像（YouTube）</label>
         {f.pose ? <span className="cl-p-warn">脸部数字已暂停：{f.pose.includes('sideways') ? '头转开了' : '头抬起或低下了'}</span> : null}
       </div>
     </section>

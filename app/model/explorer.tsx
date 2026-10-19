@@ -140,6 +140,7 @@ function Inner({ clip, events, setLang }: { clip: ClipData; events: EventRec[]; 
           </ol>
           <p className="ex-therefore">{D.therefore[lang]}</p>
           <p className="ex-assume">{D.assume[lang]}</p>
+          {D.source ? <div className="ex-source"><b>{D.source.title[lang]}</b><ul>{D.source.items.map((it, i) => <li key={i}>{it[lang]}</li>)}</ul></div> : null}
           <dl className="ex-sym">{symbols[S.id]?.map(([a, b]) => <div key={a}><dt>{a}</dt><dd>{b}</dd></div>)}</dl>
         </div> : null}
 

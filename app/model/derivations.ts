@@ -1,7 +1,8 @@
 /* Full derivation of every stage: definitions, steps, why each step holds, and the assumptions it rests on. TeX is language-free; prose is bilingual. */
 export interface Bi { zh: string; en: string }
 export interface DStep { say: Bi; tex: string; note?: Bi }
-export interface Deriv { goal: Bi; story?: Bi; steps: DStep[]; therefore: Bi; assume: Bi }
+export interface Source { title: Bi; items: Bi[] }
+export interface Deriv { goal: Bi; story?: Bi; source?: Source; steps: DStep[]; therefore: Bi; assume: Bi }
 const r = String.raw;
 
 export const DERIV: Record<string, Deriv> = {
@@ -104,6 +105,16 @@ export const DERIV: Record<string, Deriv> = {
     assume: { zh: '前提：开头那段确实是“平时”。如果那段里猫恰好很紧张，之后所有偏离都被算歪。用 60 / 90 / 150 / 300 帧记平时，结果差别很大，所以正式使用前应单独拍一段平静视频存成基线。', en: 'Assumes the opening segment really is "usual". If the cat happened to be tense there, every later deviation is miscalculated. Learning usual from 60 / 90 / 150 / 300 frames gives very different results, so record a calm clip beforehand and store it as the baseline.' },
   },
   rules: {
+    source: {
+      title: { zh: '这些数字怎么来的（没有训练）', en: 'Where these numbers come from (nothing was trained)' },
+      items: [
+        { zh: '方向来自文献：耳朵动作是猫面部表情量表（Feline Grimace Scale，Evangelista 2019）里的一个动作单元，Cats Protection 的身体语言指南也把耳朵位置当作信号。', en: 'The direction comes from the literature: ear position is an action unit of the Feline Grimace Scale (Evangelista 2019), and the Cats Protection body-language guide also treats ears as a signal.' },
+        { zh: '数值是我们估的：耳朵高度最可靠，门槛取 ±1.5；耳转、眼睛睁开、活动更嘈杂，门槛取 2.0；“静止”取 −1。保持标签的门槛（1.0、1.5、−0.5）是为了防闪烁设的。代码里写明这些是 “unvalidated guesses”。', en: 'The values are our estimates: ear height is the most reliable, so its bar is ±1.5; ear rotation, eye opening and activity are noisier, so theirs is 2.0; "still" is −1. The stay thresholds (1.0, 1.5, −0.5) were added to prevent flicker. The code calls them "unvalidated guesses".' },
+        { zh: '只有耳朵高度可以单独触发标签：它的测量误差只有真实差异的 0.15，低于约 0.3 的线。其余特征只能做补充。', en: 'Only ear height may trigger a label alone: its measurement error is 0.15 of the real difference, under the 0.3 line. The other features may only support it.' },
+        { zh: '在测试视频上看到失败后手动改过：分母加了测量误差下限（之前校准期猫几乎不动，z 爆表，造成 40% 的误报）；耳转只有在耳尖也偏低时才算数；旧卡片的依据写错，用第 09 步的检验在 7 个事件里查出 3 个，改成只写判断真正用到的特征。', en: 'Adjusted by hand after failures on the test video: the denominator got a measurement-error floor (before, the cat barely moved during calibration and z exploded, causing 40% false alarms); ear rotation counts only when the ear tip is also lower; the old card cited wrong evidence, which the check in step 09 caught in 3 of 7 events, so cards now cite only what the decision used.' },
+        { zh: '没有被检验：调整只依据一段约 35 秒的视频，没有留出的验证数据。Bennett 等（2017）发现与恐惧、挫败最相关的面部动作是眨眼、嘴部动作和头部转向，这些我们没有测。要调整门槛，需要两个人独立标注，用 Cohen’s κ 看一致性，再用另一次测试的数据评价。', en: 'Not validated: the adjustments used one video of about 35 s and no held-out data. Bennett et al. (2017) found that the facial actions most related to fear and frustration are blinking, mouth movements and head turning, which we do not measure. Tuning the thresholds needs two independent annotators, Cohen\'s κ for agreement, and a separate test set for evaluation.' },
+      ],
+    },
     goal: { zh: '把 4 个 z 变成一个标签，并且让“为什么是这个标签”能被逐条核对。', en: 'Turn 4 z scores into one label so that "why this label" can be checked line by line.' },
     steps: [
       { say: { zh: '写成函数：输入是 4 个 z 和上一帧的标签，输出是 7 个标签之一。z 的三个坐标就是 3D 空间的三个轴（耳转作为第三轴）。', en: 'As a function: the input is 4 z scores plus the previous label, the output is one of 7 labels. The coordinates of z are the axes of the 3D space (ear rotation is the third axis).' },
@@ -141,6 +152,16 @@ export const DERIV: Record<string, Deriv> = {
     assume: { zh: '前提：0.3 秒和 60% 是手设的。', en: 'Assumes 0.3 s and 60% are hand-set.' },
   },
   guess: {
+    source: {
+      title: { zh: '这些概率怎么来的（没有训练）', en: 'Where these probabilities come from (nothing was trained)' },
+      items: [
+        { zh: '55 个概率（4 × 5 个起始概率，7 × 5 个似然）都是手写的假设。配置版本号写的是 “hand-set v1 (hypotheses, not validated)”。', en: 'All 55 probabilities (4 × 5 starting, 7 × 5 likelihood) are hand-written hypotheses. The config version string reads "hand-set v1 (hypotheses, not validated)".' },
+        { zh: '依据的是文献的方向，不是拟合：Feline Grimace Scale、Cats Protection 的身体语言指南、捕猎序列（Leyhausen 1979）、Bennett 等 2017。例如“耳朵压低”时紧张给得最高，“随后躲开”在紧张下 0.60、在放松下 0.05，只表达“紧张的猫更常躲开”这个相对大小。', en: 'They follow the direction of the literature, not a fit: the Feline Grimace Scale, the Cats Protection guide, the predatory sequence (Leyhausen 1979) and Bennett et al. 2017. For example "ears back" gives tense the highest start, and "moves away" is 0.60 under tense and 0.05 under calm, which only encodes that tense cats move away more often.' },
+        { zh: '在测试视频上手动改过一处：早先只看“动得快不快”，受惊逃跑被推测成“想玩，高把握”。现在“扑玩”要求同时不是在离开，又快又在离开另算“快速跑开”，指向紧张。', en: 'One hand fix on the test video: early on, only speed was considered and a startled flight was guessed as "playful, high confidence". Now "plays" requires that the cat is not moving away, and fast plus moving away is a separate cue, "runs off", that points to tense.' },
+        { zh: '更新方法已写好，还没用过：`learn()` 把手设值当作 10 条虚拟标注，每加一条人工标注就更新（Dirichlet / Beta 计数）。目前已填写的标注是 0 条，所以现在用的仍是手设值。约 30 条之后数据才开始占主导。', en: 'The update method is written but unused: `learn()` treats the hand-set values as 10 virtual annotations and updates with each human label (Dirichlet / Beta counts). The number of filled-in labels so far is 0, so the hand-set values are still in use. Data starts to dominate after about 30 labels.' },
+        { zh: '评价时要注意：同一批事件既用来更新概率、又用来评价，会高估准确率，评价要用另一次测试的数据。标注的人也可能被系统的推测带偏，所以要先看视频、写下自己的判断，再显示系统的推测。', en: 'When evaluating: using the same events to update and to evaluate overstates accuracy, so evaluate on a separate test. Annotators can also be swayed by the system\'s guess, so they should watch the video and write their own judgement before seeing it.' },
+      ],
+    },
     goal: { zh: '从“看到的行为”推测“可能的状态”，并且知道什么时候不该说。', en: 'Infer the likely state from observed behaviour, and know when not to speak.' },
     steps: [
       { say: { zh: '设状态 s 有 5 种，标签是 ℓ，随后看到线索 c₁…c_m。要的是已知这些信息后每种状态的概率。用贝叶斯公式：', en: 'Let the state s take 5 values, the label be ℓ, and the cues seen afterwards be c₁…c_m. We want the probability of each state given all this. Bayes\' rule gives:' },

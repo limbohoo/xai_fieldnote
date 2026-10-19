@@ -206,3 +206,7 @@
 .ex-light .gl-table th, .ex-light .gl-table td { padding: 5px 3px; }
 .ex-light .gl-table thead th:first-child, .ex-light .gl-table tbody th { width: 76px; font-size: 12px; line-height: 1.35; }
 .ex-light .gl-table th button { font-size: 12px; padding: 4px 2px; }
+
+.ex-source { border: 1px solid #2a3347; border-radius: 10px; padding: 14px 16px; background: #0f1522; }
+.ex-source > b { display: block; font-size: 15px; color: #ffb84d; margin-bottom: 8px; }
+.ex-source ul { margin: 0; padding-left: 1.2em; display: flex; flex-direction: column; gap: 8px; font-size: 14px; line-height: 1.75; color: #c9d1e0; }

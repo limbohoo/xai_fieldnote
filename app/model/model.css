@@ -254,3 +254,17 @@
 .ex-gpick small { color: #8a94a6; letter-spacing: .08em; font-size: 11px; } .ex-gpick > div { display: flex; flex-wrap: wrap; gap: 5px; }
 .ex-gpick button { font: inherit; font-size: 13px; color: #c9d1e0; background: #151c2e; border: 1px solid #2a3347; border-radius: 6px; padding: 4px 10px; cursor: pointer; }
 .ex-gpick button[aria-pressed="true"] { background: #234fe5; border-color: #234fe5; color: #fff; }
+
+/* key points tab and the chain map */
+.ex-key { display: flex; flex-direction: column; gap: 12px; }
+.ex-kind { display: grid; grid-template-columns: 14px 1fr; gap: 2px 10px; align-items: center; border: 1px solid; border-radius: 10px; padding: 12px 14px; background: #0f1522; }
+.ex-kind i { width: 14px; height: 14px; border-radius: 3px; } .ex-kind b { font-size: 16px; } .ex-kind span { grid-column: 2; font-size: 13px; color: #aab4c8; }
+.ex-krow small { display: block; color: #8a94a6; letter-spacing: .08em; font-size: 11.5px; margin-bottom: 4px; } .ex-krow p { margin: 0; font-size: 15px; line-height: 1.8; color: #d5dcec; }
+.ex-krow.hl { border-left: 3px solid #6c9bff; padding-left: 12px; } .ex-krow.hl p { color: #fff; font-size: 16px; }
+.ex-tax { border-collapse: collapse; width: 100%; font-size: 13.5px; } .ex-tax th { text-align: left; color: #8a94a6; font-weight: 500; padding: 6px 10px 6px 0; width: 92px; vertical-align: top; } .ex-tax td { color: #d5dcec; padding: 6px 0; border-bottom: 1px solid #1d2535; line-height: 1.6; }
+.ex-gates { list-style: none; margin: 0; padding: 0; display: flex; flex-direction: column; gap: 8px; } .ex-gates b { display: block; color: #ffcf8a; font-size: 14px; font-weight: 600; line-height: 1.6; } .ex-gates span { font-size: 13px; color: #aab4c8; }
+.ex-none { margin: 0; color: #8a94a6; font-size: 14px; }
+.ex-wh { margin: 18px 0 8px; font-size: 18px; font-weight: 600; } .ex-wh:first-child { margin-top: 0; }
+.ex-logic { margin: 0; padding-left: 0; list-style: none; display: flex; flex-direction: column; gap: 6px; font-size: 15px; line-height: 1.75; }
+.ex-map { border-collapse: collapse; width: 100%; font-size: 13.5px; } .ex-map th, .ex-map td { text-align: left; padding: 8px; border-bottom: 1px solid var(--border); vertical-align: top; line-height: 1.55; } .ex-map th { color: #667083; font-weight: 500; }
+.ex-pill { color: #151a24; font-weight: 600; font-size: 12.5px; padding: 1px 9px; border-radius: 999px; white-space: nowrap; }

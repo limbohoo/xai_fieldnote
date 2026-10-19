@@ -10,13 +10,14 @@ import { createScene, type SceneApi } from './scene';
 import { HAND, ORIGIN, PARAMS, getStages, getSymbols } from './stages';
 import { Tex } from './tex';
 import { NODE_WHY, REFS, STAGE_REFS } from './refs';
+import { KIND, LOGIC, UNSUP_NOTE, XAI } from './xai';
 
 const COLORS = ['#6c9bff', '#4fd08c', '#ff7a7a', '#ffb84d'];
 function Sources({ ids, title }: { ids: string[]; title: string }) {
   const { t, lang } = useT();
   return <div className="ex-refs"><b>{title}</b><ol>{ids.map((id) => { const r = REFS[id]; return <li key={id}><span>{r.cite}{r.verify ? <em className="v">{t('　⚠️ 引用前请核对卷号、页码', '  ⚠️ verify volume and pages before citing')}</em> : null}</span>{r.url ? <a href={r.url} target="_blank" rel="noreferrer">{t('打开 ↗', 'Open ↗')}</a> : null}<small>{r.use[lang]}</small></li>; })}</ol></div>;
 }
-type Tab = 'explain' | 'derive' | 'numbers';
+type Tab = 'key' | 'explain' | 'derive' | 'numbers';
 
 function useLang(): [Lang, (l: Lang) => void] {
   const [lang, setLang] = useState<Lang>('zh');
@@ -45,7 +46,7 @@ function Inner({ clip, events, setLang }: { clip: ClipData; events: EventRec[]; 
   const n = clip.frames.length, host = useRef<HTMLDivElement>(null), api = useRef<SceneApi | null>(null);
   const [fi, setFi] = useState(() => Math.min(n - 1, Math.round(((events[0]?.start_s ?? 10) + 0.2) * clip.fps)));
   const [sel, setSel] = useState(0), [follow, setFollow] = useState(true), [playing, setPlaying] = useState(false), [speed, setSpeed] = useState(1);
-  const [sheet, setSheet] = useState<null | 'two-d' | 'whole'>(null), [tab, setTab] = useState<Tab>('explain');
+  const [sheet, setSheet] = useState<null | 'two-d' | 'whole'>(null), [tab, setTab] = useState<Tab>('key');
   const [gl, setGl] = useState('ears_back'), [gc, setGc] = useState<string[]>(['moves_away']), [col, setCol] = useState(0);
   const [feat, setFeat] = useState<FeatureKey>('ear_height'), [calib, setCalib] = useState(clip.calib_frames), [ev, setEv] = useState(0), [prevO, setPrevO] = useState<string | null>(null);
   const { base, out } = useMemo(() => run(clip.frames, calib), [clip, calib]);
@@ -96,7 +97,7 @@ function Inner({ clip, events, setLang }: { clip: ClipData; events: EventRec[]; 
     return fin(x) && m !== undefined && s !== undefined ? String.raw`z=\frac{x-m}{s}=\frac{${x.toFixed(3)}-${m.toFixed(3)}}{${s.toFixed(3)}}=${((x - m) / s).toFixed(2)}` : null;
   })();
   const toTab = (x: Tab) => setTab(x);
-  const tabs: [Tab, string][] = [['explain', t('讲解', 'Explain')], ['derive', t('推导', 'Derive')], ['numbers', t('代入数字', 'Numbers')]];
+  const tabs: [Tab, string][] = [['key', t('要点', 'Key points')], ['explain', t('讲解', 'Explain')], ['derive', t('推导', 'Derive')], ['numbers', t('代入数字', 'Numbers')]];
   return (
     <div className="ex">
       <div className="ex-scene">
@@ -162,6 +163,24 @@ function Inner({ clip, events, setLang }: { clip: ClipData; events: EventRec[]; 
           {tabs.map(([k, name]) => <button key={k} role="tab" aria-selected={tab === k} onClick={() => toTab(k)}>{name}</button>)}
         </div>
 
+        {tab === 'key' ? (() => { const X = XAI[S.id], K = KIND[X.kind]; return <div className="ex-key">
+          <div className="ex-kind" style={{ borderColor: K.color }}><i style={{ background: K.color }} /><b style={{ color: K.color }}>{K.name[lang]}</b><span>{X.box === 'black' ? t('黑箱：内部不能直接读', 'Black box: the inside cannot be read') : t('白箱：每一步都能逐行核对', 'Glass box: every step can be checked line by line')}</span></div>
+          <div className="ex-krow"><small>{t('这一步解决什么问题', 'THE PROBLEM IT SOLVES')}</small><p>{X.problem[lang]}</p></div>
+          <div className="ex-krow hl"><small>{t('要点', 'THE POINT')}</small><p>{X.point[lang]}</p></div>
+          <div className="ex-krow"><small>{t('学了什么、从哪学', 'WHAT IS LEARNED, FROM WHAT')}</small><p>{X.learned[lang]}</p></div>
+          <table className="ex-tax"><tbody>
+            <tr><th>{t('解释谁', 'Object')}</th><td>{X.object[lang]}</td></tr>
+            <tr><th>{t('多大范围', 'Scope')}</th><td>{X.scope[lang]}</td></tr>
+            <tr><th>{t('何时形成', 'Approach')}</th><td>{X.approach[lang]}</td></tr>
+            <tr><th>{t('需要什么访问', 'Access')}</th><td>{X.access[lang]}</td></tr>
+            <tr><th>{t('解释方法', 'Method')}</th><td>{X.method[lang]}</td></tr>
+          </tbody></table>
+          <div className="ex-krow"><small>{t('在哪里下判断', 'WHERE A JUDGEMENT IS MADE')}</small>
+            {X.gates.length ? <ul className="ex-gates">{X.gates.map((g, i) => <li key={i}><b>◆ {g.rule[lang]}</b><span>{g.why[lang]}</span></li>)}</ul> : <p className="ex-none">{t('这一步不下判断，只做计算。', 'No judgement here, only computation.')}</p>}
+          </div>
+          <button className="ex-2d" onClick={() => setSheet('whole')}>{t('看整条链路的地图', 'See the map of the whole chain')}</button>
+        </div>; })() : null}
+
         {tab === 'explain' ? <>
           {D.story ? <p className="ex-story"><b>{t('先看一个例子　', 'A quick example  ')}</b>{D.story[lang]}</p> : null}
           <p className="ex-text">{S.text}</p>
@@ -215,6 +234,13 @@ function Inner({ clip, events, setLang }: { clip: ClipData; events: EventRec[]; 
                 <div className="ex-scrub"><label htmlFor="ex-t2">{t('换一个时刻', 'Change the moment')}</label><input id="ex-t2" type="range" min={0} max={n - 1} value={fi} onChange={(e) => setFi(+e.target.value)} /><span className="num">{mmss(f.t)}</span></div>
                 <div className="cl-widget">{views[S.id]}</div>
               </> : <>
+                <h3 className="ex-wh">{t('整条链路的逻辑', 'The logic of the chain')}</h3>
+                <ol className="ex-logic">{LOGIC.map((l, i) => <li key={i}>{l[lang]}</li>)}</ol>
+                <h3 className="ex-wh">{t('哪里是机器学习、无监督、算法、规则', 'Where machine learning, unsupervised, algorithms and rules are')}</h3>
+                <table className="ex-map"><thead><tr><th>{t('层', 'Stage')}</th><th>{t('类型', 'Kind')}</th><th>{t('学了什么', 'Learned')}</th><th>{t('黑箱 / 白箱', 'Box')}</th><th>{t('判断点', 'Gates')}</th></tr></thead>
+                  <tbody>{stages.map((s) => { const X = XAI[s.id], K = KIND[X.kind]; return <tr key={s.id}><td><b>{s.no}</b> {s.name}</td><td><span className="ex-pill" style={{ background: K.color }}>{K.short[lang]}</span></td><td>{X.learned[lang]}</td><td>{X.box === 'black' ? t('黑箱', 'Black') : t('白箱', 'Glass')}</td><td>{X.gates.length}</td></tr>; })}</tbody></table>
+                <p className="ex-whole-foot">{UNSUP_NOTE[lang]}</p>
+                <h3 className="ex-wh">{t('写成一个复合函数', 'As one composite function')}</h3>
                 <p className="ex-whole-head">{WHOLE.head[lang]}</p>
                 <table className="ex-whole"><tbody>{WHOLE.rows.map((r, i) => <tr key={i}><td className="no">{String(i + 1).padStart(2, '0')}</td><td><Tex tex={r.tex} /></td><td className="say">{r.say[lang]}</td></tr>)}</tbody></table>
                 <p className="ex-whole-foot">{WHOLE.foot[lang]}</p>

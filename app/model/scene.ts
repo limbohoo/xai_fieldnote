@@ -4,6 +4,7 @@ import { FEATURES, LIK, PRIOR, STATES, Z, fin, type Check, type ClipData, type E
 import { FIDX, LCOL } from '../case/vocab';
 import { NODES, STAGE_IDS, childrenOf, type Node } from './nodes';
 import { buildVis3D, disposeObj, disposeObj3dCaches, type Mode } from './obj3d';
+import { KIND, XAI } from './xai';
 import { cueKeys, cueName, featShort, featName, rp, stateShort, type Lang } from './i18n';
 
 /* The model as a stack of 3D objects, bottom to top: one object per stage, each showing the actual tensor of the chosen frame. */
@@ -195,6 +196,23 @@ export function createScene(el: HTMLElement, d: SceneData, onPick: (i: number) =
     const upd = b(content, d, reg);
     const t = makeLabel(String(i + 1).padStart(2, '0') + '  ' + NAMES[d.lang][i], '#e6ebf5', 0.8, 5); t.sprite.position.set(0, 4.2, 0); g.add(t.sprite);
     const hit = new THREE.Mesh(new THREE.BoxGeometry(10, 8, 10), new THREE.MeshBasicMaterial({ transparent: true, opacity: 0, depthWrite: false })); hit.userData.i = i; g.add(hit);
+    // what kind of component this is, shown as a casing: dark and opaque for a black box, clear for a glass box
+    const X = XAI[STAGE_IDS[i]], K = KIND[X.kind], cw = 13, chh = 10.5, cd = 12;
+    const shell = new THREE.Mesh(new THREE.BoxGeometry(cw, chh, cd), new THREE.MeshBasicMaterial({ color: X.box === 'black' ? '#07080c' : K.color, transparent: true, opacity: X.box === 'black' ? 0.62 : 0.035, depthWrite: false, side: THREE.DoubleSide }));
+    shell.position.set(0, 0.2, 0); shell.renderOrder = 2; g.add(shell);
+    const edges = new THREE.LineSegments(new THREE.EdgesGeometry(shell.geometry), new THREE.LineBasicMaterial({ color: K.color, transparent: true, opacity: 0.85 })); edges.position.copy(shell.position); g.add(edges);
+    const plate = makeLabel(K.short[d.lang] + (X.box === 'black' ? (d.lang === 'en' ? ' · black box' : ' · 黑箱') : (d.lang === 'en' ? ' · glass box' : ' · 白箱')), K.color, 0.55);
+    plate.sprite.position.set(0, chh / 2 + 1.3, 0); g.add(plate.sprite);
+    // decision gates: an amber frame on the stream below the next stage
+    X.gates.slice(0, 2).forEach((gt, k) => {
+      const gy = GAP / 2 + k * 2.6, gg = new THREE.Group(); gg.position.set(0, gy, 0); g.add(gg);
+      const mat = new THREE.MeshStandardMaterial({ color: '#ffb84d', emissive: '#ffb84d', emissiveIntensity: 0.35 });
+      [-1.4, 1.4].forEach((px) => { const p = new THREE.Mesh(new THREE.BoxGeometry(0.16, 1.6, 0.16), mat); p.position.set(px, 0, 0); gg.add(p); });
+      const top = new THREE.Mesh(new THREE.BoxGeometry(3, 0.16, 0.16), mat); top.position.set(0, 0.8, 0); gg.add(top);
+      const dia = new THREE.Mesh(new THREE.OctahedronGeometry(0.32), mat); dia.position.set(0, 1.25, 0); gg.add(dia);
+      const lb = makeLabel('◆ ' + gt.rule[d.lang], '#ffcf8a', 0.36); lb.sprite.center.set(0, 0.5); lb.sprite.position.set(1.8, 0.2, 0); gg.add(lb.sprite);
+    });
+
     return { g, upd, title: t.sprite, hit };
   });
   // data stream between stages
@@ -228,6 +246,8 @@ export function createScene(el: HTMLElement, d: SceneData, onPick: (i: number) =
       childrenOf(n.id).forEach((c3, j) => { mk(c3, y + DY * (j + 1)); line(new THREE.Vector3(x, y - 4, 0), new THREE.Vector3(x, y + DY * (j + 1) + 4.8, 0), '#3a4764'); });
     });
   });
+  (Object.keys(KIND) as (keyof typeof KIND)[]).forEach((k, j) => { const l = makeLabel('■ ' + KIND[k].name[d.lang], KIND[k].color, 0.7); l.sprite.center.set(0, 0.5); l.sprite.position.set(-36, 9 * GAP + 2 - j * 1.4, 0); scene.add(l.sprite); });
+  { const l = makeLabel(d.lang === 'en' ? '◆ amber frame = a judgement is made here' : '◆ 琥珀色闸门 = 这里下判断', '#ffcf8a', 0.7); l.sprite.center.set(0, 0.5); l.sprite.position.set(-36, 9 * GAP + 2 - 6 * 1.4, 0); scene.add(l.sprite); }
   const maxParts = Math.max(...STAGE_IDS.map((sid) => childrenOf(sid).length));
   const header = (txt: string, x: number) => { const h = makeLabel(txt, '#6c9bff', 1.1); h.sprite.position.set(x, 9 * GAP - 4, 0); scene.add(h.sprite); };
   header(d.lang === 'en' ? 'LEVEL 1: THE NINE STAGES' : '第一级：九层', 0); header(d.lang === 'en' ? 'LEVEL 2: PARTS OF EACH STAGE  →   (LEVEL 3 BELOW)' : '第二级：每层的部件 →（第三级在下方）', X0 + ((maxParts - 1) * DX) / 2);

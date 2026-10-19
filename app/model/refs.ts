@@ -27,6 +27,7 @@ export const REFS: Record<string, Ref> = {
   miller: { cite: 'Miller, T. (2019). Explanation in artificial intelligence: Insights from the social sciences. Artificial Intelligence, 267, 1–38.', url: 'https://doi.org/10.1016/j.artint.2018.07.007', use: B('人们期待“为什么是这个，而不是那个”的对比式解释。', 'People expect contrastive explanations: why this and not that.') },
   wachter: { cite: 'Wachter, S., Mittelstadt, B., & Russell, C. (2017). Counterfactual explanations without opening the black box. Harvard Journal of Law & Technology, 31(2).', use: B('反事实解释：改变输入，看结论怎么变。', 'Counterfactual explanation: change the input and see how the conclusion changes.') },
   doshi: { cite: 'Doshi-Velez, F., & Kim, B. (2017). Towards a rigorous science of interpretable machine learning. arXiv:1702.08608.', url: 'https://arxiv.org/abs/1702.08608', use: B('评估解释的框架：先判断对不对，再判断解释忠不忠实，再判断人看没看懂。', 'The evaluation framework: is it right, is the explanation faithful, do people understand it.') },
+  domingos: { cite: 'Domingos, P., & Pazzani, M. (1997). On the optimality of the simple Bayesian classifier under zero-one loss. Machine Learning, 29, 103–130.', verify: true, use: B('朴素贝叶斯：排序可以很好，但概率本身往往不准、偏自信。', 'Naive Bayes: the ranking can be good while the probabilities themselves are often inaccurate and over-confident.') },
   cohen: { cite: 'Cohen, J. (1960). A coefficient of agreement for nominal scales. Educational and Psychological Measurement, 20(1), 37–46.', use: B('两个标注者的一致性（κ）。', 'Agreement between two annotators (κ).') },
   docs: { cite: 'Project docs: ml/share/docs/反应识别与事件报告.md; Colab CatPose_XAI_Tutorial §5.10–5.12; code ml/catpose/{reactions,interpret,smoothing}.py.', use: B('本页数字和规则的出处：门槛、概率、窗口都能在这些文件里逐行找到。', 'Where this page\'s numbers and rules come from: thresholds, probabilities and windows can be found line by line in these files.') },
 };
@@ -40,7 +41,7 @@ export const STAGE_REFS: Record<string, string[]> = {
   baseline: ['leys', 'rousseeuw'],
   rules: ['fgs', 'bennett', 'catsprot', 'humphrey', 'docs'],
   vote: ['docs'],
-  guess: ['fgs', 'bennett', 'leyhausen', 'hall98', 'humphrey', 'catsprot', 'koh', 'docs'],
+  guess: ['fgs', 'bennett', 'leyhausen', 'hall98', 'humphrey', 'catsprot', 'koh', 'domingos', 'cohen', 'docs'],
   check: ['wachter', 'miller', 'doshi', 'cohen', 'koh'],
 };
 

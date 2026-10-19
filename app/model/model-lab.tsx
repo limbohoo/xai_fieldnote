@@ -6,6 +6,7 @@ import {
 } from '../case/core';
 import { FEAT, FIDX, LCOL, fmt, mmss } from '../case/vocab';
 import { cueKeys, cueName, driverTxt, featName, rp, stateName, stateShort, useT } from './i18n';
+import { contributions, robustness } from './nbmath';
 
 /* The 2D, hands-on view of each stage. Every string goes through t(zh, en). */
 const COL = { blue: '#234fe5', ink: '#151a24', warn: '#b4690e', bad: '#b02a37', ok: '#1f7a45' };
@@ -273,6 +274,7 @@ export function GuessLab({ label, setLabel, cues, setCues, col, setCol }: GuessS
   const sn = stateShort(lang, STATES[col]);
   const eq = `${p0[col].toFixed(2)}${cues.map((c) => ` × ${LIK[c][col].toFixed(2)}`).join('')} = ${prod[col].toFixed(3)}`;
   const cc = (i: number) => (i === col ? 'sel' : '');
+  const ct = contributions(label, cues), rb = robustness(label, cues, 0.25), nm = (i: number) => stateShort(lang, STATES[i]);
   return (
     <div className="gl">
       <p className="gl-step"><b>1</b>{t('选一个标签（系统刚看到的行为）', 'Pick a label (the behaviour just seen)')}</p>
@@ -295,6 +297,16 @@ export function GuessLab({ label, setLabel, cues, setCues, col, setCol }: GuessS
       <p className="ml-out">{g
         ? <>{t(`最像“${stateName(lang, g.top)}”（${g.p1.toFixed(2)}），第二是“${stateName(lang, g.second)}”（${g.p2.toFixed(2)}）。把握：`, `Most like "${stateName(lang, g.top)}" (${g.p1.toFixed(2)}), second "${stateName(lang, g.second)}" (${g.p2.toFixed(2)}). Confidence: `)}<b>{bandName(g.band)}</b>{g.show ? t('，显示给主人。', ', shown to the owner.') : t('，不显示情绪，只写看到的行为。', ', no emotion shown; only the behaviour is written.')}</>
         : t('这个标签没有对应的推测。', 'This label has no guess attached.')}</p>
+      <p className="gl-step"><b>5</b>{t(`每条线索让「${nm(ct.top)}」比「${nm(ct.second)}」多领先了多少（对数似然比，可以相加）`, `How much each cue puts "${nm(ct.top)}" ahead of "${nm(ct.second)}" (log-likelihood ratio, additive)`)}</p>
+      <table className="gl-ev"><tbody>
+        <tr><th>{t('起始概率之比', 'Starting odds')}</th><td className={ct.prior >= 0 ? 'pos' : 'neg'}>{ct.prior >= 0 ? '+' : ''}{ct.prior.toFixed(2)}</td></tr>
+        {ct.items.map((x) => <tr key={x.cue}><th>{cueName(lang, x.cue)}</th><td className={x.v >= 0 ? 'pos' : 'neg'}>{x.v >= 0 ? '+' : ''}{x.v.toFixed(2)}</td></tr>)}
+        <tr className="tot"><th>{t('合计', 'Total')}</th><td>{ct.total.toFixed(2)}　<small>= e^{ct.total.toFixed(2)} = {Math.exp(ct.total).toFixed(1)}{t(' 倍', ' to 1')}</small></td></tr>
+      </tbody></table>
+      <p className="cl-note">{t('只用出现过的线索：没选的线索不会改变结果，“没看到”不被当作证据。', 'Only cues that occurred are used: cues you did not pick change nothing, and "not seen" is not treated as evidence.')}</p>
+      <p className="gl-step"><b>6</b>{t('如果手设的数字不准，结论稳不稳？', 'If the hand-set numbers are off, does the conclusion hold?')}</p>
+      <p className="gl-eq">{t(`把 55 个手设数字各自随机放大或缩小最多 25%，重算 ${rb.n} 次：领先的状态不变占 `, `Scale each of the 55 hand-set numbers by up to ±25% at random and recompute ${rb.n} times: the leader is unchanged in `)}<b>{Math.round(rb.kept * 100)}%</b>{t('；仍然给出推测（把握够）占 ', '; a guess is still shown (enough confidence) in ')}<b>{Math.round(rb.shown * 100)}%</b>。</p>
+      <p className="cl-note">{t('上面的概率是模型内部算出来的，不是“猜对的概率”：55 个数都是手设，没有被标注检验过，线索之间的独立性也只是近似。', 'The probabilities above are the model\'s internal numbers, not "the probability of being right": all 55 are hand-set and unvalidated, and independence between cues is only an approximation.')}</p>
       <details className="cl-more"><summary><span>{t('看两张手设的完整表（矩阵视图）', 'See the two full hand-set tables (matrix view)')}</span><b aria-hidden="true">＋</b></summary>
         <div className="cl-more-body">
           <p className="cl-small">{t('起始概率：行是标签，列是状态', 'Starting probability: rows are labels, columns are states')}</p>

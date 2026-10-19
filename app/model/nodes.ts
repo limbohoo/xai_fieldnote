@@ -3,6 +3,7 @@ import { FEATURES, LIK, MODEL_ERROR, PRIOR, STATES, Z, checkEvent, classify, fac
 import { FIDX, LCOL } from '../case/vocab';
 import { cueKeys, cueName, driverTxt, featName, featShort, rp, stateShort, type Lang } from './i18n';
 import type { SceneData, SceneState } from './scene';
+import { contributions, posterior, rank, robustness } from './nbmath';
 import type { Vis } from './vis';
 
 export interface Bi { zh: string; en: string }
@@ -15,7 +16,7 @@ const L = (c: NodeCtx) => (zh: string, en: string) => (c.lang === 'en' ? en : zh
 const frame = (c: NodeCtx) => c.d.clip.frames[c.s.fi];
 const kframe = (c: NodeCtx) => c.d.clip.frames[c.s.kfi];
 const num = (v: number | null | undefined, n = 2) => (fin(v) ? (v as number).toFixed(n) : '—');
-export const DEFAULTS: Record<string, number> = { beta: 1.5, noise: 0.4, rival: 0, alpha: 0.3, minConf: 0.25, nocat: 0 };
+export const DEFAULTS: Record<string, number> = { beta: 1.5, noise: 0.4, rival: 0, alpha: 0.3, minConf: 0.25, nocat: 0, perturb: 0.25 };
 const ps = (c: NodeCtx, k: string) => c.ps[k] ?? DEFAULTS[k];
 const CTL = {
   beta: { key: 'beta', label: B('β（越大，越只信最亮的格子）', 'β (larger = trust only the brightest cell)'), min: 0.2, max: 4, step: 0.1, def: 1.5 },
@@ -23,6 +24,7 @@ const CTL = {
   rival: { key: 'rival', label: B('另一个相似的峰', 'A second similar peak'), min: 0, max: 1, step: 0.05, def: 0 },
   alpha: { key: 'alpha', label: B('α（越大越信当前帧）', 'α (larger = trust the current frame)'), min: 0.05, max: 1, step: 0.05, def: 0.3 },
   minConf: { key: 'minConf', label: B('把握门槛', 'Confidence bar'), min: 0, max: 0.9, step: 0.05, def: 0.25 },
+  perturb: { key: 'perturb', label: B('手设数字的误差 ε（每个数乘 (1+ε)^u）', 'Error ε in the hand-set numbers (each × (1+ε)^u)'), min: 0, max: 1, step: 0.05, def: 0.25 },
   nocat: { key: 'nocat', label: B('假设这一帧没找到猫（0 否，1 是）', 'Pretend no cat was found (0 no, 1 yes)'), min: 0, max: 1, step: 1, def: 0 },
 };
 
@@ -193,8 +195,13 @@ export const NODES: Node[] = [
     plain: B('每个标签对应五种状态的一组起始概率。比如“耳朵压低”时，紧张 0.40，放松 0.10。这些数是手设的。', 'Each label comes with starting odds for five states. For "ears back": tense 0.40, relaxed 0.10. These numbers are hand-set.'),
     vis: (c) => { const p = PRIOR[c.s.gl], sum = p.reduce((a, b) => a + b, 0); return { t: 'bars', items: STATES.map((s, i) => ({ label: stateShort(c.lang, s), v: p[i] / sum, note: (p[i] / sum).toFixed(2) })), lo: 0, hi: 1, caption: L(c)(`标签：${rp(c.lang, c.s.gl)}（可在右侧面板“代入数字”里换）`, `Label: ${rp(c.lang, c.s.gl)} (change it in the panel's "Numbers" tab)`) }; } },
   { id: 'guess.lik', stage: 'guess', level: 2, parent: 'guess', title: B('线索：这种状态下多常出现', 'Cues: how often in each state'),
-    plain: B('每条线索都有一行：猫处在某种状态时，这条线索出现的可能。“随后躲开”在紧张时 0.60，在放松时只有 0.05。', 'Every cue has a row: how likely it is to appear when the cat is in each state. "Moves away" is 0.60 when tense, only 0.05 when relaxed.'),
+    plain: B('每条线索都有一行：猫处在某种状态时，这条线索出现的可能。“随后躲开”在紧张时 0.60，在放松时只有 0.05。只有出现了的线索才会用到。', 'Every cue has a row: how likely it is to appear when the cat is in each state. "Moves away" is 0.60 when tense, only 0.05 when relaxed. Only cues that occurred are used.'),
     vis: (c) => ({ t: 'table', head: STATES.map((s) => stateShort(c.lang, s)), rows: cueKeys.map((k) => ({ label: cueName(c.lang, k), cells: LIK[k].map((v) => v.toFixed(2)), hi: c.s.gc.includes(k) })), hiCol: c.s.col, caption: L(c)('亮的行 = 已选的线索；亮的列 = 选中的状态。', 'Bright rows = picked cues; bright column = the selected state.') }) },
+  { id: 'guess.lik.evidence', stage: 'guess', level: 3, parent: 'guess.lik', title: B('每条线索给了多少证据', 'How much evidence each cue gives'),
+    plain: B('取对数后，每条线索是一个可以相加的“证据量”：正数把领先的状态推得更领先，负数把它拉回来。这里比较的是当前领先者和第二名。', 'In log form each cue is an additive amount of evidence: positive pushes the leader further ahead, negative pulls it back. The comparison here is the current leader against the runner-up.'),
+    tex: String.raw`\log\frac{P(a\mid\ell,C)}{P(b\mid\ell,C)}=\log\frac{P(a\mid\ell)}{P(b\mid\ell)}+\sum_{c\in C}\log\frac{P(c\mid a)}{P(c\mid b)}`,
+    vis: (c) => { const t = L(c), k = contributions(c.s.gl, c.s.gc), nm = (i: number) => stateShort(c.lang, STATES[i]);
+      return { t: 'bars', items: [{ label: t(`起始：${nm(k.top)} 对 ${nm(k.second)}`, `Start: ${nm(k.top)} vs ${nm(k.second)}`), v: k.prior, note: k.prior.toFixed(2) }, ...k.items.map((x) => ({ label: cueName(c.lang, x.cue), v: x.v, color: x.v >= 0 ? '#4fd08c' : '#ff7a7a', note: (x.v >= 0 ? '+' : '') + x.v.toFixed(2) })), { label: t('合计', 'Total'), v: k.total, hi: true, note: k.total.toFixed(2) }].slice(0, 8), lo: -3, hi: 3, lines: [{ v: 0, label: '0' }], caption: t(`合计 = ${k.total.toFixed(2)}，换算回概率之比 e^${k.total.toFixed(2)} = ${Math.exp(k.total).toFixed(1)} 倍。没选线索时只有起始项。`, `Total = ${k.total.toFixed(2)}, i.e. odds of e^${k.total.toFixed(2)} = ${Math.exp(k.total).toFixed(1)} to 1. With no cue picked only the starting term remains.`) }; } },
   { id: 'guess.multiply', stage: 'guess', level: 2, parent: 'guess', title: B('乘起来，再归一化', 'Multiply, then normalise'),
     plain: B('每看到一条线索，就把每个状态的概率乘上这条线索的数，最后除以五个数的总和，让它们加起来等于 1。', 'Each cue multiplies every state\'s probability by the cue\'s number; at the end divide by the sum of the five so they total 1.'),
     tex: String.raw`P(s\mid\ell,c)\propto P(s\mid\ell)\prod P(c_i\mid s)`,
@@ -208,6 +215,15 @@ export const NODES: Node[] = [
     plain: B('看最高概率 p₁ 和第二名 p₂：p₁ 要够高，还要和 p₂ 拉开。不够，系统就不说情绪，只写看到的行为。', 'Look at the top probability p₁ and the runner-up p₂: p₁ must be high enough and clear of p₂. If not, the system says no emotion and only writes the behaviour.'),
     vis: (c) => { const g = guess(c.s.gl, c.s.gc, 0.8), t = L(c); if (!g) return { t: 'eq', lines: [{ text: t('这个标签不做推测', 'No guess for this label') }] }; const bn = c.lang === 'en' ? { 高: 'high', 中: 'medium', 低: 'low' }[g.band] : g.band;
       return { t: 'checks', items: [{ text: `p₁ = ${g.p1.toFixed(2)}（${stateShort(c.lang, g.top)}）`, ok: null }, { text: `p₂ = ${g.p2.toFixed(2)}（${stateShort(c.lang, g.second)}）`, ok: null }, { text: t(`高：p₁ ≥ 0.6 且 p₁ − p₂ ≥ 0.3`, 'High: p₁ ≥ 0.6 and p₁ − p₂ ≥ 0.3'), ok: g.p1 >= 0.6 && g.p1 - g.p2 >= 0.3 }, { text: t('中：p₁ ≥ 0.45 且 p₁ − p₂ ≥ 0.15', 'Medium: p₁ ≥ 0.45 and p₁ − p₂ ≥ 0.15'), ok: g.p1 >= 0.45 && g.p1 - g.p2 >= 0.15 }], caption: t(`把握：${bn}（脸可见比例按 0.8 计）。${g.show ? '会显示给主人。' : '不显示情绪。'}`, `Confidence: ${bn} (face visible taken as 0.8). ${g.show ? 'Shown to the owner.' : 'No emotion shown.'}`) }; } },
+
+  { id: 'guess.band.robust', stage: 'guess', level: 3, parent: 'guess.band', title: B('手设数字有误差时，稳不稳', 'Do the hand-set numbers matter'),
+    plain: B('这 55 个概率都是我们手设的。把每一个随机放大或缩小一点，重算 200 次，看领先的状态有多少次没变。越接近 100%，结论越不依赖我们的猜测。', 'All 55 probabilities were set by hand. Scale each up or down a little at random, recompute 200 times and count how often the leading state stays. The closer to 100%, the less the conclusion depends on our guesses.'),
+    controls: [CTL.perturb], tex: String.raw`r=\frac1N\sum_n\mathbf 1[\arg\max_s P^{(n)}=s^{*}]`,
+    vis: (c) => { const t = L(c), e = ps(c, 'perturb'), r = robustness(c.s.gl, c.s.gc, e), top = rank(posterior(c.s.gl, c.s.gc))[0];
+      return { t: 'bars', items: STATES.map((s, i) => ({ label: stateShort(c.lang, s) + (i === top ? t('（现在领先）', ' (leader now)') : ''), v: r.share[i], hi: i === top, color: i === top ? '#6c9bff' : '#4a5163', note: Math.round(r.share[i] * 100) + '%' })), lo: 0, hi: 1, caption: t(`每个数在 ±${Math.round(e * 100)}% 内随机变动，${r.n} 次里领先状态不变的占 ${Math.round(r.kept * 100)}%；仍能给出推测（把握够）的占 ${Math.round(r.shown * 100)}%。`, `With every number varied within ±${Math.round(e * 100)}%, the leader stayed in ${Math.round(r.kept * 100)}% of ${r.n} runs; a guess was still shown (enough confidence) in ${Math.round(r.shown * 100)}%.`) }; } },
+  { id: 'guess.assume', stage: 'guess', level: 2, parent: 'guess', title: B('这个模型做了哪些假设', 'What the model assumes'),
+    plain: B('红色是已知只是近似、或没有被检验的地方；灰色是设定。这些不是缺点清单，而是“结论成立所需的前提”，答辩时要主动讲。', 'Red marks what is known to be only an approximation, or unvalidated; grey marks a set-up choice. This is not a list of flaws but the premises the conclusion needs, and worth stating up front.'),
+    vis: (c) => { const t = L(c); return { t: 'checks', items: [{ text: t('线索在已知状态时互相独立（A1）：只是近似', 'Cues independent given the state (A1): only approximate'), ok: false }, { text: t('线索不再依赖标签（A2）：没有检验', 'Cues independent of the label (A2): not checked'), ok: false }, { text: t('没出现的线索不算证据：和完整模型不同', 'Absent cues are not evidence: differs from the full model'), ok: false }, { text: t('状态只有 5 种，没有“其他”：封闭集合', 'Only 5 states, no "other": a closed set'), ok: null }, { text: t('标签被当作没有误差的观测', 'The label is taken as an error-free observation'), ok: false }, { text: t('55 个概率手设，没有被标注检验', 'All 55 probabilities hand-set, none validated'), ok: false }, { text: t('p₁ 没有校准：不是猜对的概率', 'p₁ is uncalibrated: not the probability of being right'), ok: false }], caption: t('红 = 近似或没有检验；灰 = 设定。', 'Red = approximate or unvalidated; grey = a set-up choice.') }; } },
 
   /* ---------------- 09 check ---------------- */
   { id: 'check.rerun', stage: 'check', level: 2, parent: 'check', title: B('用记下的数字重算', 'Rerun on the recorded numbers'),

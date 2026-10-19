@@ -34,3 +34,16 @@ export function robustness(label: string, cues: string[], eps: number, n = 200) 
   }
   return { share: count.map((c) => c / n), kept: kept / n, shown: shown / n, top, n };
 }
+
+/* the simplest story: the two states the label leaves most confusable (its two largest starting odds),
+   and how each occurring cue multiplies their ratio. Out of every 100 cats, so the numbers can be counted. */
+export function pairOdds(label: string, cues: string[]) {
+  const p0 = norm(PRIOR[label]), [a, b] = rank(p0), start: [number, number] = [p0[a] * 100, p0[b] * 100];
+  let cur: [number, number] = [...start];
+  const steps = cues.filter((c) => LIK[c]).map((c) => { const la = LIK[c][a], lb = LIK[c][b]; cur = [cur[0] * la, cur[1] * lb]; return { cue: c, la, lb, x: la / lb, after: [...cur] as [number, number] }; });
+  const leader = rank(posterior(label, cues))[0];
+  return { a, b, start, steps, end: cur, ratio: cur[0] / cur[1], leader };
+}
+/* "8 : 1" or "1 : 3" — always put the larger side as the whole number */
+export const ratioText = (r: number) => (r >= 1 ? `${fmtR(r)} : 1` : `1 : ${fmtR(1 / r)}`);
+const fmtR = (v: number) => (v >= 10 ? v.toFixed(0) : String(parseFloat(v.toFixed(v >= 2 ? 1 : 2))));

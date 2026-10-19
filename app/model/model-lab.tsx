@@ -7,7 +7,7 @@ import {
 import { FIDX, LCOL, fmt, mmss, buildVocab } from '../case/vocab';
 const FEAT = buildVocab('zh').FEAT;
 import { cueKeys, cueName, driverTxt, featName, rp, stateName, stateShort, useT } from './i18n';
-import { contributions, robustness } from './nbmath';
+import { contributions, pairOdds, ratioText, robustness } from './nbmath';
 
 /* The 2D, hands-on view of each stage. Every string goes through t(zh, en). */
 const COL = { blue: '#234fe5', ink: '#151a24', warn: '#b4690e', bad: '#b02a37', ok: '#1f7a45' };
@@ -275,14 +275,21 @@ export function GuessLab({ label, setLabel, cues, setCues, col, setCol, events =
   const sn = stateShort(lang, STATES[col]);
   const eq = `${Math.round(p0[col] * 1000)}${cues.map((c) => ` × ${Math.round(LIK[c][col] * 100)}%`).join('')} = ${(prod[col] * 1000).toFixed(prod[col] * 1000 < 10 ? 1 : 0)}`;
   const cc = (i: number) => (i === col ? 'sel' : '');
-  const ct = contributions(label, cues), rb = robustness(label, cues, 0.25), nm = (i: number) => stateShort(lang, STATES[i]);
+  const ct = contributions(label, cues), rb = robustness(label, cues, 0.25), nm = (i: number) => stateShort(lang, STATES[i]), po = pairOdds(label, cues);
   return (
     <div className="gl">
       <p className="gl-step"><b>1</b>{t('选一个标签（系统刚看到的行为）', 'Pick a label (the behaviour just seen)')}</p>
       <div className="cl-seg" role="group" aria-label={t('标签', 'Label')}>{names.map((k) => <button key={k} aria-pressed={label === k} onClick={() => setLabel(k)}>{rp(lang, k)}</button>)}</div>
       <p className="gl-step"><b>2</b>{t('点选随后看到的线索（可以多选，也可以一条都不选）', 'Pick the cues seen afterwards (any number, or none)')}</p>
       <div className="cl-seg" role="group" aria-label={t('线索', 'Cues')}>{cueKeys.map((k) => <button key={k} aria-pressed={cues.includes(k)} onClick={() => toggle(k)}>{cueName(lang, k)}</button>)}</div>
-      <p className="gl-step"><b>3</b>{t('把 1000 只猫按状态分群，用线索筛选，再数留下的占比。点列名看某一群的算式', 'Split 1000 cats by state, filter them with the cues, then count the shares that remain. Click a column name for one group')}</p>
+      <p className="gl-step"><b>3</b>{t(`先只比两种：「${nm(po.a)}」和「${nm(po.b)}」`, `Compare just two first: "${nm(po.a)}" and "${nm(po.b)}"`)}</p>
+      <div className="gl-pair">
+        <div><small>{t('一开始（每 100 只）', 'At first (per 100)')}</small><b>{Math.round(po.start[0])} : {Math.round(po.start[1])}</b></div>
+        {po.steps.map((x) => <div key={x.cue} className={x.x >= 1 ? 'up' : 'down'}><small>× {cueName(lang, x.cue)}</small><b>{Math.round(x.la * 100)}% ÷ {Math.round(x.lb * 100)}% = ×{x.x >= 1 ? ratioText(x.x).replace(' : 1', '') : x.x.toFixed(2)}</b></div>)}
+        <div className="end"><small>{t('现在', 'Now')}</small><b>{ratioText(po.ratio)}</b></div>
+      </div>
+      <p className="cl-note">{t('原来的比 × 每条线索的倍数 = 新的比。倍数 = 这条线索在两种心情下出现的比例之比，大于 1 帮左边，小于 1 帮右边。', 'Old ratio × each cue\'s factor = new ratio. The factor is how often the cue appears in one mood divided by the other: above 1 helps the left, below 1 helps the right.')}{po.leader !== po.a && po.leader !== po.b ? t(`五种一起算时，最像的其实是“${nm(po.leader)}”，见下一步。`, ` With all five, the most likely is actually "${nm(po.leader)}"; see the next step.`) : null}</p>
+      <p className="gl-step"><b>4</b>{t('五种一起算：每种都乘，再算占比（按 1000 只猫）。点列名看某一群的算式', 'All five at once: multiply each, then take shares (per 1000 cats). Click a column name for one group')}</p>
       <table className="gl-table">
         <thead><tr><th />{STATES.map((s, i) => <th key={s} className={cc(i)}><button aria-pressed={col === i} onClick={() => setCol(i)}>{stateShort(lang, s)}</button></th>)}</tr></thead>
         <tbody>
@@ -293,23 +300,13 @@ export function GuessLab({ label, setLabel, cues, setCues, col, setCol, events =
         </tbody>
       </table>
       <p className="gl-eq">{t(`「${sn}」这一列：`, `Column "${sn}": `)}<code>{eq}</code>{t('；再除以五列合计 ', '; divide by the five-column total ')}<code>{(Zs * 1000).toFixed(0)}</code>{' = '}<b>{post[col].toFixed(2)}</b></p>
-      <p className="gl-step"><b>4</b>{t('把握：最高概率够不够高，和第二名拉开够不够？脸看不清时要降一级', 'Confidence: is the top probability high enough, and far enough ahead of the second? A hidden face lowers it')}</p>
+      <p className="gl-step"><b>5</b>{t('红绿灯：最高的占比够不够高、和第二名拉开够不够？脸看不清时要降一级', 'Traffic light: is the top share high enough, and far enough ahead of the second? A hidden face lowers it')}</p>
       <div className="cl-sl"><label htmlFor="ml-fv">{t('脸可见的比例', 'Share of face visible')}</label><input id="ml-fv" type="range" min={0} max={1} step={0.05} value={fv} onChange={(e) => setFv(+e.target.value)} /><span className="num">{fv.toFixed(2)}</span></div>
       <p className="ml-out">{g
         ? <>{t(`最像“${stateName(lang, g.top)}”（${g.p1.toFixed(2)}），第二是“${stateName(lang, g.second)}”（${g.p2.toFixed(2)}）。把握：`, `Most like "${stateName(lang, g.top)}" (${g.p1.toFixed(2)}), second "${stateName(lang, g.second)}" (${g.p2.toFixed(2)}). Confidence: `)}<b>{bandName(g.band)}</b>{g.show ? t('，显示给主人。', ', shown to the owner.') : t('，不显示情绪，只写看到的行为。', ', no emotion shown; only the behaviour is written.')}</>
         : t('这个标签没有对应的推测。', 'This label has no guess attached.')}</p>
-      <p className="gl-step"><b>5</b>{t(`每条线索让「${nm(ct.top)}」比「${nm(ct.second)}」多领先了多少（对数似然比，可以相加）`, `How much each cue puts "${nm(ct.top)}" ahead of "${nm(ct.second)}" (log-likelihood ratio, additive)`)}</p>
-      <table className="gl-ev"><tbody>
-        <tr><th>{t('起始概率之比', 'Starting odds')}</th><td className={ct.prior >= 0 ? 'pos' : 'neg'}>{ct.prior >= 0 ? '+' : ''}{ct.prior.toFixed(2)}</td></tr>
-        {ct.items.map((x) => <tr key={x.cue}><th>{cueName(lang, x.cue)}</th><td className={x.v >= 0 ? 'pos' : 'neg'}>{x.v >= 0 ? '+' : ''}{x.v.toFixed(2)}</td></tr>)}
-        <tr className="tot"><th>{t('合计', 'Total')}</th><td>{ct.total.toFixed(2)}　<small>= e^{ct.total.toFixed(2)} = {Math.exp(ct.total).toFixed(1)}{t(' 倍', ' to 1')}</small></td></tr>
-      </tbody></table>
-      <p className="cl-note">{t('只用出现过的线索：没选的线索不会改变结果，“没看到”不被当作证据。', 'Only cues that occurred are used: cues you did not pick change nothing, and "not seen" is not treated as evidence.')}</p>
-      <p className="gl-step"><b>6</b>{t('如果手设的数字不准，结论稳不稳？', 'If the hand-set numbers are off, does the conclusion hold?')}</p>
-      <p className="gl-eq">{t(`把 55 个手设数字各自随机放大或缩小最多 25%，重算 ${rb.n} 次：领先的状态不变占 `, `Scale each of the 55 hand-set numbers by up to ±25% at random and recompute ${rb.n} times: the leader is unchanged in `)}<b>{Math.round(rb.kept * 100)}%</b>{t('；仍然给出推测（把握够）占 ', '; a guess is still shown (enough confidence) in ')}<b>{Math.round(rb.shown * 100)}%</b>。</p>
-      <p className="cl-note">{t('上面的概率是模型内部算出来的，不是“猜对的概率”：55 个数都是手设，没有被标注检验过，线索之间的独立性也只是近似。', 'The probabilities above are the model\'s internal numbers, not "the probability of being right": all 55 are hand-set and unvalidated, and independence between cues is only an approximation.')}</p>
       {events.some((e) => e.interp) ? <>
-        <p className="gl-step"><b>7</b>{t('这段视频里真实发生的推测：点“载入”，把当时的标签、线索和脸可见比例放进上面的表', 'The guesses the system actually made in this clip: press "Load" to put that moment\'s label, cues and face share into the table above')}</p>
+        <p className="gl-step"><b>6</b>{t('这段视频里真实发生的推测：点“载入”，把当时的标签、线索和脸可见比例放进上面的表', 'The guesses the system actually made in this clip: press "Load" to put that moment\'s label, cues and face share into the table above')}</p>
         <div className="gl-wrap"><table className="gl-real">
           <thead><tr><th>{t('时刻', 'Time')}</th><th>{t('标签', 'Label')}</th><th>{t('随后的线索', 'Cues afterwards')}</th><th>{t('脸可见', 'Face')}</th><th>{t('结论', 'Result')}</th><th /></tr></thead>
           <tbody>{events.map((e, i) => { const it = e.interp; if (!it) return null; const r = guess(e.reaction, it.cues, it.face_visible), on = label === e.reaction && fv === it.face_visible && cues.length === it.cues.length && it.cues.every((c) => cues.includes(c));
@@ -321,8 +318,19 @@ export function GuessLab({ label, setLabel, cues, setCues, col, setCol, events =
         </table></div>
         {(() => { const d = events.find((e) => e.interp && guess(e.reaction, e.interp.cues, 1)?.band === '高' && guess(e.reaction, e.interp.cues, e.interp.face_visible)?.band !== '高'); return <p className="cl-note">{t('这几行用的就是上面同一套公式和门槛，第 09 步会再重算一遍核对。', 'These rows use exactly the formula and bars above; step 09 recomputes them to check.')}{d ? t(`注意 ${mmss(d.start_s)} 那次：概率已经够“高”，但脸只看见 ${Math.round(d.interp!.face_visible * 100)}%，所以把握降了一级。`, ` Note the one at ${mmss(d.start_s)}: the probability is enough for "high", but only ${Math.round(d.interp!.face_visible * 100)}% of the face was visible, so the band drops a level.`) : null}</p>; })()}
       </> : null}
-      <details className="cl-more"><summary><span>{t('看两张手设的完整表（矩阵视图）', 'See the two full hand-set tables (matrix view)')}</span><b aria-hidden="true">＋</b></summary>
-        <div className="cl-more-body">
+      <details className="cl-more"><summary><span>{t('选读：取对数后的证据分数、手设数字的敏感性、两张完整的表', 'Optional: evidence scores in log form, sensitivity to the hand-set numbers, the two full tables')}</span><b aria-hidden="true">＋</b></summary>
+        <div className="cl-more-body gl">
+      <p className="gl-step"><b>a</b>{t(`每条线索让「${nm(ct.top)}」比「${nm(ct.second)}」多领先了多少（对数似然比，可以相加）`, `How much each cue puts "${nm(ct.top)}" ahead of "${nm(ct.second)}" (log-likelihood ratio, additive)`)}</p>
+      <table className="gl-ev"><tbody>
+        <tr><th>{t('起始概率之比', 'Starting odds')}</th><td className={ct.prior >= 0 ? 'pos' : 'neg'}>{ct.prior >= 0 ? '+' : ''}{ct.prior.toFixed(2)}</td></tr>
+        {ct.items.map((x) => <tr key={x.cue}><th>{cueName(lang, x.cue)}</th><td className={x.v >= 0 ? 'pos' : 'neg'}>{x.v >= 0 ? '+' : ''}{x.v.toFixed(2)}</td></tr>)}
+        <tr className="tot"><th>{t('合计', 'Total')}</th><td>{ct.total.toFixed(2)}　<small>= e^{ct.total.toFixed(2)} = {Math.exp(ct.total).toFixed(1)}{t(' 倍', ' to 1')}</small></td></tr>
+      </tbody></table>
+      <p className="cl-note">{t('只用出现过的线索：没选的线索不会改变结果，“没看到”不被当作证据。', 'Only cues that occurred are used: cues you did not pick change nothing, and "not seen" is not treated as evidence.')}</p>
+      <p className="gl-step"><b>b</b>{t('如果手设的数字不准，结论稳不稳？', 'If the hand-set numbers are off, does the conclusion hold?')}</p>
+      <p className="gl-eq">{t(`把 55 个手设数字各自随机放大或缩小最多 25%，重算 ${rb.n} 次：领先的状态不变占 `, `Scale each of the 55 hand-set numbers by up to ±25% at random and recompute ${rb.n} times: the leader is unchanged in `)}<b>{Math.round(rb.kept * 100)}%</b>{t('；仍然给出推测（把握够）占 ', '; a guess is still shown (enough confidence) in ')}<b>{Math.round(rb.shown * 100)}%</b>。</p>
+      <p className="cl-note">{t('上面的概率是模型内部算出来的，不是“猜对的概率”：55 个数都是手设，没有被标注检验过，线索之间的独立性也只是近似。', 'The probabilities above are the model\'s internal numbers, not "the probability of being right": all 55 are hand-set and unvalidated, and independence between cues is only an approximation.')}</p>
+          <p className="gl-step"><b>c</b>{t('两张手设的完整表', 'The two full hand-set tables')}</p>
           <p className="cl-small">{t('起始概率：行是标签，列是状态', 'Starting probability: rows are labels, columns are states')}</p>
           <Matrix rows={Object.entries(PRIOR).map(([k, v]) => [rp(lang, k), v] as [string, number[]])} sel={rp(lang, label)} />
           <p className="cl-small">{t('似然 P(线索 | 状态)：行是线索，列是状态', 'Likelihood P(cue | state): rows are cues, columns are states')}</p>

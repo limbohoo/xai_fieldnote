@@ -55,8 +55,8 @@ function Inner({ clip, events }: { clip: ClipData; events: EventRec[] }) {
   }, [clip, out, events, lang, base]);
   useEffect(() => { api.current?.update({ fi, kfi, feat, gl, gc, col, ps }); }, [fi, kfi, feat, gl, gc, col, ps, out, lang]);
   useEffect(() => { const a = api.current; if (!a) return; a.select(sel, false); if (detail) a.setView({ stage: sel, ...detail }); else a.setView(null, follow); }, [sel, detail]);
-  const seq = useMemo(() => childrenOf(STAGE_IDS[sel]).flatMap((n) => [n, ...childrenOf(n.id)]), [sel]);
-  const curId = detail ? (detail.l3 ?? detail.l2) : null, seqIdx = seq.findIndex((n) => n.id === curId);
+  const seq = useMemo(() => childrenOf(STAGE_IDS[sel]).flatMap((n) => [n, ...childrenOf(n.id).filter((k) => !k.deep)]), [sel]);
+  const curId = detail ? (detail.l3 ?? detail.l2) : null, curN = curId ? nodeById(curId) : null, seqIdx = seq.findIndex((n) => n.id === (curN?.deep ? curN.parent : curId));
   const stepTo = (d: number) => { const n = seq[seqIdx + d]; if (n) setDetail(n.level === 3 ? { l2: n.parent, l3: n.id } : { l2: n.id, l3: null }); };
   const stepRef = useRef(stepTo); stepRef.current = stepTo;
   const enter = () => setDetail({ l2: childrenOf(STAGE_IDS[sel])[0]?.id ?? null, l3: null });
@@ -136,7 +136,8 @@ function Inner({ clip, events }: { clip: ClipData; events: EventRec[] }) {
               {cur.tex ? <div className="ex-tex"><Tex tex={cur.tex} /></div> : null}
               {NODE_WHY[cur.id] ? <div className="ex-why"><b>{t('这些数为什么这么给', 'Why these numbers')}</b><p>{NODE_WHY[cur.id].why[lang]}</p><p className="lim">{NODE_WHY[cur.id].limit[lang]}</p><Sources ids={NODE_WHY[cur.id].refs} title={t('依据', 'Sources')} /></div> : (STAGE_REFS[cur.stage] ? <details className="ex-refd"><summary>{t('这一层的引用与来源', 'References for this stage')}</summary><Sources ids={STAGE_REFS[cur.stage]} title="" /></details> : null)}
               {cur.controls?.length ? <div className="ex-ctls">{cur.controls.map((c) => <label key={c.key}><span>{c.label[lang]}</span><input type="range" min={c.min} max={c.max} step={c.step} value={ps[c.key] ?? DEFAULTS[c.key]} onChange={(e) => setPs({ ...ps, [c.key]: +e.target.value })} /><em className="num">{(ps[c.key] ?? DEFAULTS[c.key]).toFixed(2)}</em></label>)}</div> : null}
-              {kids.length ? <div className="ex-kids"><small>{t('再往下拆', 'GO ONE LEVEL DEEPER')}</small>{kids.map((k) => <button key={k.id} onClick={() => setDetail({ l2: cur.id, l3: k.id })}>{k.title[lang]} ›</button>)}</div> : null}
+              {kids.some((k) => !k.deep) ? <div className="ex-kids"><small>{t('再往下拆', 'GO ONE LEVEL DEEPER')}</small>{kids.filter((k) => !k.deep).map((k) => <button key={k.id} onClick={() => setDetail({ l2: cur.id, l3: k.id })}>{k.title[lang]} ›</button>)}</div> : null}
+              {kids.some((k) => k.deep) ? <div className="ex-kids deep"><small>{t('选读：给想深入的人（不在“下一步”路线里）', 'OPTIONAL, FOR THE CURIOUS (NOT ON THE NEXT-STEP PATH)')}</small>{kids.filter((k) => k.deep).map((k) => <button key={k.id} onClick={() => setDetail({ l2: cur.id, l3: k.id })}>{k.title[lang]} ›</button>)}</div> : null}
               {cur.level === 3 ? <button className="ex-2d" onClick={up}>{t('‹ 回到上一级', '‹ Back up one level')}</button> : null}
             </> : <p className="ex-plain">{t('下面是这一层拆开后的部件，按顺序从左到右。点一个看它的讲解，3D 里的卡片也可以直接点。', 'These are the parts of the stage, in order from left to right. Pick one to read about it; you can also click the cards in 3D.')}</p>}
             <div className="ex-steps2"><small>{t('这一层的全部部件', 'ALL PARTS OF THIS STAGE')}</small>{l2s.map((n, i) => <button key={n.id} className={n.id === detail.l2 ? 'on' : ''} onClick={() => setDetail({ l2: n.id, l3: null })}><b>{i + 1}</b>{n.title[lang]}</button>)}</div>
@@ -171,9 +172,10 @@ function Inner({ clip, events }: { clip: ClipData; events: EventRec[] }) {
         </div>; })() : null}
 
         {tab === 'explain' ? <>
+          {S.lead ? <p className="ex-lead">{S.lead}</p> : null}
           {D.story ? <p className="ex-story"><b>{t('先看一个例子　', 'A quick example  ')}</b>{D.story[lang]}</p> : null}
           <p className="ex-text">{S.text}</p>
-          {getUse(lang)[S.id] ? <div className="ex-use"><b>{t('在系统里怎么用', 'How the running system uses it')}</b><ol>{getUse(lang)[S.id].map((x, i) => <li key={i}>{x}</li>)}</ol></div> : null}
+          {getUse(lang)[S.id] ? <details className="ex-use"><summary>{t(`在系统里怎么用（${getUse(lang)[S.id].length} 步）`, `How the running system uses it (${getUse(lang)[S.id].length} steps)`)}</summary><ol>{getUse(lang)[S.id].map((x, i) => <li key={i}>{x}</li>)}</ol></details> : null}
           <div className="ex-dims"><div><small>{t('输入', 'INPUT')}</small>{S.inDim}</div><div><small>{t('输出', 'OUTPUT')}</small>{S.outDim}</div></div>
           <div className="ex-params"><span>{t('参数', 'PARAMETERS')}</span><b>{pv}</b><em>{pn}</em></div>
           <p className="ex-origin"><i className={'dot ' + S.origin} />{ORIGIN[lang][S.origin][0]}. {S.params}</p>

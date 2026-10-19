@@ -2,7 +2,7 @@ import { LIK, PRIOR, STATES, Z, FEATURES } from '../case/core';
 import type { Lang } from './i18n';
 
 export type Origin = 'net' | 'pre' | 'formula' | 'hand';
-export interface StageInfo { id: string; no: string; name: string; en: string; origin: Origin; inDim: string; outDim: string; formula: string[]; text: string; params: string }
+export interface StageInfo { id: string; no: string; name: string; en: string; origin: Origin; inDim: string; outDim: string; formula: string[]; text: string; params: string; lead?: string }
 export const NPROB = Object.keys(PRIOR).length * STATES.length + Object.keys(LIK).length * STATES.length;
 export const HAND = NPROB + Object.keys(Z).length + FEATURES.length;
 export const ORIGIN: Record<Lang, Record<Origin, [string, string]>> = {
@@ -41,8 +41,9 @@ const ZH: StageInfo[] = [
     formula: ['窗口 = 最近 0.3 秒', '新标签占窗口 ≥ 60%，且窗口至少有 0.15 秒，才切换'],
     text: '规则每帧都给一个结果，显示的标签要在最近 0.3 秒里占多数才会换。按时间算，不按帧数算，电脑慢一点延迟也一样。', params: '0.3 秒和 60% 是手设的。' },
   { id: 'guess', no: '08', name: '推测状态', en: 'GUESS', origin: 'hand', inDim: '标签 + 随后的线索（最多 7 条）+ 脸可见比例', outDim: '5 个概率 + 把握档（高 / 中 / 低）',
-    formula: ['留下的猫数 = 起始猫数 × 每条线索的比例', '占比 = 这一群留下的数 ÷ 所有留下的猫', 'P(状态 | 标签, 线索) ∝ P(状态 | 标签) · Π P(线索ᵢ | 状态)', '把握 高: p₁ ≥ 0.6 且 p₁ − p₂ ≥ 0.3；中: p₁ ≥ 0.45 且 p₁ − p₂ ≥ 0.15；其余为低'],
-    text: '朴素贝叶斯：每个标签对应 5 种状态的一组起始概率，每出现一条线索，就把各状态的概率乘上“这条线索在该状态下多常出现”，再归一化。只用出现过的线索，没出现的不算证据。输出是模型内部的概率，不是猜对的概率；把握是“低”就不说。',
+    lead: '一句话：先按刚看到的动作猜一个大概，再看猫接下来做了什么来改猜，不够确定就不说。',
+    formula: ['新的比 = 原来的比 × 线索的倍数', '倍数 = P(线索 | A) ÷ P(线索 | B)', 'P(状态 | 标签, 线索) ∝ P(状态 | 标签) · Π P(线索ᵢ | 状态)', '把握 高: p₁ ≥ 0.6 且 p₁ − p₂ ≥ 0.3；中: p₁ ≥ 0.45 且 p₁ − p₂ ≥ 0.15；其余为低'],
+    text: '改猜只用一个乘法：两种心情的比，乘上这条线索的倍数（这条线索在两种心情下出现的比例之比）。多一条线索就再乘一次；五种心情一起算时每种都乘，最后换成占比。这个方法叫朴素贝叶斯。只用出现过的线索，没出现的不算证据；输出是模型内部的概率，不是猜对的概率。',
     params: `${NPROB} 个概率全部是手设，没有一个被标注检验过。` },
   { id: 'check', no: '09', name: '检验解释', en: 'FAITHFULNESS', origin: 'formula', inDim: '一个事件的 z 和它的依据', outDim: '4 项检验，全部通过才算忠实',
     formula: ['能重现:  用记录的 z 重新跑规则，标签不变', '写出的就是原因:  把依据改回平时（z = 0），标签变', '没有隐藏原因:  把没写的改回平时，标签不变', '推测能重现'],
@@ -75,8 +76,9 @@ const EN: StageInfo[] = [
     formula: ['window = last 0.3 s', 'switch only if the new label holds ≥ 60% of the window and the window spans ≥ 0.15 s'],
     text: 'The rules give a result every frame. The displayed label changes only when the new one has the majority of the last 0.3 seconds. The window is in time, not frames, so a slower computer gives the same delay.', params: '0.3 s and 60% are hand-set.' },
   { id: 'guess', no: '08', name: 'Guess the state', en: 'GUESS', origin: 'hand', inDim: 'Label + later cues (up to 7) + share of face visible', outDim: '5 probabilities + confidence band (high / medium / low)',
-    formula: ['cats that stay = starting cats × each cue\'s share', 'share = this group\'s remaining cats ÷ all remaining cats', 'P(state | label, cues) ∝ P(state | label) · Π P(cueᵢ | state)', 'Confidence high: p₁ ≥ 0.6 and p₁ − p₂ ≥ 0.3; medium: p₁ ≥ 0.45 and p₁ − p₂ ≥ 0.15; otherwise low'],
-    text: 'Naive Bayes: each label has a starting set of probabilities over 5 states. Each cue that occurred multiplies every state by how often that cue appears in that state, then renormalises. Only cues that occurred count; absent ones are not evidence. The output is the model\'s internal probability, not the probability of being right; with low confidence the system says nothing.',
+    lead: 'In one line: make a rough guess from the action just seen, update it by what the cat does next, and say nothing when unsure.',
+    formula: ['new ratio = old ratio × the cue\'s factor', 'factor = P(cue | A) ÷ P(cue | B)', 'P(state | label, cues) ∝ P(state | label) · Π P(cueᵢ | state)', 'Confidence high: p₁ ≥ 0.6 and p₁ − p₂ ≥ 0.3; medium: p₁ ≥ 0.45 and p₁ − p₂ ≥ 0.15; otherwise low'],
+    text: 'The update is one multiplication: the ratio between two moods times the cue\'s factor (how often the cue appears in one mood divided by the other). Each further cue multiplies again; with all five moods every one is multiplied and the results are turned into shares. The method is called naive Bayes. Only cues that occurred count; absent ones are not evidence. The output is the model\'s internal probability, not the probability of being right.',
     params: `All ${NPROB} probabilities are hand-set. None has been checked against annotation.` },
   { id: 'check', no: '09', name: 'Check the explanation', en: 'FAITHFULNESS', origin: 'formula', inDim: 'One event: its z scores and its evidence', outDim: '4 checks, all must pass to be faithful',
     formula: ['Reproducible:  rerun the rules on the recorded z, label unchanged', 'Cause is cited:  set cited features back to usual (z = 0), label changes', 'No hidden cause:  set uncited features back to usual, label unchanged', 'Guess reproducible'],

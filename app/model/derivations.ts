@@ -158,7 +158,7 @@ export const DERIV: Record<string, Deriv> = {
     assume: { zh: '前提：0.3 秒和 60% 是手设的。', en: 'Assumes 0.3 s and 60% are hand-set.' },
   },
   guess: {
-    story: { zh: '想象 1000 只刚刚“耳朵压低”的猫。按起始概率，紧张的约 400 只、专注的 300 只、好奇的 150 只、放松的 100 只、想玩的 50 只。随后看到“躲开”：紧张的猫里 60% 会躲开，留下 240 只；好奇的留下 30 只，专注的 30 只，想玩和放松各 5 只。现在只看这 310 只躲开的猫，其中 240 只是紧张的：240 ÷ 310 = 77%。“线索”就是这次筛选，“归一化”就是最后这个除法。', en: 'Imagine 1000 cats that just put their ears back. By the starting odds about 400 are tense, 300 attentive, 150 curious, 100 relaxed and 50 playful. Then we see "moved away": 60% of tense cats move away, so 240 stay; 30 curious, 30 attentive, and 5 each of playful and relaxed. Now look only at these 310 cats that moved away: 240 are tense, so 240 ÷ 310 = 77%. The "cue" is that filtering; "normalising" is that final division.' },
+    story: { zh: '耳朵压低时，真正难分的是“紧张”和“专注地听”。100 只这样的猫里，大约 40 只紧张、30 只专注，40 : 30 差不多。随后它躲开了：紧张的猫有 60% 会躲开，专注的只有 10%，所以这条线索让紧张多 6 倍。40 × 6 : 30 = 240 : 30 = 8 : 1，现在明显更像紧张。另外三种心情也照样乘，最后换成占比：紧张约 77%。', en: 'With ears back, the hard call is "tense" versus "listening intently". Of 100 such cats about 40 are tense and 30 attentive: 40 : 30, close. Then it moved away: 60% of tense cats move away, only 10% of attentive ones, so this cue makes tense 6 times more likely. 40 × 6 : 30 = 240 : 30 = 8 : 1, now clearly more like tense. The other three moods are multiplied the same way and turned into shares: tense comes to about 77%.' },
     source: {
       title: { zh: '这些概率怎么来的（没有训练）', en: 'Where these probabilities come from (nothing was trained)' },
       items: [

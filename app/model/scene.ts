@@ -2,12 +2,15 @@ import * as THREE from 'three';
 import { OrbitControls } from 'three/examples/jsm/controls/OrbitControls.js';
 import { FEATURES, LIK, PRIOR, STATES, Z, fin, type Check, type ClipData, type EventRec, type FeatureKey, type Step } from '../case/core';
 import { FIDX, LCOL } from '../case/vocab';
+import { NODES, STAGE_IDS, childrenOf, type Node } from './nodes';
+import { CH, CW, drawVis } from './vis';
 import { cueKeys, cueName, featShort, featName, rp, stateShort, type Lang } from './i18n';
 
 /* The model as a stack of 3D objects, bottom to top: one object per stage, each showing the actual tensor of the chosen frame. */
-export interface SceneData { lang: Lang; clip: ClipData; out: Step[]; events: EventRec[]; checks: Check[]; fmax: Record<FeatureKey, number> }
-export interface SceneState { fi: number; kfi: number; feat: FeatureKey; gl: string; gc: string[]; col: number }
-export interface SceneApi { update: (s: SceneState) => void; select: (i: number, fly: boolean) => void; overview: () => void; dispose: () => void }
+export interface SceneData { lang: Lang; base: ReturnType<typeof import('../case/core').run>['base']; clip: ClipData; out: Step[]; events: EventRec[]; checks: Check[]; fmax: Record<FeatureKey, number> }
+export interface SceneState { fi: number; kfi: number; feat: FeatureKey; gl: string; gc: string[]; col: number; ps: Record<string, number> }
+export interface View { stage: number; l2: string | null; l3: string | null }
+export interface SceneApi { update: (s: SceneState) => void; select: (i: number, fly: boolean) => void; setView: (v: View | null) => void; overview: () => void; dispose: () => void }
 
 export const GAP = 12;
 const NAMES: Record<Lang, string[]> = { zh: ['找猫', '标点', '防抖', '量特征', '和平时比', '套规则', '投票', '推测', '检验'], en: ['Detect', 'Keypoints', 'Smooth', 'Features', 'Baseline', 'Rules', 'Vote', 'Guess', 'Check'] };
@@ -176,7 +179,7 @@ function sCheck(g: THREE.Group, d: SceneData): Upd {
   };
 }
 
-export function createScene(el: HTMLElement, d: SceneData, onPick: (i: number) => void, onCol: (c: number) => void): SceneApi {
+export function createScene(el: HTMLElement, d: SceneData, onPick: (i: number) => void, onCol: (c: number) => void, onNode: (id: string) => void): SceneApi {
   const W = () => Math.max(1, el.clientWidth), H = () => Math.max(1, el.clientHeight);
   const renderer = new THREE.WebGLRenderer({ antialias: true }); renderer.setPixelRatio(Math.min(2, devicePixelRatio)); renderer.setSize(W(), H()); renderer.setClearColor('#05070b'); el.appendChild(renderer.domElement);
   const scene = new THREE.Scene(); scene.fog = new THREE.Fog('#05070b', 40, 110);
@@ -198,12 +201,50 @@ export function createScene(el: HTMLElement, d: SceneData, onPick: (i: number) =
   const NP = 10, streams = stages.slice(0, -1).map((_, i) => { const geo = new THREE.BufferGeometry(); geo.setAttribute('position', new THREE.Float32BufferAttribute(new Float32Array(NP * 3), 3)); const p = new THREE.Points(geo, new THREE.PointsMaterial({ color: '#6c9bff', size: 0.2, transparent: true, opacity: 0.9 })); p.frustumCulled = false; scene.add(p);
     scene.add(new THREE.Line(new THREE.BufferGeometry().setFromPoints([new THREE.Vector3(0, i * GAP + 4.2, 0), new THREE.Vector3(0, (i + 1) * GAP - 4.2, 0)]), new THREE.LineBasicMaterial({ color: '#1d2a4d' }))); return geo; });
 
+    /* second and third level: cards of the parts inside one stage, laid out as a tree */
+  const SW = 7.6, SH = (SW * CH) / CW, DX = 9.2, DY = -6.4;
+  interface Slab { node: Node; mesh: THREE.Mesh; cv: HTMLCanvasElement; tex: THREE.CanvasTexture; edge: THREE.LineSegments; front: THREE.MeshBasicMaterial; pos: THREE.Vector3 }
+  const details = new Map<number, { g: THREE.Group; slabs: Slab[] }>();
+  let view: View | null = null, last: SceneState | null = null;
+  const drawSlab = (sl: Slab) => { if (!last) return; drawVis(sl.cv, sl.node.vis({ d, s: last, lang: d.lang, ps: last.ps }), sl.node.title[d.lang]); sl.tex.needsUpdate = true; };
+  const buildDetail = (i: number) => {
+    const g = new THREE.Group(); g.position.set(70, i * GAP, 0); scene.add(g);
+    const slabs: Slab[] = [], l2 = childrenOf(STAGE_IDS[i]);
+    const mk = (node: Node, x: number, y: number) => {
+      const cv = document.createElement('canvas'); cv.width = CW; cv.height = CH; const tex = new THREE.CanvasTexture(cv); tex.colorSpace = THREE.SRGBColorSpace;
+      const side = new THREE.MeshStandardMaterial({ color: '#141b2d' }), front = new THREE.MeshBasicMaterial({ map: tex });
+      const mesh = new THREE.Mesh(new THREE.BoxGeometry(SW, SH, 0.3), [side, side, side, side, front, side]); mesh.position.set(x, y, 0); mesh.userData.node = node.id; g.add(mesh);
+      const edge = new THREE.LineSegments(new THREE.EdgesGeometry(mesh.geometry), new THREE.LineBasicMaterial({ color: '#2a3550' })); edge.position.copy(mesh.position); g.add(edge);
+      const sl: Slab = { node, mesh, cv, tex, edge, front, pos: mesh.position.clone() }; slabs.push(sl); return sl;
+    };
+    l2.forEach((n, k) => {
+      const x = (k - (l2.length - 1) / 2) * DX; mk(n, x, 0);
+      if (k < l2.length - 1) g.add(new THREE.Line(new THREE.BufferGeometry().setFromPoints([new THREE.Vector3(x + SW / 2, 0, 0), new THREE.Vector3(x + DX - SW / 2, 0, 0)]), new THREE.LineBasicMaterial({ color: '#3a4764' })));
+      childrenOf(n.id).forEach((c3, j) => { mk(c3, x, DY * (j + 1)); g.add(new THREE.Line(new THREE.BufferGeometry().setFromPoints([new THREE.Vector3(x, -SH / 2, 0), new THREE.Vector3(x, DY * (j + 1) + SH / 2, 0)]), new THREE.LineBasicMaterial({ color: '#3a4764' }))); });
+    });
+    const det = { g, slabs }; details.set(i, det); return det;
+  };
+  const highlight = () => {
+    if (!view) return; const det = details.get(view.stage); if (!det) return;
+    det.slabs.forEach((sl) => { const id = sl.node.id, cur = view!.l3 ?? view!.l2, on = id === cur, onPath = !!cur && (cur.startsWith(id + '.') || id === view!.l2);
+      sl.front.color.set(on ? '#ffffff' : onPath ? '#cfd6e6' : '#8a92a6'); (sl.edge.material as THREE.LineBasicMaterial).color.set(on ? '#ffffff' : onPath ? '#6c9bff' : '#2a3550'); });
+  };
+
   let sel = 0; const goalPos = new THREE.Vector3(), goalTgt = new THREE.Vector3(); let flying = false;
   const fly = (pos: THREE.Vector3, tgt: THREE.Vector3) => { goalPos.copy(pos); goalTgt.copy(tgt); flying = true; };
   const focus = (i: number) => fly(new THREE.Vector3(9, i * GAP + 5, 19), new THREE.Vector3(0, i * GAP + 0.5, 0));
   cam.position.set(9, 5, 19); ctl.target.set(0, 0, 0);
   const api: SceneApi = {
-    update: (s) => stages.forEach((st) => st.upd(s)),
+    update: (s) => { last = s; stages.forEach((st) => st.upd(s)); if (view) details.get(view.stage)?.slabs.forEach(drawSlab); },
+    setView(v) {
+      view = v;
+      if (!v) { focus(sel); return; }
+      const det = details.get(v.stage) ?? buildDetail(v.stage); det.slabs.forEach(drawSlab); highlight();
+      const id = v.l3 ?? v.l2, sl = det.slabs.find((x) => x.node.id === id), gp = det.g.position;
+      const fitDist = (w: number) => (w / 2) / (Math.tan(THREE.MathUtils.degToRad(20)) * Math.min(1.7, cam.aspect));
+      if (sl) fly(new THREE.Vector3(gp.x + sl.pos.x, gp.y + sl.pos.y + 0.2, fitDist(SW * 1.18)), new THREE.Vector3(gp.x + sl.pos.x, gp.y + sl.pos.y, 0));
+      else { const n = det.slabs.filter((x) => x.node.level === 2).length; fly(new THREE.Vector3(gp.x, gp.y - 2, fitDist(n * DX)), new THREE.Vector3(gp.x, gp.y - 2, 0)); }
+    },
     select(i, f) { sel = i; stages.forEach((st, k) => { st.title.material.opacity = k === i ? 1 : 0.45; }); if (f) focus(i); },
     overview: () => fly(new THREE.Vector3(26, 4 * GAP + 8, 52), new THREE.Vector3(0, 4 * GAP, 0)),
     dispose() { cancelAnimationFrame(raf); ro.disconnect(); ctl.dispose(); scene.traverse((o) => { const m = o as THREE.Mesh; m.geometry?.dispose?.(); const mt = m.material as THREE.Material | THREE.Material[] | undefined; (Array.isArray(mt) ? mt : mt ? [mt] : []).forEach((x) => { (x as THREE.SpriteMaterial).map?.dispose(); x.dispose(); }); }); renderer.dispose(); renderer.domElement.remove(); },
@@ -215,6 +256,7 @@ export function createScene(el: HTMLElement, d: SceneData, onPick: (i: number) =
   cv.addEventListener('pointerup', (e) => {
     if (!down || Math.hypot(e.clientX - down[0], e.clientY - down[1]) > 4) return;
     const r = cv.getBoundingClientRect(); mouse.set(((e.clientX - r.left) / r.width) * 2 - 1, -((e.clientY - r.top) / r.height) * 2 + 1); ray.setFromCamera(mouse, cam);
+    if (view) { const det = details.get(view.stage); const sh = det ? ray.intersectObjects(det.slabs.map((x) => x.mesh), false)[0] : undefined; if (sh) onNode(sh.object.userData.node as string); return; }
     const bar = ray.intersectObjects(colBars, false)[0];
     if (bar && sel === 7) { onCol(bar.object.userData.col as number); return; }
     const hit = ray.intersectObjects(stages.map((s) => s.hit), false)[0]; if (hit) onPick(hit.object.userData.i as number);

@@ -5,6 +5,7 @@ import { COLAB_URL, LCOL, mmss } from '../case/vocab';
 import { DERIV, WHOLE } from './derivations';
 import { LangCtx, makeT, rp, useT, type Lang } from './i18n';
 import { ViewBaseline, ViewCheck, ViewDetect, ViewFeatures, GuessLab, ViewKeypoints, ViewRules, ViewSmooth, ViewVote, worked } from './model-lab';
+import { DEFAULTS, STAGE_IDS, childrenOf, nodeById } from './nodes';
 import { createScene, type SceneApi } from './scene';
 import { HAND, ORIGIN, PARAMS, getStages, getSymbols } from './stages';
 import { Tex } from './tex';
@@ -46,17 +47,21 @@ function Inner({ clip, events, setLang }: { clip: ClipData; events: EventRec[]; 
   const step = out[fi], f = clip.frames[fi];
   const stages = getStages(lang), symbols = getSymbols(lang);
   const kfi = useMemo(() => { let best = fi, d = 1e9; clip.frames.forEach((x, i) => { if (x.fp && Math.abs(i - fi) < d) { d = Math.abs(i - fi); best = i; } }); return best; }, [clip, fi]);
-  const live = useRef({ fi, kfi, feat, sel, gl, gc, col }); live.current = { fi, kfi, feat, sel, gl, gc, col };
+  const [detail, setDetail] = useState<{ l2: string | null; l3: string | null } | null>(null), [ps, setPs] = useState<Record<string, number>>({});
+  const live = useRef({ fi, kfi, feat, sel, gl, gc, col, ps, detail }); live.current = { fi, kfi, feat, sel, gl, gc, col, ps, detail };
 
   useEffect(() => {
     const fmax = {} as Record<FeatureKey, number>;
     FEATURES.forEach((k, j) => { fmax[k] = Math.max(1e-6, ...clip.frames.map((x) => { const v = x.raw?.[j]; return fin(v) ? Math.abs(v) : 0; })); });
-    const a = createScene(host.current!, { lang, clip, out, events, checks: events.map(checkEvent), fmax }, (i) => setSel(i), (c) => { setCol(c); setSel(7); setTab('numbers'); });
-    api.current = a; a.select(live.current.sel, true); a.update({ ...live.current });
+    const a = createScene(host.current!, { lang, base, clip, out, events, checks: events.map(checkEvent), fmax }, (i) => setSel(i), (c) => { setCol(c); setSel(7); setTab('numbers'); }, (id) => { const n = nodeById(id); if (n) setDetail(n.level === 3 ? { l2: n.parent, l3: n.id } : { l2: n.id, l3: null }); });
+    api.current = a; const { detail: dt, ...st } = live.current; a.select(st.sel, !dt); a.update(st); a.setView(dt ? { stage: st.sel, ...dt } : null);
     return () => { a.dispose(); api.current = null; };
-  }, [clip, out, events, lang]);
-  useEffect(() => { api.current?.update({ fi, kfi, feat, gl, gc, col }); }, [fi, kfi, feat, gl, gc, col, out, lang]);
-  useEffect(() => { api.current?.select(sel, follow); }, [sel]);
+  }, [clip, out, events, lang, base]);
+  useEffect(() => { api.current?.update({ fi, kfi, feat, gl, gc, col, ps }); }, [fi, kfi, feat, gl, gc, col, ps, out, lang]);
+  useEffect(() => { api.current?.select(sel, follow && !live.current.detail); if (live.current.detail) { const first = childrenOf(STAGE_IDS[sel])[0]?.id ?? null; setDetail({ l2: first, l3: null }); } }, [sel]);
+  useEffect(() => { api.current?.setView(detail ? { stage: sel, ...detail } : null); }, [detail]);
+  const enter = () => setDetail({ l2: childrenOf(STAGE_IDS[sel])[0]?.id ?? null, l3: null });
+  const up = () => setDetail((d) => (d && d.l3 ? { l2: d.l2, l3: null } : d && d.l2 ? { l2: null, l3: null } : null));
   useEffect(() => {
     if (!playing) return;
     const id = setInterval(() => setFi((x) => (x + speed >= n ? 0 : x + speed)), 1000 / clip.fps);
@@ -65,7 +70,7 @@ function Inner({ clip, events, setLang }: { clip: ClipData; events: EventRec[]; 
   useEffect(() => setPrevO(null), [fi]);
   const go = (d: number) => setSel((i) => Math.max(0, Math.min(stages.length - 1, i + d)));
   useEffect(() => {
-    const h = (e: KeyboardEvent) => { if ((e.target as HTMLElement)?.tagName === 'INPUT') return; if (e.key === 'ArrowRight' || e.key === 'ArrowDown') go(1); if (e.key === 'ArrowLeft' || e.key === 'ArrowUp') go(-1); if (e.key === 'Escape') setSheet(null); };
+    const h = (e: KeyboardEvent) => { if ((e.target as HTMLElement)?.tagName === 'INPUT') return; if (e.key === 'ArrowRight' || e.key === 'ArrowDown') go(1); if (e.key === 'ArrowLeft' || e.key === 'ArrowUp') go(-1); if (e.key === 'Escape') { if (live.current.detail) setDetail((d) => (d && d.l3 ? { l2: d.l2, l3: null } : d && d.l2 ? { l2: null, l3: null } : null)); else setSheet(null); } };
     window.addEventListener('keydown', h); return () => window.removeEventListener('keydown', h);
   }, []);
 
@@ -88,9 +93,9 @@ function Inner({ clip, events, setLang }: { clip: ClipData; events: EventRec[]; 
     <div className="ex">
       <div className="ex-scene">
         <div ref={host} className="ex-canvas" role="img" aria-label={t('系统的 3D 模型：九个步骤自下而上排成一摞，可拖动旋转、滚轮缩放、点击选择', 'The system as a 3D model: nine stages stacked bottom to top. Drag to rotate, scroll to zoom, click to select.')} />
-        <nav className="ex-rail" aria-label={t('步骤', 'Stages')}>
+        {detail ? null : <nav className="ex-rail" aria-label={t('步骤', 'Stages')}>
           {stages.map((s, i) => <button key={s.id} aria-current={i === sel ? 'step' : undefined} onClick={() => setSel(i)}><i>{s.no}</i><span>{s.name}</span></button>)}
-        </nav>
+        </nav>}
         <div className="ex-top">
           <button onClick={() => setPlaying((p) => !p)} aria-label={playing ? t('暂停', 'Pause') : t('播放', 'Play')}>{playing ? '❚❚' : '▶'}</button>
           <button onClick={() => setSpeed((s) => (s === 1 ? 3 : s === 3 ? 8 : 1))} aria-label={t('播放速度', 'Speed')}>{speed}×</button>
@@ -108,6 +113,29 @@ function Inner({ clip, events, setLang }: { clip: ClipData; events: EventRec[]; 
       </div>
 
       <aside className="ex-panel" aria-live="polite">
+        {detail ? (() => {
+          const cur = nodeById(detail.l3 ?? detail.l2 ?? ''), l2s = childrenOf(STAGE_IDS[sel]), p2 = detail.l2 ? nodeById(detail.l2) : null, kids = cur ? childrenOf(cur.id) : [];
+          return <div className="ex-node">
+            <nav className="ex-crumbs" aria-label={t('层级', 'Levels')}>
+              <button onClick={() => setDetail(null)}>{t('总览', 'Overview')}</button><i>›</i>
+              <button onClick={() => setDetail({ l2: null, l3: null })} aria-current={!cur ? 'true' : undefined}>{S.no} {S.name}</button>
+              {p2 ? <><i>›</i><button onClick={() => setDetail({ l2: p2.id, l3: null })} aria-current={!detail.l3 ? 'true' : undefined}>{p2.title[lang]}</button></> : null}
+              {detail.l3 && cur ? <><i>›</i><button aria-current="true">{cur.title[lang]}</button></> : null}
+            </nav>
+            <small className="ex-level">{cur ? (cur.level === 2 ? t('第二级：这一层里的部件', 'LEVEL 2: A PART INSIDE THE STAGE') : t('第三级：最小的一步', 'LEVEL 3: THE SMALLEST STEP')) : t('这一层拆开后的全部部件', 'ALL PARTS OF THIS STAGE')}</small>
+            <h2>{cur ? cur.title[lang] : S.name}</h2>
+            {cur ? <>
+              <p className="ex-plain">{cur.plain[lang]}</p>
+              {cur.tex ? <div className="ex-tex"><Tex tex={cur.tex} /></div> : null}
+              {cur.controls?.length ? <div className="ex-ctls">{cur.controls.map((c) => <label key={c.key}><span>{c.label[lang]}</span><input type="range" min={c.min} max={c.max} step={c.step} value={ps[c.key] ?? DEFAULTS[c.key]} onChange={(e) => setPs({ ...ps, [c.key]: +e.target.value })} /><em className="num">{(ps[c.key] ?? DEFAULTS[c.key]).toFixed(2)}</em></label>)}</div> : null}
+              {kids.length ? <div className="ex-kids"><small>{t('再往下拆', 'GO ONE LEVEL DEEPER')}</small>{kids.map((k) => <button key={k.id} onClick={() => setDetail({ l2: cur.id, l3: k.id })}>{k.title[lang]} ›</button>)}</div> : null}
+              {cur.level === 3 ? <button className="ex-2d" onClick={up}>{t('‹ 回到上一级', '‹ Back up one level')}</button> : null}
+            </> : <p className="ex-plain">{t('下面是这一层拆开后的部件，按顺序从左到右。点一个看它的讲解，3D 里的卡片也可以直接点。', 'These are the parts of the stage, in order from left to right. Pick one to read about it; you can also click the cards in 3D.')}</p>}
+            <div className="ex-steps2"><small>{t('这一层的全部部件', 'ALL PARTS OF THIS STAGE')}</small>{l2s.map((n, i) => <button key={n.id} className={n.id === detail.l2 ? 'on' : ''} onClick={() => setDetail({ l2: n.id, l3: null })}><b>{i + 1}</b>{n.title[lang]}</button>)}</div>
+            <button className="ex-2d" onClick={() => setDetail(null)}>{t('回到完整模型', 'Back to the whole model')}</button>
+          </div>;
+        })() : null}
+        {detail ? null : <>
         <div className="ex-head">
           <div><small>{t('第', 'STAGE ')}{String(sel + 1).padStart(2, '0')}{t(' / ', ' / ')}{stages.length} · {S.en}</small><h2>{S.name}</h2></div>
           <div className="ex-pn"><button onClick={() => go(-1)} disabled={sel === 0} aria-label={t('上一层', 'Previous stage')}>‹</button><button onClick={() => go(1)} disabled={sel === stages.length - 1} aria-label={t('下一层', 'Next stage')}>›</button></div>
@@ -154,7 +182,9 @@ function Inner({ clip, events, setLang }: { clip: ClipData; events: EventRec[]; 
           <button className="ex-2d" onClick={() => setSheet('two-d')}>{t('2D / 动手视图', '2D / hands-on view')}</button>
         </div> : null}
 
+        <button className="ex-dive" onClick={enter}>{t('拆开看这一层 ▸', 'Take this stage apart ▸')}<small>{t(`${childrenOf(STAGE_IDS[sel]).length} 个部件，每个都能再往下拆`, `${childrenOf(STAGE_IDS[sel]).length} parts, each can go deeper`)}</small></button>
         {sel === stages.length - 1 ? <p className="ex-foot">{t(`整个系统：3 个网络，${HAND} 个手设数字，其余是公式。系统不读猫的情绪，把握不够就不说。完整推导见 `, `The whole system: 3 networks, ${HAND} hand-set numbers, everything else is formula. It does not read the cat's emotions, and stays silent when unsure. Full derivations in `)}<a href={COLAB_URL} target="_blank" rel="noreferrer">Colab ↗</a></p> : null}
+        </>}
       </aside>
 
       {sheet ? (

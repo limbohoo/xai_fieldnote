@@ -76,7 +76,7 @@ export function Panel({ clip, out, fi, kpFrame, kpStep, layers, setLayers, minCo
           <span className="cl-panel-eyebrow">CASE LAB · 案例实验室 · 实时分析演示</span>
           <h1>一只猫的耳朵压低了，<span>系统是怎么判断的？</span></h1>
         </div>
-        <p className="cl-panel-hint">按播放键，右边的数字会随着视频每一帧实时变化。</p>
+        <p className="cl-panel-hint">按播放键，下面的数字会随着视频每一帧实时变化。</p>
       </div>
       <div className="cl-panel-grid">
         <div className="cl-panel-media">

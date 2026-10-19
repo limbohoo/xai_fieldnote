@@ -26,66 +26,58 @@ function bodyZone(z: ZMap): Zone {
   return { hit: false, color: '#9aa6ba', text: m === null ? '身体：量不出来' : '身体：在平时范围', z: m };
 }
 
-/* Line-art cat: black outlines on white, so the lines themselves are what lights up. */
-const INK = '#151a24', GHOST = '#b5bdca';
-const BODY = 'M64 124 C42 166 34 226 54 258 C68 280 172 280 186 258 C206 226 198 166 176 124 Z';
-const LEGS = ['M90 226 C88 248 90 264 98 272', 'M112 234 C113 250 112 262 110 272', 'M150 226 C152 248 150 264 142 272', 'M128 234 C127 250 128 262 130 272'];
-const TOES = ['M98 272 L96 262', 'M104 273 L104 264', 'M142 272 L144 262', 'M136 273 L136 264'];
-const TAIL = 'M46 214 C28 262 62 288 122 288 C178 288 212 272 210 238';
-const EAR = 'M56 74 C50 44 52 24 58 12 C76 18 96 30 104 42 Z';
-const EAR_IN = 'M63 62 C59 44 61 32 64 24 C74 29 85 36 91 44 Z';
-const HEAD = 'M52 84 C50 50 80 38 120 38 C160 38 190 50 188 84 C186 112 160 130 120 130 C80 130 54 112 52 84 Z';
+/* Line-art cat: one continuous outline for head, ears and body, so the lines themselves are what lights up. */
+const INK = '#151a24', SOFT = '#9aa6ba';
+const SIL = 'M58 10 C76 16 96 30 106 40 C114 38 126 38 134 40 C144 30 164 16 182 10 C190 30 190 52 186 72 C196 92 188 114 166 126 C196 158 206 226 186 258 C176 276 150 284 120 284 C90 284 64 276 54 258 C34 226 44 158 74 126 C52 114 44 92 54 72 C50 52 50 30 58 10 Z';
+const EAR_OUT = 'M106 40 C96 30 76 16 58 10 C50 30 50 52 54 72';
+const EAR_FILL = 'M58 10 C76 16 96 30 106 40 C88 46 68 58 54 72 C50 52 50 30 58 10 Z';
+const EAR_IN = 'M66 30 C64 44 64 54 66 62 C76 54 88 46 94 42 C86 38 76 34 66 30 Z';
+const BODY_OUT = 'M166 126 C196 158 206 226 186 258 C176 276 150 284 120 284 C90 284 64 276 54 258 C34 226 44 158 74 126';
+const LEGS = ['M92 232 C90 254 92 270 98 279', 'M114 242 C115 258 114 272 112 282', 'M148 232 C150 254 148 270 142 279', 'M126 242 C125 258 126 272 128 282'];
+const TOES = ['M98 279 L96 270', 'M104 281 L104 272', 'M142 279 L144 270', 'M136 281 L136 272'];
+const TAIL = 'M184 262 C170 296 80 302 40 278 C12 260 18 222 40 202';
 
 export function CatMap({ z, caption, compact }: { z: ZMap; caption?: string; compact?: boolean }) {
   const ear = earZone(z), eye = eyeZone(z), body = bodyZone(z);
-  const h = num(z, 'ear_height') ?? 0, a = num(z, 'ear_angle') ?? 0, e = num(z, 'eye_aperture') ?? 0;
-  const dy = clamp(-h * 2.5, -7, 7), rot = clamp(a * 4, -16, 16), sy = 1 + clamp(e, -2, 2) * 0.14;
+  const e = num(z, 'eye_aperture') ?? 0;
+  const sy = 1 + clamp(e, -2, 2) * 0.14;
   const label = [ear, eye, body].map((q) => q.text).join('；');
   const zones = [ear, eye, body];
   const earOp = ear.hit ? clamp(0.25 + Math.abs(ear.z ?? 0) * 0.08, 0.3, 0.6) : 0;
   const bodyOp = body.hit ? clamp(0.15 + Math.abs(body.z ?? 0) * 0.06, 0.2, 0.4) : 0;
   const line = { fill: 'none', strokeLinecap: 'round', strokeLinejoin: 'round' } as const;
-  const Lit = ({ d, c, w = 3, halo = 9, fill = 0 }: { d: string; c: string; w?: number; halo?: number; fill?: number }) => (
-    <><path d={d} fill={c} fillOpacity={fill} stroke="none" /><path d={d} {...line} stroke={c} strokeWidth={halo} strokeOpacity=".28" /><path d={d} {...line} stroke={c} strokeWidth={w} /></>
-  );
+  const Glow = ({ d, c }: { d: string; c: string }) => <><path d={d} {...line} stroke={c} strokeWidth="10" strokeOpacity=".25" /><path d={d} {...line} stroke={c} strokeWidth="3.4" /></>;
   const Ear = ({ mirror }: { mirror?: boolean }) => (
     <g transform={mirror ? 'translate(240 0) scale(-1 1)' : undefined}>
-      <g transform={`translate(0 ${dy}) rotate(${-rot} 84 66)`}>
-        <path d={EAR} fill="#fff" stroke={INK} strokeWidth="3" strokeLinejoin="round" />
-        <path d={EAR_IN} fill="none" stroke={INK} strokeWidth="2.4" strokeLinejoin="round" />
-        {ear.hit ? <><Lit d={EAR} c={ear.color} fill={earOp} /><path d={EAR_IN} fill={ear.color} fillOpacity={earOp} /></> : null}
-      </g>
+      <path d={EAR_IN} {...line} stroke={INK} strokeWidth="2.6" />
+      {ear.hit ? <><path d={EAR_FILL} fill={ear.color} fillOpacity={earOp} /><Glow d={EAR_OUT} c={ear.color} /><path d={EAR_IN} {...line} stroke={ear.color} strokeWidth="3" /></> : null}
     </g>
   );
   const Eye = ({ mirror }: { mirror?: boolean }) => (
     <g transform={mirror ? 'translate(240 0) scale(-1 1)' : undefined}>
       <g transform={`translate(0 86) scale(1 ${sy}) translate(0 -86)`}>
-        <ellipse cx="92" cy="86" rx="11" ry="11" fill="#fff" stroke={INK} strokeWidth="3" />
+        <circle cx="92" cy="86" r="11" fill="#fff" stroke={eye.hit ? eye.color : INK} strokeWidth="3" />
         <ellipse cx="93" cy="87" rx="4" ry="5" fill={INK} />
-        {eye.hit ? <ellipse cx="92" cy="86" rx="11" ry="11" fill="none" stroke={eye.color} strokeWidth="3" /> : null}
       </g>
-      {eye.hit ? <circle cx="92" cy="86" r="19" fill="none" stroke={eye.color} strokeWidth="2" strokeDasharray="4 4" /> : null}
+      {eye.hit ? <circle cx="92" cy="86" r="19" fill="none" stroke={eye.color} strokeWidth="2.4" strokeOpacity=".7" /> : null}
     </g>
   );
   return (
     <figure className={'cl-cat' + (compact ? ' compact' : '')}>
       <svg viewBox="0 0 240 300" role="img" aria-label={`猫的示意图：${label}`}>
-        {/* tail and whiskers: not measured, so they stay light and dashed */}
-        <path d={TAIL} {...line} stroke={GHOST} strokeWidth="19" strokeDasharray="1 0" />
-        <path d={TAIL} {...line} stroke="#fff" strokeWidth="14" />
-        <g {...line} stroke={GHOST} strokeWidth="2.4" strokeDasharray="5 5">
-          <path d="M78 98 L26 84" /><path d="M78 105 L24 105" /><path d="M78 112 L28 126" /><path d="M162 98 L214 84" /><path d="M162 105 L216 105" /><path d="M162 112 L212 126" />
+        {/* tail and whiskers are not measured, so they stay light */}
+        <path d={TAIL} {...line} stroke={SOFT} strokeWidth="17" />
+        <path d={TAIL} {...line} stroke="#fff" strokeWidth="12" />
+        <g {...line} stroke={SOFT} strokeWidth="2.6">
+          <path d="M78 100 L24 86" /><path d="M78 107 L22 107" /><path d="M78 114 L26 128" /><path d="M162 100 L216 86" /><path d="M162 107 L218 107" /><path d="M162 114 L214 128" />
         </g>
-        {/* body */}
-        <path d={BODY} fill="#fff" stroke={INK} strokeWidth="3" strokeLinejoin="round" />
-        <g {...line} stroke={INK} strokeWidth="2.6">{LEGS.map((d) => <path key={d} d={d} />)}{TOES.map((d) => <path key={d} d={d} strokeWidth="2" />)}</g>
-        {body.hit ? <><Lit d={BODY} c={body.color} fill={bodyOp} />{LEGS.map((d) => <path key={d} d={d} {...line} stroke={body.color} strokeWidth="2.6" />)}</> : null}
-        {/* ears sit behind the head */}
+        <path d={SIL} fill="#fff" stroke={INK} strokeWidth="3.2" strokeLinejoin="round" />
+        <g {...line} stroke={INK} strokeWidth="2.8">{LEGS.map((d) => <path key={d} d={d} />)}{TOES.map((d) => <path key={d} d={d} strokeWidth="2.2" />)}</g>
+        {body.hit ? <><path d={BODY_OUT + ' Z'} fill={body.color} fillOpacity={bodyOp} /><Glow d={BODY_OUT} c={body.color} /></> : null}
         <Ear /><Ear mirror />
-        <path d={HEAD} fill="#fff" stroke={INK} strokeWidth="3" strokeLinejoin="round" />
         <Eye /><Eye mirror />
-        <path d="M114 98 C114 94 126 94 126 98 C126 102 122 105 120 105 C118 105 114 102 114 98 Z" fill="#fff" stroke={INK} strokeWidth="2.4" strokeLinejoin="round" />
-        <path d="M120 105 L120 109 M108 110 C108 117 120 117 120 109 C120 117 132 117 132 110" {...line} stroke={INK} strokeWidth="2.4" />
+        <path d="M114 98 C114 94 126 94 126 98 C126 102 122 105 120 105 C118 105 114 102 114 98 Z" fill="#fff" stroke={INK} strokeWidth="2.6" strokeLinejoin="round" />
+        <path d="M120 105 L120 109 M108 111 C108 118 120 118 120 109 C120 118 132 118 132 111" {...line} stroke={INK} strokeWidth="2.6" />
       </svg>
       <figcaption>
         {caption ? <p className="cl-cat-cap">{caption}</p> : null}

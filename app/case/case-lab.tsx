@@ -1,52 +1,14 @@
 'use client';
-import { useEffect, useMemo, useRef, useState, type ReactNode } from 'react';
+import { memo, useCallback, useEffect, useMemo, useRef, useState, type ReactNode } from 'react';
 import { Cite } from '../cite';
 import {
   MODEL_ERROR, STATES, USED, Z, checkEvent, classify, fin, guess, run, zEvent,
   type Baseline, type Check, type ClipData, type EventRec, type FeatureKey, type Frame, type Reaction, type State, type Step, type ZMap,
 } from './core';
-import { Viewer, usePhotoAvailable, type Layers } from './viewer';
+import { usePhotoAvailable, type Layers } from './viewer';
+import { MiniBar, Panel } from './panel';
 
-/* ---------- shared vocabulary ---------- */
-const RPLAIN: Record<string, string> = {
-  calibrating: '正在记下它平时的样子', unknown: '看不清', resting: '没有明显变化', active: '动起来了',
-  alert: '注意到了什么', ears_back: '耳朵压低', freeze: '突然不动',
-};
-const LCOL: Record<string, string> = {
-  resting: '#7d8ba3', active: '#234fe5', alert: '#c98a14', ears_back: '#d9622b', freeze: '#b02a37', unknown: '#a3abb8', calibrating: '#cdd3de',
-};
-const STATE_TEXT: Record<State, string> = { tense: '紧张 / 害怕', curious: '警惕 / 好奇', playful: '想玩 / 兴奋', attentive: '专注地听或看', calm: '放松' };
-const CUES: [string, string][] = [
-  ['moves_away', '随后离开或躲开'], ['flees', '随后快速跑开'], ['approaches', '随后靠近'], ['plays', '随后扑玩、追逐'],
-  ['settles', '随后很快平静下来'], ['stays_still', '随后保持不动'], ['robot_before', '之前小车刚有动作'],
-];
-const TELL: Record<string, string> = {
-  'tense|attentive': '随后躲起来更像紧张；随后去查看或继续原来的事，更像只是在专注听',
-  'tense|playful': '随后逃开更像紧张；随后扑出去更像准备玩',
-  'curious|tense': '随后靠近、嗅闻更像好奇；随后后退更像警惕或紧张',
-  'playful|curious': '有扑、追的动作更像想玩；只是靠近看看更像好奇',
-  'attentive|calm': '耳朵和头一直朝向某处更像专注；很快躺回去更像放松',
-};
-interface FeatInfo { k: FeatureKey; name: string; used: boolean; rel: string; def: string; gate: boolean; zthr: [number, string][] }
-const FEAT: FeatInfo[] = [
-  { k: 'ear_height', name: '耳朵高度', used: true, rel: '误差只有真实差异的 0.15，可以单独触发标签', def: '两个耳尖，比两眼连线的中点高多少，以两眼间距为单位。耳朵压低，数字变小。', gate: true, zthr: [[-1.5, '耳朵压低'], [1.5, '注意到了什么']] },
-  { k: 'ear_angle', name: '耳朵外转', used: true, rel: '误差约为真实差异的一半，只作补充', def: '耳朵的轴线（耳根到耳尖）偏离“头顶方向”多少度，往外转为正。', gate: true, zthr: [[2.0, '补充：外转']] },
-  { k: 'eye_aperture', name: '眼睛睁开', used: true, rel: '误差约为真实差异的 0.4，只作补充', def: '眼睛上下张开的距离 ÷ 眼睛的宽度，两只眼睛取平均。', gate: true, zthr: [[2.0, '补充：睁大']] },
-  { k: 'muzzle_ratio', name: '口鼻宽度', used: false, rel: '误差约为真实差异的一半', def: '口鼻两侧点的距离 ÷ 两眼间距。', gate: true, zthr: [] },
-  { k: 'head_drop', name: '头的高低', used: false, rel: '还没有在验证集上测过误差', def: '鼻子比肩胛低多少，以身长为单位（来自身体 20 点）。', gate: false, zthr: [] },
-  { k: 'activity', name: '活动量', used: true, rel: '还没有在验证集上测过误差，用中位数并封顶', def: '关键点在约 0.5 秒里的移动速度，以“猫身长 / 秒”为单位，取各点的中位数，最高算 3。', gate: false, zthr: [[2.0, '动起来了'], [-1.0, '静止']] },
-];
-const FIDX = Object.fromEntries(FEAT.map((f, i) => [f.k, i])) as Record<FeatureKey, number>;
-const DPLAIN: Partial<Record<FeatureKey, [string, string, string]>> = {
-  ear_height: ['耳朵', '比它平时低', '比它平时竖得高'], ear_angle: ['耳朵', '比它平时更朝前', '比它平时更向外转'],
-  eye_aperture: ['眼睛', '比它平时眯', '比它平时睁得大'], activity: ['身体', '比它平时安静', '比它平时动得多'],
-};
-const amount = (z: number) => (Math.abs(z) < 2 ? '有些' : Math.abs(z) < 3 ? '明显' : '很明显');
-const driverText = (d: { feature: FeatureKey; z: number }) => { const p = DPLAIN[d.feature]!; return p[0] + (d.z < 0 ? p[1] : p[2]) + '（' + amount(d.z) + '）'; };
-const VIDEO_ID = 'twzzFMcScww';
-export const COLAB_URL = 'https://colab.research.google.com/drive/1e41NMDHYXqvHY0a6cdBD2_nSD2krZPar';
-const mmss = (t: number) => String(Math.floor(t / 60)).padStart(2, '0') + ':' + (t % 60).toFixed(1).padStart(4, '0');
-const fmt = (v: number | null | undefined, n = 2) => (fin(v) ? v.toFixed(n) : '—');
+import { COLAB_URL, CUES, DPLAIN, FEAT, FIDX, LCOL, RPLAIN, STATE_TEXT, TELL, VIDEO_ID, amount, driverText, fmt, mmss } from './vocab';
 
 /* ---------- small layout pieces ---------- */
 function Head({ no, en, title, desc }: { no: string; en: string; title: string; desc: string }) {
@@ -571,7 +533,9 @@ function OwnerStep({ L, onWatch }: { L: L; onWatch: (i: number) => void }) {
 }
 
 /* ---------- main ---------- */
-export function CaseLab() {
+const Step1M = memo(Step1), Step2M = memo(Step2), Step3M = memo(Step3), Step4M = memo(Step4), Step5M = memo(Step5), Step6M = memo(Step6), OwnerStepM = memo(OwnerStep);
+
+export function CaseLab({ children }: { children?: ReactNode }) {
   const [clip, setClip] = useState<ClipData | null>(null);
   const [events, setEvents] = useState<EventRec[]>([]);
   const [err, setErr] = useState('');
@@ -579,14 +543,15 @@ export function CaseLab() {
     Promise.all([fetch('/case/frames.json').then((r) => r.json()), fetch('/case/events.json').then((r) => r.json())])
       .then(([c, e]) => { setClip(c); setEvents(e); }).catch((x) => setErr(String(x)));
   }, []);
-  if (err) return <p className="cl-warn">数据没有载入成功：{err}</p>;
-  if (!clip) return <p className="cl-loading">正在载入这段视频的数据……</p>;
-  return <Lab clip={clip} events={events} />;
+  if (err) return <><p className="cl-warn">数据没有载入成功：{err}</p>{children}</>;
+  if (!clip) return <><section className="cl-panel cl-panel-loading"><h1>一只猫的耳朵压低了，<span>系统是怎么判断的？</span></h1><p>正在载入这段视频的数据……</p></section>{children}</>;
+  return <Lab clip={clip} events={events}>{children}</Lab>;
 }
 
-function Lab({ clip, events }: { clip: ClipData; events: EventRec[] }) {
+function Lab({ clip, events, children }: { clip: ClipData; events: EventRec[]; children?: ReactNode }) {
   const kp = useMemo(() => clip.frames.map((f, i) => (f.kp ? i : -1)).filter((i) => i >= 0), [clip]);
-  const [s, setS] = useState(0);
+  const nF = clip.frames.length, fps = clip.fps, total = clip.frames[nF - 1].t;
+  const [t, setT] = useState(0); // seconds; continuous: the scrubber, or the video clock while it plays
   const [calib, setCalib] = useState(clip.calib_frames);
   const [feat, setFeat] = useState<FeatureKey>('ear_height');
   const [minConf, setMinConf] = useState(0.25);
@@ -594,48 +559,66 @@ function Lab({ clip, events }: { clip: ClipData; events: EventRec[] }) {
   const [ev, setEv] = useState(0);
   const [geo, setGeo] = useState(false);
   const [wantPhoto, setWantPhoto] = useState(true);
-  const [showVideo, setShowVideo] = useState(false);
-  const [videoStart, setVideoStart] = useState(0); // fixed when the player opens; a moving src would reload it
-  const [videoState, setVideoState] = useState<'idle' | 'playing'>('idle');
+  const [showVideo, setShowVideo] = useState(true);
+  const [videoStart] = useState(() => Math.max(0, Math.floor((events[0]?.start_s ?? 0) - 1))); // fixed: a moving src would reload the player
+  const [playing, setPlaying] = useState(false);
+  const [panelVisible, setPanelVisible] = useState(true);
   const iframe = useRef<HTMLIFrameElement>(null);
-  const fromVideo = useRef(false);
+  const panelRef = useRef<HTMLElement>(null);
+  const miniRef = useRef<HTMLDivElement>(null);
+  const showVideoRef = useRef(showVideo);
+  showVideoRef.current = showVideo;
+  const tRef = useRef(t);
+  tRef.current = t;
   const lastSeek = useRef(0);
+  const clock = useRef({ t: 0, wall: 0 });
   const ytReady = useRef(false);
   const ytLastTime = useRef(-1);
   const ytState = useRef<number | undefined>(undefined);
   const photoOk = usePhotoAvailable();
   const { base, out } = useMemo(() => run(clip.frames, calib), [clip, calib]);
-  const fi = kp[s], frame = clip.frames[fi], step = out[fi];
+
+  // the frame being analysed, and the nearest frame that has keypoints drawn
+  const fi = Math.max(0, Math.min(nF - 1, Math.round(t * fps)));
+  let lo = 0, hi = kp.length - 1;
+  while (lo < hi) { const mid = (lo + hi) >> 1; if (kp[mid] < fi) lo = mid + 1; else hi = mid; }
+  const s = lo > 0 && Math.abs(kp[lo - 1] - fi) <= Math.abs(kp[lo] - fi) ? lo - 1 : lo;
+  const fiK = kp[s], frame = clip.frames[fiK], step = out[fiK];
+
   // The original video is embedded from YouTube (not copied); the page keeps it in step with the scrubber.
-  const yt = (func: string, args: unknown[] = []) => iframe.current?.contentWindow?.postMessage(JSON.stringify({ event: 'command', func, args }), '*');
-  const seekVideo = (t: number) => {
-    if (!showVideo) return;
+  const yt = useCallback((func: string, args: unknown[] = []) => iframe.current?.contentWindow?.postMessage(JSON.stringify({ event: 'command', func, args }), '*'), []);
+  const seekVideo = useCallback((tt: number) => {
+    if (!showVideoRef.current) return;
     const now = Date.now();
     if (now - lastSeek.current < 120) return;
     lastSeek.current = now;
-    yt('seekTo', [t, true]); yt('pauseVideo');
-  };
-  const s2 = useRef<HTMLDivElement>(null);
-  const vref = useRef<HTMLDivElement>(null);
-
-  const scrubTo = (q: number) => { setS(q); seekVideo(clip.frames[kp[q]].t); };
-  const watchEvent = (i: number) => {
-    pickEvent(i);
-    const t = Math.max(0, events[i].start_s - 2);
-    if (!showVideo) { setVideoStart(Math.floor(t)); setShowVideo(true); }
-    else { window.setTimeout(() => { yt('seekTo', [t, true]); yt('playVideo'); }, 250); }
-  };
-  const pickEvent = (i: number) => {
+    yt('seekTo', [tt, true]); yt('pauseVideo');
+  }, [yt]);
+  const onScrub = useCallback((i: number) => { const tt = clip.frames[i].t; setPlaying(false); setT(tt); seekVideo(tt); }, [clip, seekVideo]);
+  const pickEvent = useCallback((i: number) => {
     setEv(i);
     const e = events[i];
     let best = -1;
     for (let q = 0; q < kp.length; q++) { const f = clip.frames[kp[q]]; if (f.t >= e.start_s - 0.2 && f.t <= e.start_s + 1.2 && out[kp[q]].label === e.reaction) { best = q; break; } }
     if (best < 0) for (let q = 0; q < kp.length; q++) if (clip.frames[kp[q]].t >= e.start_s) { best = q; break; }
-    setS(Math.max(best, 0));
-    seekVideo(clip.frames[kp[Math.max(best, 0)]].t);
-  };
+    const tt = clip.frames[kp[Math.max(best, 0)]].t;
+    setPlaying(false); setT(tt); seekVideo(tt);
+  }, [events, kp, clip, out, seekVideo]);
+  const watchEvent = useCallback((i: number) => {
+    pickEvent(i);
+    const tt = Math.max(0, events[i].start_s - 2);
+    setShowVideo(true);
+    window.setTimeout(() => { yt('seekTo', [tt, true]); yt('playVideo'); clock.current = { t: tt, wall: performance.now() }; setT(tt); }, 300);
+  }, [pickEvent, events, yt]);
+  const onPlayPause = useCallback(() => {
+    if (playing) { yt('pauseVideo'); setPlaying(false); return; }
+    if (tRef.current >= total - 0.1) { yt('seekTo', [0, true]); clock.current = { t: 0, wall: performance.now() }; setT(0); }
+    else clock.current = { t: tRef.current, wall: performance.now() };
+    yt('playVideo');
+  }, [playing, yt, total]);
   useEffect(() => { pickEvent(0); /* eslint-disable-next-line react-hooks/exhaustive-deps */ }, []);
-  // listen to the embedded player: while it plays, the scrubber follows it
+
+  // listen to the embedded player; while it plays, the analysis follows its clock
   useEffect(() => {
     if (!showVideo) return;
     const onMsg = (e: MessageEvent) => {
@@ -644,102 +627,100 @@ function Lab({ clip, events }: { clip: ClipData; events: EventRec[] }) {
       try { d = typeof e.data === 'string' ? JSON.parse(e.data) : e.data; } catch { return; }
       ytReady.current = true;
       if (d.event !== 'infoDelivery' || !d.info) return;
-      if (d.info.playerState !== undefined) { ytState.current = d.info.playerState; setVideoState(d.info.playerState === 1 ? 'playing' : 'idle'); }
+      const st = d.info.playerState;
+      if (st !== undefined) { ytState.current = st; if (st === 1) setPlaying(true); else if (st === 2 || st === 0 || st === 5) setPlaying(false); }
       // the player only repeats its state when it changes, so also follow a clock that is moving
       const t0 = d.info.currentTime;
       const moving = typeof t0 === 'number' && ytLastTime.current >= 0 && Math.abs(t0 - ytLastTime.current) > 0.02;
       if (typeof t0 === 'number') ytLastTime.current = t0;
       if (typeof t0 === 'number' && (ytState.current === 1 || (ytState.current === undefined && moving))) {
-        const t = t0;
-        let q = kp.length - 1;
-        for (let i = 0; i < kp.length; i++) if (clip.frames[kp[i]].t >= t) { q = i; break; }
-        fromVideo.current = true; setS(q);
+        clock.current = { t: t0, wall: performance.now() };
+        if (ytState.current === undefined) setPlaying(true);
+        setT(Math.min(t0, total));
       }
     };
     window.addEventListener('message', onMsg);
     return () => window.removeEventListener('message', onMsg);
-  }, [showVideo, kp, clip]);
-  // keep the viewer under the top bar (which wraps and grows on phones) and leave room for it when jumping to a step
+  }, [showVideo, total]);
+  // between the player's messages, advance a local clock so the numbers change on every frame
+  useEffect(() => {
+    if (!playing) return;
+    let raf = 0, last = 0;
+    const tick = (now: number) => {
+      const tt = clock.current.t + (performance.now() - clock.current.wall) / 1000;
+      if (now - last > 50) { last = now; setT(Math.min(tt, total)); }
+      raf = requestAnimationFrame(tick);
+    };
+    raf = requestAnimationFrame(tick);
+    return () => cancelAnimationFrame(raf);
+  }, [playing, total]);
+  const onIframeLoad = useCallback(() => {
+    // the player's script starts after the frame loads: repeat the handshake until it answers
+    ytReady.current = false; ytLastTime.current = -1; ytState.current = undefined;
+    let tries = 0;
+    const id = window.setInterval(() => {
+      if (ytReady.current || ++tries > 20) { window.clearInterval(id); return; }
+      iframe.current?.contentWindow?.postMessage(JSON.stringify({ event: 'listening', id: 1, channel: 'widget' }), '*');
+    }, 400);
+  }, []);
+
+  // layout: the slim bar sits under the top bar once the panel is out of view
   useEffect(() => {
     const measure = () => {
       const top = document.querySelector('.topbar')?.getBoundingClientRect().height ?? 88;
-      const vh = vref.current?.getBoundingClientRect().height ?? 240;
+      const mh = miniRef.current?.getBoundingClientRect().height ?? 90;
       const root = document.documentElement.style;
       root.setProperty('--cl-top', `${Math.round(top)}px`);
-      root.setProperty('--cl-pad', `${Math.round(top + vh + 18)}px`);
+      root.setProperty('--cl-pad', `${Math.round(top + mh + 18)}px`);
     };
     measure();
     const ro = new ResizeObserver(measure);
-    if (vref.current) ro.observe(vref.current);
+    if (miniRef.current) ro.observe(miniRef.current);
     window.addEventListener('resize', measure);
     return () => { ro.disconnect(); window.removeEventListener('resize', measure); };
   }, []);
   useEffect(() => {
-    const el = s2.current;
+    const el = panelRef.current;
+    if (!el || typeof IntersectionObserver === 'undefined') return;
+    const io = new IntersectionObserver((es) => es.forEach((x) => setPanelVisible(x.intersectionRatio > 0.12)), { threshold: [0, 0.12, 0.3] });
+    io.observe(el);
+    return () => io.disconnect();
+  }, []);
+  useEffect(() => {
+    const el = document.getElementById('s2');
     if (!el || typeof IntersectionObserver === 'undefined') return;
     const io = new IntersectionObserver((es) => es.forEach((x) => setGeo(x.isIntersecting)), { rootMargin: '-340px 0px -30% 0px' });
     io.observe(el);
     return () => io.disconnect();
   }, []);
 
-  // label timeline
-  const runs: [number, number, string][] = [];
-  { let st = 0; for (let i = 1; i <= out.length; i++) if (i === out.length || out[i].label !== out[st].label) { runs.push([st, i, out[st].label]); st = i; } }
-  const L: L = { clip, events, kp, s, step, frame, fi, base, out, calib, setCalib, feat, setFeat, minConf, setMinConf, ev, pickEvent };
-  const basisText = step.calibrating ? `视频开头先用 ${calib} 帧记下这只猫平时的样子，这段时间不下判断。`
-    : step.drivers.length ? [...new Map(step.drivers.map((d) => [d.feature, d])).values()].map(driverText).join('；')
-      : step.label === 'resting' ? '所有特征都在它平时的范围里。' : step.label === 'unknown' ? '脸和身体都没有可靠的关键点。' : '';
-  const total = clip.frames[clip.frames.length - 1].t;
+  const runs = useMemo(() => {
+    const r: [number, number, string][] = [];
+    let st = 0;
+    for (let i = 1; i <= out.length; i++) if (i === out.length || out[i].label !== out[st].label) { r.push([st, i, out[st].label]); st = i; }
+    return r;
+  }, [out]);
+  const L: L = useMemo(() => ({ clip, events, kp, s, step, frame, fi: fiK, base, out, calib, setCalib, feat, setFeat, minConf, setMinConf, ev, pickEvent }),
+    [clip, events, kp, s, step, frame, fiK, base, out, calib, feat, minConf, ev, pickEvent]);
+  const usePhoto = photoOk && wantPhoto;
   return (
     <>
-      <div className="cl-viewer" ref={vref}><div className="cl-viewer-in">
-        <div className={'cl-vgrid' + (showVideo ? ' with-video' : '')}>
-          {showVideo ? (
-            <div className="cl-cvwrap cl-video">
-              <iframe ref={iframe} title="原视频（YouTube）" src={`https://www.youtube-nocookie.com/embed/${VIDEO_ID}?enablejsapi=1&playsinline=1&rel=0&start=${videoStart}`}
-                allow="encrypted-media; picture-in-picture" referrerPolicy="strict-origin-when-cross-origin" allowFullScreen
-                onLoad={() => {
-                  // the player's script starts after the frame loads: repeat the handshake until it answers
-                  ytReady.current = false; ytLastTime.current = -1; ytState.current = undefined;
-                  let tries = 0;
-                  const id = window.setInterval(() => {
-                    if (ytReady.current || ++tries > 20) { window.clearInterval(id); return; }
-                    iframe.current?.contentWindow?.postMessage(JSON.stringify({ event: 'listening', id: 1, channel: 'widget' }), '*');
-                  }, 400);
-                }} />
-            </div>
-          ) : null}
-          <div className="cl-cvwrap"><Viewer fi={fi} frame={frame} step={step} size={clip.size} layers={layers} minConf={minConf} geoFeature={geo ? feat : null} usePhoto={photoOk && wantPhoto} /></div>
-          <div className="cl-vinfo">
-            <span className="cl-chip" style={{ background: LCOL[step.calibrating ? 'calibrating' : step.label] }}>{step.calibrating ? '正在记平时' : RPLAIN[step.label]}</span>
-            <p className="cl-basis">{step.drivers.length && !step.calibrating ? <b>依据：</b> : null}{basisText}</p>
-            <p className="cl-small">{mmss(frame.t)} / {mmss(total)}{frame.pose ? ' · 脸部特征已暂停：' + (frame.pose.includes('sideways') ? '头转开了' : '头抬起或低下了') : ''}</p>
-            <div className="cl-layers" role="group" aria-label="画面上显示什么">
-              {([['box', '猫的框'], ['face', '脸 48 点'], ['body', '身体 20 点'], ['basis', '判断依据（红圈）']] as const).map(([k, n]) =>
-                <label key={k}><input type="checkbox" checked={layers[k]} onChange={(e) => setLayers({ ...layers, [k]: e.target.checked })} />{n}</label>)}
-              <label><input type="checkbox" checked={showVideo} onChange={(e) => { if (e.target.checked) setVideoStart(Math.floor(frame.t)); setShowVideo(e.target.checked); setVideoState('idle'); }} />同时看原视频（YouTube）</label>
-              {photoOk ? <label><input type="checkbox" checked={wantPhoto} onChange={(e) => setWantPhoto(e.target.checked)} />真实画面（仅本地）</label> : null}
-            </div>
-          </div>
-        </div>
-        <div className="cl-scrub">
-          <svg className="cl-tl" viewBox="0 0 1000 14" preserveAspectRatio="none" role="img" aria-label="整段视频里每一时刻的行为标签">
-            {runs.map(([a, b, k]) => <rect key={a} x={(a / out.length) * 1000} width={((b - a) / out.length) * 1000 + 0.5} height={14} fill={LCOL[k]} />)}
-            <rect x={Math.max(0, (fi / out.length) * 1000 - 1.5)} width={3} height={14} fill="#fff" stroke="#000" strokeWidth={0.6} />
-          </svg>
-          <input type="range" min={0} max={kp.length - 1} value={s} onChange={(e) => scrubTo(+e.target.value)} aria-label="视频进度" />
-        </div>
-        <nav className="cl-nav" aria-label="步骤">
-          {[['s1', '1 找到猫'], ['s2', '2 量特征'], ['s3', '3 和自己比'], ['s4', '4 规则'], ['s5', '5 之后发生了什么'], ['s6', '6 解释是真的吗'], ['s7', '7 给主人的报告'], ['s8', '局限']].map(([id, n]) => <a key={id} href={'#' + id}>{n}</a>)}
-        </nav>
-      </div></div>
-      <div ref={s2}><Step1 L={L} /></div>
-      <Step2 L={L} />
-      <Step3 L={L} />
-      <Step4 L={L} />
-      <Step5 L={L} />
-      <Step6 L={L} />
-      <OwnerStep L={L} onWatch={watchEvent} />
+      <Panel clip={clip} out={out} fi={fi} kpFrame={frame} kpStep={step} kpFi={fiK} layers={layers} setLayers={setLayers} minConf={minConf} geoFeature={geo ? feat : null}
+        usePhoto={usePhoto} photoOk={photoOk} wantPhoto={wantPhoto} setWantPhoto={setWantPhoto} showVideo={showVideo} setShowVideo={setShowVideo} iframeRef={iframe}
+        videoStart={videoStart} onIframeLoad={onIframeLoad} playing={playing} onPlayPause={onPlayPause} onScrub={onScrub} runs={runs} calib={calib} panelRef={panelRef} />
+      <MiniBar visible={!panelVisible} clip={clip} out={out} fi={fi} kpFrame={frame} kpStep={step} kpFi={fiK} layers={layers} minConf={minConf} geoFeature={geo ? feat : null}
+        usePhoto={usePhoto} onScrub={onScrub} barRef={miniRef} />
+      {children}
+      <nav className="cl-nav cl-nav-top" aria-label="步骤">
+        {[['s1', '1 找到猫'], ['s2', '2 量数字'], ['s3', '3 和自己比'], ['s4', '4 规则'], ['s5', '5 之后发生了什么'], ['s6', '6 解释是真的吗'], ['s7', '7 给主人的报告'], ['s8', '局限']].map(([id, n]) => <a key={id} href={'#' + id}>{n}</a>)}
+      </nav>
+      <Step1M L={L} />
+      <Step2M L={L} />
+      <Step3M L={L} />
+      <Step4M L={L} />
+      <Step5M L={L} />
+      <Step6M L={L} />
+      <OwnerStepM L={L} onWatch={watchEvent} />
       <Limits />
     </>
   );
@@ -761,7 +742,7 @@ function Limits() {
       </div>
       <div className="editor-note">
         <span>数据说明 / DATA</span>
-        <p>案例使用 YouTube 上的一段视频（<a href={'https://www.youtube.com/watch?v=' + VIDEO_ID} target="_blank" rel="noreferrer">“My cat thinks she’s home alone with a ghost – Part 2”，Kiki The Dream Cat ↗</a>），仅供课程学习。本页<b>没有复制这段视频</b>：页面顶部的“同时看原视频”是 YouTube 官方的嵌入播放器，点开才会加载；页面自己发布的，只有从视频里算出的<b>关键点和数字</b>。系统<b>不会“读出猫的情绪”</b>，它给出的是带把握程度的猜测。完整的数学推导和可运行的代码，在我们的 <a href={COLAB_URL} target="_blank" rel="noreferrer">Colab 笔记 ↗</a>。</p>
+        <p>案例使用 YouTube 上的一段视频（<a href={'https://www.youtube.com/watch?v=' + VIDEO_ID} target="_blank" rel="noreferrer">“My cat thinks she’s home alone with a ghost – Part 2”，Kiki The Dream Cat ↗</a>），仅供课程学习。本页<b>没有复制这段视频</b>。顶部的播放器是 YouTube 官方嵌入，页面自己发布的内容是从视频里算出的<b>关键点和数字</b>。系统<b>不读猫的情绪</b>，它给出带把握程度的猜测。完整的数学推导和可运行的代码，在我们的 <a href={COLAB_URL} target="_blank" rel="noreferrer">Colab 笔记 ↗</a>。</p>
       </div>
     </section>
   );

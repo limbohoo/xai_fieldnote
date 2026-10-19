@@ -591,12 +591,26 @@ function Lab({ clip, events, children }: { clip: ClipData; events: EventRec[]; c
 
   // The original video is embedded from YouTube (not copied); the page keeps it in step with the scrubber.
   const yt = useCallback((func: string, args: unknown[] = []) => iframe.current?.contentWindow?.postMessage(JSON.stringify({ event: 'command', func, args }), '*'), []);
+  const seekTarget = useRef<number | null>(null);
+  const peeking = useRef(false);
+  const seekTimer = useRef(0);
+  const [syncing, setSyncing] = useState(false);
+  // The video is the reference: after a jump the analysis snaps to the time the player reports,
+  // so what you see in the video and what is measured are the same moment.
   const seekVideo = useCallback((tt: number) => {
     if (!showVideoRef.current) return;
-    const now = Date.now();
-    if (now - lastSeek.current < 120) return;
-    lastSeek.current = now;
-    yt('seekTo', [tt, true]); yt('pauseVideo');
+    seekTarget.current = tt;
+    setSyncing(true);
+    window.clearTimeout(seekTimer.current);
+    const wait = Math.max(0, 140 - (Date.now() - lastSeek.current));
+    seekTimer.current = window.setTimeout(() => {
+      lastSeek.current = Date.now();
+      const at = seekTarget.current ?? tt;
+      // a player that has not started yet shows black after seek+pause: let it play (muted) just long enough to draw that frame
+      if (ytState.current === undefined || ytState.current === -1 || ytState.current === 5) { peeking.current = true; yt('mute'); yt('seekTo', [at, true]); yt('playVideo'); }
+      else { yt('seekTo', [at, true]); yt('pauseVideo'); }
+      seekTimer.current = window.setTimeout(() => { seekTarget.current = null; setSyncing(false); }, 2000);
+    }, wait);
   }, [yt]);
   const onScrub = useCallback((i: number) => { const tt = clip.frames[i].t; setPlaying(false); setT(tt); seekVideo(tt); }, [clip, seekVideo]);
   const pickEvent = useCallback((i: number) => {
@@ -612,13 +626,14 @@ function Lab({ clip, events, children }: { clip: ClipData; events: EventRec[]; c
     pickEvent(i);
     const tt = Math.max(0, events[i].start_s - 2);
     setShowVideo(true);
-    window.setTimeout(() => { yt('seekTo', [tt, true]); yt('playVideo'); clock.current = { t: tt, wall: performance.now() }; setT(tt); }, 300);
+    window.setTimeout(() => { seekTarget.current = null; setSyncing(false); yt('unMute'); yt('seekTo', [tt, true]); yt('playVideo'); clock.current = { t: tt, wall: performance.now() }; setT(tt); }, 300);
   }, [pickEvent, events, yt]);
   const onPlayPause = useCallback(() => {
     if (playing) { yt('pauseVideo'); setPlaying(false); return; }
+    seekTarget.current = null; setSyncing(false); window.clearTimeout(seekTimer.current);
     if (tRef.current >= total - 0.1) { yt('seekTo', [0, true]); clock.current = { t: 0, wall: performance.now() }; setT(0); }
     else clock.current = { t: tRef.current, wall: performance.now() };
-    yt('playVideo');
+    yt('unMute'); yt('playVideo');
   }, [playing, yt, total]);
   useEffect(() => { pickEvent(0); /* eslint-disable-next-line react-hooks/exhaustive-deps */ }, []);
 
@@ -629,12 +644,17 @@ function Lab({ clip, events, children }: { clip: ClipData; events: EventRec[]; c
       if (!/youtube(-nocookie)?\.com$/.test(new URL(e.origin).hostname)) return;
       let d: { event?: string; info?: { currentTime?: number; playerState?: number } };
       try { d = typeof e.data === 'string' ? JSON.parse(e.data) : e.data; } catch { return; }
-      ytReady.current = true;
+      if (!ytReady.current) { ytReady.current = true; seekVideo(tRef.current); } // the player starts at its own start time: bring it to the analysed moment
       if (d.event !== 'infoDelivery' || !d.info) return;
       const st = d.info.playerState;
-      if (st !== undefined) { ytState.current = st; if (st === 1) setPlaying(true); else if (st === 2 || st === 0 || st === 5) setPlaying(false); }
+      if (st === 1 && peeking.current) { peeking.current = false; ytState.current = 2; yt('pauseVideo'); }
+      else if (st !== undefined) { ytState.current = st; if (st === 1) setPlaying(true); else if (st === 2 || st === 0 || st === 5) setPlaying(false); }
       // the player only repeats its state when it changes, so also follow a clock that is moving
       const t0 = d.info.currentTime;
+      if (seekTarget.current !== null && typeof t0 === 'number' && Math.abs(t0 - seekTarget.current) < 0.6 && (ytState.current !== 1 || d.info.playerState === 1)) {
+        window.clearTimeout(seekTimer.current);
+        seekTarget.current = null; setSyncing(false); setT(Math.min(t0, total));
+      }
       const moving = typeof t0 === 'number' && ytLastTime.current >= 0 && Math.abs(t0 - ytLastTime.current) > 0.02;
       if (typeof t0 === 'number') ytLastTime.current = t0;
       if (typeof t0 === 'number' && (ytState.current === 1 || (ytState.current === undefined && moving))) {
@@ -645,7 +665,7 @@ function Lab({ clip, events, children }: { clip: ClipData; events: EventRec[]; c
     };
     window.addEventListener('message', onMsg);
     return () => window.removeEventListener('message', onMsg);
-  }, [showVideo, total]);
+  }, [showVideo, total, seekVideo]);
   // between the player's messages, advance a local clock so the numbers change on every frame
   useEffect(() => {
     if (!playing) return;
@@ -711,7 +731,7 @@ function Lab({ clip, events, children }: { clip: ClipData; events: EventRec[]; c
     <>
       <Panel clip={clip} out={out} fi={fi} kpFrame={frame} kpStep={step} kpFi={fiK} layers={layers} setLayers={setLayers} minConf={minConf} geoFeature={geo ? feat : null}
         usePhoto={usePhoto} photoOk={photoOk} wantPhoto={wantPhoto} setWantPhoto={setWantPhoto} showVideo={showVideo} setShowVideo={setShowVideo} iframeRef={iframe}
-        videoStart={videoStart} onIframeLoad={onIframeLoad} playing={playing} onPlayPause={onPlayPause} onScrub={onScrub} runs={runs} calib={calib} panelRef={panelRef} />
+        videoStart={videoStart} onIframeLoad={onIframeLoad} playing={playing} onPlayPause={onPlayPause} onScrub={onScrub} syncing={syncing} runs={runs} calib={calib} panelRef={panelRef} />
       <MiniBar visible={!panelVisible} clip={clip} out={out} fi={fi} kpFrame={frame} kpStep={step} kpFi={fiK} layers={layers} minConf={minConf} geoFeature={geo ? feat : null}
         usePhoto={usePhoto} onScrub={onScrub} barRef={miniRef} />
       {children}

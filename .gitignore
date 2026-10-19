@@ -38,3 +38,6 @@ next-env.d.ts
 /work/
 *.tsbuildinfo
 *.ts.bak
+
+# local-only video frames for the case lab (YouTube video, course-internal use): never commit
+/public/case/img/

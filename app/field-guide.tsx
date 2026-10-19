@@ -83,6 +83,13 @@ export function FieldGuide() {
             <span className="right">阅读版 / 2026.10</span>
           </div>
         </section>
+        <a className="case-banner" href="/case">
+          <span className="eyebrow"><i /> 案例实验室 · CASE LAB</span>
+          <strong>一只猫的耳朵压低了，系统是怎么判断的？</strong>
+          <span className="case-banner-copy">
+            用我们小组的项目做例子：拖动、点击，一步步看一个 AI 系统怎样找到猫、量特征、套规则，又怎样检验自己的解释。 →
+          </span>
+        </a>
         <Chapter id="mapping" number="01" title="领域、问题与阅读坐标" summary="从系统依据、人的理解到真实情境，建立选择解释方法前的判断框架。">
           <Head
             no="01"

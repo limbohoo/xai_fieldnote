@@ -1,5 +1,5 @@
 /* oxlint-disable next/no-html-link-for-pages */
-export function SiteHeader({ glossary = false }: { glossary?: boolean }) {
+export function SiteHeader({ glossary = false, page }: { glossary?: boolean; page?: 'case' }) {
   return (
     <header className="topbar">
       <a className="brand" href="/">
@@ -17,9 +17,10 @@ export function SiteHeader({ glossary = false }: { glossary?: boolean }) {
         <a href="/#atlas">方法图鉴</a>
         <a href="/#process">流程与验证</a>
         <a href="/#frontiers">延伸阅读</a>
+        <a href="/case" aria-current={page === 'case' ? 'page' : undefined}>案例实验室</a>
       </nav>
-      <a className="source-nav" href={glossary ? '/' : '/glossary'}>
-        {glossary ? '返回阅读指南 ↗' : '术语词典 Glossary ↗'}
+      <a className="source-nav" href={glossary || page ? '/' : '/glossary'}>
+        {glossary || page ? '返回阅读指南 ↗' : '术语词典 Glossary ↗'}
       </a>
     </header>
   );

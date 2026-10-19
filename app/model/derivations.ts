@@ -7,6 +7,7 @@ const r = String.raw;
 
 export const DERIV: Record<string, Deriv> = {
   detect: {
+    story: { zh: '同一个例子贯穿全页：视频第 14.7 秒，一只猫正在看镜头。第一步，检测器在画面里框出这只猫；之后所有计算只看框里面。', en: 'One example runs through the whole page: at 14.7 s in the video a cat is facing the camera. First, the detector boxes the cat; every later computation looks only inside the box.' },
     goal: { zh: '从整帧画面得到“猫在哪里”，没有猫就明确地说没有。', en: 'From a whole frame, obtain where the cat is, and say so explicitly when there is none.' },
     steps: [
       { say: { zh: '检测器 D 把画面 I 映射成一组候选框，每个框带类别 c 和把握 s。', en: 'A detector D maps the frame I to a set of candidate boxes, each with a class c and a confidence s.' },
@@ -22,6 +23,7 @@ export const DERIV: Record<string, Deriv> = {
     assume: { zh: '前提：检测器把猫框对了。框偏了，后面所有数字都跟着偏；这一步在 132 张测试图上找到 93.9%（YOLOv8s）/ 90.2%（YOLOv8n）的猫。', en: 'Assumes the detector boxes the cat correctly. A wrong box shifts every later number; on 132 test images it found 93.9% (YOLOv8s) / 90.2% (YOLOv8n) of the cats.' },
   },
   keypoints: {
+    story: { zh: '框里的这只猫被标上 68 个点：脸上 48 个（耳尖、眼角、鼻子……），身上 20 个。每个点有坐标，也有一个“把握”。', en: 'The cat in the box gets 68 points: 48 on the face (ear tips, eye corners, nose…) and 20 on the body. Each point has coordinates and a confidence.' },
     goal: { zh: '把“每个点可能在哪里”的一张热力图，变成一个精确的坐标，并且这个变换可以求导。', en: 'Turn a heatmap of "where each point might be" into one precise coordinate, in a way that is differentiable.' },
     steps: [
       { say: { zh: '网络对每个关键点输出一张热力图 H。第 (i, j) 格的数越大，点越可能在那里。', en: 'For each keypoint the network outputs a heatmap H. The larger the value at cell (i, j), the more likely the point is there.' },
@@ -44,6 +46,7 @@ export const DERIV: Record<string, Deriv> = {
     assume: { zh: '前提：热力图是单峰的。有两个相似的峰时，期望会落在两峰之间（上一页的滑块可以试）。脸 48 点 PCK@0.05 为 99.0%，身体 20 点 PCK@0.1 为 79.4%。', en: 'Assumes a single-peaked heatmap. With two similar peaks the expectation lands between them (try the slider in the 2D view). Face 48 points PCK@0.05 = 99.0%; body 20 points PCK@0.1 = 79.4%.' },
   },
   smooth: {
+    story: { zh: '同一个耳尖，在相邻两帧里会抖动几个像素，哪怕猫没动。滤波把这种抖动抹平，但猫真的转头时不会拖后腿。', en: 'The same ear tip jitters a few pixels between frames even when the cat is still. The filter smooths that out without lagging when the cat really turns its head.' },
     goal: { zh: '压住点坐标逐帧的随机抖动，同时不让快速动作被拖慢。', en: 'Suppress frame-to-frame random jitter in point coordinates without lagging behind fast motion.' },
     steps: [
       { say: { zh: '先取最简单的低通滤波：一阶 RC 系统，输出 y 以时间常数 τ 追随输入 x。', en: 'Start from the simplest low-pass filter: a first-order RC system, where the output y follows the input x with time constant τ.' },
@@ -65,6 +68,7 @@ export const DERIV: Record<string, Deriv> = {
     assume: { zh: '前提：抖动是各帧独立的随机误差，真实动作是平滑变化的。实际实现（smoothing.py）和上面的推导有两处不同：速度本身也经过一次低通（d_cutoff = 1.0），并且按猫的大小归一，所以速度门槛与画面大小无关；默认 f_min = 1.0，β = 0.05。三个数都是手调的旋钮。', en: 'Assumes jitter is independent random error per frame and real motion is smooth. The implementation (smoothing.py) differs from the derivation above in two ways: the speed is itself low-passed once (d_cutoff = 1.0) and normalised by the cat\'s size, so the speed threshold does not depend on frame size; defaults are f_min = 1.0, β = 0.05. All three numbers are hand-tuned knobs.' },
   },
   features: {
+    story: { zh: '从 68 个点算出 6 个数。比如“耳朵高度”：耳尖比两眼高多少，以两眼间距为单位。这一帧是 1.46。', en: 'Six numbers are computed from the 68 points. For example "ear height": how far the ear tips sit above the eyes, in units of eye distance. On this frame it is 1.46.' },
     goal: { zh: '把 68 个点压成 6 个数，并且这 6 个数不受猫离镜头远近、头在画面里转动的影响。', en: 'Compress 68 points into 6 numbers that do not depend on how far the cat is, or how the head is rotated in the image.' },
     steps: [
       { say: { zh: '用两只眼的中心定出一把“尺子”和一个“头顶方向”。d 是两眼间距，x̂ 沿眼线，up 与它垂直。', en: 'Use the two eye centres to define a ruler and an "up" direction. d is the eye distance, x̂ runs along the eye line, up is perpendicular to it.' },
@@ -83,6 +87,7 @@ export const DERIV: Record<string, Deriv> = {
     assume: { zh: '前提：猫的脸大致朝向镜头。侧脸时两眼间距缩短，数字失真，所以左右眼到鼻子的距离差超过 0.2 时暂停脸部的数字。相似变换不包含透视变形。', en: 'Assumes the face points roughly toward the camera. In a side view the eye distance shortens and numbers distort, so the face numbers pause when the left/right eye-to-nose difference exceeds 0.2. A similarity transform does not cover perspective distortion.' },
   },
   baseline: {
+    story: { zh: '这只猫平时的耳朵高度是 1.73，正常抖动约 0.19。这一帧 1.46，比平时低了 (1.46 − 1.73) ÷ 0.19 ≈ 1.4 个“正常抖动”，记作 z = −1.4。', en: 'This cat\'s usual ear height is 1.73, with a normal wobble of about 0.19. This frame is 1.46, i.e. (1.46 − 1.73) ÷ 0.19 ≈ 1.4 normal wobbles below usual: z = −1.4.' },
     goal: { zh: '把不同单位的 6 个特征，换成同一把尺子：比这只猫自己的平时偏了多少。', en: 'Put six features of different units on one ruler: how far from this cat\'s own usual.' },
     steps: [
       { say: { zh: '取开头 n 帧作为“平时”样本，记为 X₁…Xₙ。', en: 'Take the first n frames as the "usual" sample X₁…Xₙ.' }, tex: r`X_1,\dots,X_n` },
@@ -105,6 +110,7 @@ export const DERIV: Record<string, Deriv> = {
     assume: { zh: '前提：开头那段确实是“平时”。如果那段里猫恰好很紧张，之后所有偏离都被算歪。程序默认用前 300 帧（本页的示例视频用 150 帧）。用 60 / 90 / 150 / 300 帧记平时，结果差别很大，所以正式使用前应单独拍一段平静视频存成基线。', en: 'Assumes the opening segment really is "usual". If the cat happened to be tense there, every later deviation is miscalculated. The program defaults to the first 300 frames (this page\'s demo clip uses 150). Learning usual from 60 / 90 / 150 / 300 frames gives very different results, so record a calm clip beforehand and store it as the baseline.' },
   },
   rules: {
+    story: { zh: '这个时刻，耳朵外转 z = +2.4（超过 2），耳朵高度 z = −1.4（低于 −0.5）。两条同时满足，标签是“耳朵压低”，依据就是这两项。', en: 'At this moment ear rotation z = +2.4 (above 2) and ear height z = −1.4 (below −0.5). Both hold, so the label is "ears back", and those two are the evidence.' },
     source: {
       title: { zh: '这些数字怎么来的（没有训练）', en: 'Where these numbers come from (nothing was trained)' },
       items: [
@@ -152,6 +158,7 @@ export const DERIV: Record<string, Deriv> = {
     assume: { zh: '前提：0.3 秒和 60% 是手设的。', en: 'Assumes 0.3 s and 60% are hand-set.' },
   },
   guess: {
+    story: { zh: '想象 1000 只刚刚“耳朵压低”的猫。按起始概率，紧张的约 400 只、专注的 300 只、好奇的 150 只、放松的 100 只、想玩的 50 只。随后看到“躲开”：紧张的猫里 60% 会躲开，留下 240 只；好奇的留下 30 只，专注的 30 只，想玩和放松各 5 只。现在只看这 310 只躲开的猫，其中 240 只是紧张的：240 ÷ 310 = 77%。“线索”就是这次筛选，“归一化”就是最后这个除法。', en: 'Imagine 1000 cats that just put their ears back. By the starting odds about 400 are tense, 300 attentive, 150 curious, 100 relaxed and 50 playful. Then we see "moved away": 60% of tense cats move away, so 240 stay; 30 curious, 30 attentive, and 5 each of playful and relaxed. Now look only at these 310 cats that moved away: 240 are tense, so 240 ÷ 310 = 77%. The "cue" is that filtering; "normalising" is that final division.' },
     source: {
       title: { zh: '这些概率怎么来的（没有训练）', en: 'Where these probabilities come from (nothing was trained)' },
       items: [
@@ -164,6 +171,8 @@ export const DERIV: Record<string, Deriv> = {
     },
     goal: { zh: '从“看到的行为”推测猫更可能处在哪种状态，说清每条后续线索把判断推动了多少，并且在模型不确定时保持沉默。同时讲明白这个数字到底是什么、不是什么。', en: 'From observed behaviour, infer which state the cat is more likely in, show how much each later cue moved that judgement, and stay silent when the model is unsure. And say exactly what the number is and is not.' },
     steps: [
+      { say: { zh: '先用数猫的方法把整件事讲清楚（自然频数）。设有 N 只刚做出这个动作的猫，第 s 群有 N·P(s | ℓ) 只。每看到一条线索，第 s 群里只留下做了这个动作的那一部分，比例是 P(c | s)。最后留下的猫，按群数一遍占比。下面每一步公式，都是这三句话的严格写法。', en: 'First tell the whole thing by counting cats (natural frequencies). Take N cats that just did this; group s has N·P(s | ℓ) of them. For each cue, only the share P(c | s) of group s that did the action stays. Finally recount the shares among the cats that remain. Every formula below is the precise version of these three sentences.' },
+        tex: r`n_s=N\cdot P(s\mid\ell)\cdot\prod_{c\in C}P(c\mid s),\qquad P(s\mid\ell,C)=\frac{n_s}{\sum_{s'}n_{s'}}` },
       { say: { zh: '先定义变量。状态 S 只有 5 种（封闭集合，没有“其他”）；标签 ℓ 来自规则和投票，在这里被当作无误差的观测；线索是事件后 5 秒内出现的行为，每条要么出现要么没出现，系统只记录出现了的。', en: 'First the variables. The state S has only 5 values (a closed set, no "other"); the label ℓ comes from the rules and the vote and is treated here as an observation without error; cues are behaviours in the 5 s after the event, each present or absent, and the system records only the ones that occurred.' },
         tex: r`S\in\{\text{tense, curious, playful, attentive, calm}\},\quad \ell\in\{\text{ears back, froze, noticed, moving}\},\quad C\subseteq\{c_1,\dots,c_7\}` },
       { say: { zh: '要的是：已知标签和出现的线索时，每种状态的概率。贝叶斯公式：', en: 'What we want: the probability of each state given the label and the cues that occurred. Bayes\' rule:' },

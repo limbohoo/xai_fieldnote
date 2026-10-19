@@ -35,7 +35,7 @@ function labelFor(text: string, color: string): Lab {
   return l;
 }
 export function disposeObj3dCaches() { labs.forEach((l) => { l.mat.map?.dispose(); l.mat.dispose(); }); labs.clear(); mats.forEach((m) => m.dispose()); mats.clear(); plain.forEach((m) => m.dispose()); plain.clear(); }
-export function disposeObj(g: THREE.Group) { (g.userData.own as THREE.BufferGeometry[] | undefined)?.forEach((x) => x.dispose()); (g.userData.ownMat as THREE.Material[] | undefined)?.forEach((x) => x.dispose()); }
+export function disposeObj(g: THREE.Group) { (g.userData.ownInst as THREE.InstancedMesh[] | undefined)?.forEach((x) => x.dispose()); (g.userData.own as THREE.BufferGeometry[] | undefined)?.forEach((x) => x.dispose()); (g.userData.ownMat as THREE.Material[] | undefined)?.forEach((x) => x.dispose()); }
 
 type Anchor = 'c' | 'l' | 'r';
 function lab(g: THREE.Group, text: string, x: number, y: number, z: number, o: { color?: string; size?: number; anchor?: Anchor; mode?: Mode } = {}) {
@@ -134,6 +134,25 @@ export function buildVis3D(v: Vis, mode: Mode): THREE.Group {
       if (c < per - 1 && k < n - 1) { const a = new THREE.Mesh(CONE, mat('#6f7a90', mode)); a.scale.set(0.18, 0.4, 0.18); a.rotation.z = -Math.PI / 2; a.position.set(x + sp / 2, y, 0); g.add(a); }
     });
     caption(g, v.caption, -2.7, mode);
+  } else if (v.t === 'crowd') {
+    // every cat is one small cube; cats that no longer match the evidence fade to a flat, dark tile
+    const total = v.groups.reduce((s, x) => s + x.total, 0) || 1, W = 8.6, cell = 0.17, gap = 0.45, usable = W - gap * (v.groups.length - 1);
+    const mesh = new THREE.InstancedMesh(BOX, ownMat(g, new THREE.MeshStandardMaterial({ color: '#ffffff', roughness: 0.5, metalness: 0.1 })), total);
+    g.userData.ownInst = [...(g.userData.ownInst ?? []), mesh];
+    const m = new THREE.Matrix4(), col = new THREE.Color(); let idx = 0, x = -W / 2;
+    v.groups.forEach((gr) => {
+      const w = Math.max(cell, (gr.total / total) * usable), cols = Math.max(1, Math.round(w / cell)), rows = Math.ceil(gr.total / cols);
+      for (let k = 0; k < gr.total; k++) {
+        const r = Math.floor(k / cols), c = k % cols, on = k < gr.keep;
+        m.compose(new THREE.Vector3(x + (c + 0.5) * cell, -1.6 + (r + 0.5) * cell + (on ? 0.0 : -0.07), 0), new THREE.Quaternion(), new THREE.Vector3(cell * 0.82, on ? cell * 0.82 : cell * 0.15, cell * 0.82));
+        mesh.setMatrixAt(idx, m); col.set(gr.color); if (!on) col.lerp(BG, 0.72); else if (mode === 'dim') col.lerp(BG, 0.5); mesh.setColorAt(idx, col); idx++;
+      }
+      lab(g, gr.label, x + (cols * cell) / 2, -2.1, 0, { size: 0.3, color: gr.color, mode });
+      lab(g, `${gr.keep} / ${gr.total}`, x + (cols * cell) / 2, -2.55, 0, { size: 0.3, mode });
+      void rows; x += cols * cell + gap;
+    });
+    mesh.instanceMatrix.needsUpdate = true; if (mesh.instanceColor) mesh.instanceColor.needsUpdate = true; g.add(mesh);
+    caption(g, v.caption, -3.1, mode);
   } else if (v.t === 'points') {
     const xs = [...v.pts.map((p) => p.x), ...(v.segs ?? []).flatMap((s) => [s.a[0], s.b[0]])], ys = [...v.pts.map((p) => p.y), ...(v.segs ?? []).flatMap((s) => [s.a[1], s.b[1]])];
     if (xs.length) {

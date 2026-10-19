@@ -1,9 +1,9 @@
 'use client';
 import { useEffect, useMemo, useRef, useState, type ReactNode } from 'react';
-import { FEATURES, checkEvent, fin, run, type ClipData, type EventRec, type FeatureKey } from '../case/core';
+import { FEATURES, PRIOR, checkEvent, fin, run, type ClipData, type EventRec, type FeatureKey } from '../case/core';
 import { COLAB_URL, LCOL, mmss } from '../case/vocab';
 import { DERIV, WHOLE } from './derivations';
-import { LangCtx, makeT, rp, useT, type Lang } from './i18n';
+import { LangCtx, cueKeys, cueName, makeT, rp, useT, type Lang } from './i18n';
 import { ViewBaseline, ViewCheck, ViewDetect, ViewFeatures, GuessLab, ViewKeypoints, ViewRules, ViewSmooth, ViewVote, worked } from './model-lab';
 import { DEFAULTS, STAGE_IDS, childrenOf, nodeById } from './nodes';
 import { createScene, type SceneApi } from './scene';
@@ -139,6 +139,10 @@ function Inner({ clip, events, setLang }: { clip: ClipData; events: EventRec[]; 
             <h2>{cur ? cur.title[lang] : S.name}</h2>
             {cur ? <>
               <p className="ex-plain">{cur.plain[lang]}</p>
+              {cur.stage === 'guess' ? <div className="ex-gpick">
+                <small>{t('标签', 'LABEL')}</small><div>{Object.keys(PRIOR).map((k) => <button key={k} aria-pressed={gl === k} onClick={() => setGl(k)}>{rp(lang, k)}</button>)}</div>
+                <small>{t('随后看到的线索（可多选）', 'CUES SEEN AFTERWARDS (ANY NUMBER)')}</small><div>{cueKeys.map((k) => <button key={k} aria-pressed={gc.includes(k)} onClick={() => setGc(gc.includes(k) ? gc.filter((y) => y !== k) : [...gc, k])}>{cueName(lang, k)}</button>)}</div>
+              </div> : null}
               {cur.tex ? <div className="ex-tex"><Tex tex={cur.tex} /></div> : null}
               {NODE_WHY[cur.id] ? <div className="ex-why"><b>{t('这些数为什么这么给', 'Why these numbers')}</b><p>{NODE_WHY[cur.id].why[lang]}</p><p className="lim">{NODE_WHY[cur.id].limit[lang]}</p><Sources ids={NODE_WHY[cur.id].refs} title={t('依据', 'Sources')} /></div> : (STAGE_REFS[cur.stage] ? <details className="ex-refd"><summary>{t('这一层的引用与来源', 'References for this stage')}</summary><Sources ids={STAGE_REFS[cur.stage]} title="" /></details> : null)}
               {cur.controls?.length ? <div className="ex-ctls">{cur.controls.map((c) => <label key={c.key}><span>{c.label[lang]}</span><input type="range" min={c.min} max={c.max} step={c.step} value={ps[c.key] ?? DEFAULTS[c.key]} onChange={(e) => setPs({ ...ps, [c.key]: +e.target.value })} /><em className="num">{(ps[c.key] ?? DEFAULTS[c.key]).toFixed(2)}</em></label>)}</div> : null}

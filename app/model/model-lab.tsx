@@ -272,7 +272,7 @@ export function GuessLab({ label, setLabel, cues, setCues, col, setCol }: GuessS
   const g = guess(label, cues, fv);
   const bandName = (b: string) => (lang === 'en' ? { 高: 'high', 中: 'medium', 低: 'low' }[b] : b);
   const sn = stateShort(lang, STATES[col]);
-  const eq = `${p0[col].toFixed(2)}${cues.map((c) => ` × ${LIK[c][col].toFixed(2)}`).join('')} = ${prod[col].toFixed(3)}`;
+  const eq = `${Math.round(p0[col] * 1000)}${cues.map((c) => ` × ${Math.round(LIK[c][col] * 100)}%`).join('')} = ${(prod[col] * 1000).toFixed(prod[col] * 1000 < 10 ? 1 : 0)}`;
   const cc = (i: number) => (i === col ? 'sel' : '');
   const ct = contributions(label, cues), rb = robustness(label, cues, 0.25), nm = (i: number) => stateShort(lang, STATES[i]);
   return (
@@ -281,17 +281,17 @@ export function GuessLab({ label, setLabel, cues, setCues, col, setCol }: GuessS
       <div className="cl-seg" role="group" aria-label={t('标签', 'Label')}>{names.map((k) => <button key={k} aria-pressed={label === k} onClick={() => setLabel(k)}>{rp(lang, k)}</button>)}</div>
       <p className="gl-step"><b>2</b>{t('点选随后看到的线索（可以多选，也可以一条都不选）', 'Pick the cues seen afterwards (any number, or none)')}</p>
       <div className="cl-seg" role="group" aria-label={t('线索', 'Cues')}>{cueKeys.map((k) => <button key={k} aria-pressed={cues.includes(k)} onClick={() => toggle(k)}>{cueName(lang, k)}</button>)}</div>
-      <p className="gl-step"><b>3</b>{t('每一列是一种状态。点列名，看这一列是怎么算出来的', 'Each column is one state. Click a column name to see its own arithmetic')}</p>
+      <p className="gl-step"><b>3</b>{t('把 1000 只猫按状态分群，用线索筛选，再数留下的占比。点列名看某一群的算式', 'Split 1000 cats by state, filter them with the cues, then count the shares that remain. Click a column name for one group')}</p>
       <table className="gl-table">
         <thead><tr><th />{STATES.map((s, i) => <th key={s} className={cc(i)}><button aria-pressed={col === i} onClick={() => setCol(i)}>{stateShort(lang, s)}</button></th>)}</tr></thead>
         <tbody>
-          <tr><th>{t('起始概率', 'Starting')}</th>{p0.map((v, i) => <td key={i} className={cc(i)}>{v.toFixed(2)}</td>)}</tr>
-          {cues.map((c) => <tr key={c}><th>× {cueName(lang, c)}</th>{LIK[c].map((v, i) => <td key={i} className={cc(i)}>{v.toFixed(2)}</td>)}</tr>)}
-          <tr className="gl-prod"><th>{t('乘起来', 'Product')}</th>{prod.map((v, i) => <td key={i} className={cc(i)}>{v.toFixed(3)}</td>)}</tr>
-          <tr className="gl-post"><th>{t(`÷ 合计 ${Zs.toFixed(3)}`, `÷ total ${Zs.toFixed(3)}`)}</th>{post.map((v, i) => <td key={i} className={cc(i)}><i style={{ height: Math.max(2, v * 56) + 'px' }} /><b>{v.toFixed(2)}</b></td>)}</tr>
+          <tr><th>{t('起始：1000 只里有几只', 'Start: how many of 1000')}</th>{p0.map((v, i) => <td key={i} className={cc(i)}>{Math.round(v * 1000)}</td>)}</tr>
+          {cues.map((c) => <tr key={c}><th>× {t('做了“', 'did "')}{cueName(lang, c)}{t('”的比例', '" share')}</th>{LIK[c].map((v, i) => <td key={i} className={cc(i)}>{Math.round(v * 100)}%</td>)}</tr>)}
+          <tr className="gl-prod"><th>{t('= 留下几只', '= cats that stay')}</th>{prod.map((v, i) => <td key={i} className={cc(i)}>{(v * 1000).toFixed(v * 1000 < 10 ? 1 : 0)}</td>)}</tr>
+          <tr className="gl-post"><th>{t(`÷ 留下的总数 ${(Zs * 1000).toFixed(0)} = 占比`, `÷ all that stay ${(Zs * 1000).toFixed(0)} = share`)}</th>{post.map((v, i) => <td key={i} className={cc(i)}><i style={{ height: Math.max(2, v * 56) + 'px' }} /><b>{v.toFixed(2)}</b></td>)}</tr>
         </tbody>
       </table>
-      <p className="gl-eq">{t(`「${sn}」这一列：`, `Column "${sn}": `)}<code>{eq}</code>{t('；再除以五列合计 ', '; divide by the five-column total ')}<code>{Zs.toFixed(3)}</code>{' = '}<b>{post[col].toFixed(2)}</b></p>
+      <p className="gl-eq">{t(`「${sn}」这一列：`, `Column "${sn}": `)}<code>{eq}</code>{t('；再除以五列合计 ', '; divide by the five-column total ')}<code>{(Zs * 1000).toFixed(0)}</code>{' = '}<b>{post[col].toFixed(2)}</b></p>
       <p className="gl-step"><b>4</b>{t('把握：最高概率够不够高，和第二名拉开够不够？脸看不清时要降一级', 'Confidence: is the top probability high enough, and far enough ahead of the second? A hidden face lowers it')}</p>
       <div className="cl-sl"><label htmlFor="ml-fv">{t('脸可见的比例', 'Share of face visible')}</label><input id="ml-fv" type="range" min={0} max={1} step={0.05} value={fv} onChange={(e) => setFv(+e.target.value)} /><span className="num">{fv.toFixed(2)}</span></div>
       <p className="ml-out">{g

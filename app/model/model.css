@@ -249,3 +249,8 @@
 .ex-stepnav span { text-align: center; font-size: 13px; color: #8a94a6; }
 .ex-stepnav button { font: inherit; font-size: 14.5px; color: #e6ebf5; background: #151c2e; border: 1px solid #2a3347; border-radius: 8px; padding: 8px 14px; cursor: pointer; }
 .ex-stepnav button.go { background: #234fe5; border-color: #234fe5; color: #fff; font-weight: 600; } .ex-stepnav button:disabled { opacity: .35; cursor: default; }
+
+.ex-gpick { display: flex; flex-direction: column; gap: 6px; border: 1px solid #1d2535; border-radius: 10px; padding: 10px 12px; background: #0f1522; }
+.ex-gpick small { color: #8a94a6; letter-spacing: .08em; font-size: 11px; } .ex-gpick > div { display: flex; flex-wrap: wrap; gap: 5px; }
+.ex-gpick button { font: inherit; font-size: 13px; color: #c9d1e0; background: #151c2e; border: 1px solid #2a3347; border-radius: 6px; padding: 4px 10px; cursor: pointer; }
+.ex-gpick button[aria-pressed="true"] { background: #234fe5; border-color: #234fe5; color: #fff; }

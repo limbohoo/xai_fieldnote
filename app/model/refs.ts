@@ -28,6 +28,8 @@ export const REFS: Record<string, Ref> = {
   wachter: { cite: 'Wachter, S., Mittelstadt, B., & Russell, C. (2017). Counterfactual explanations without opening the black box. Harvard Journal of Law & Technology, 31(2).', use: B('反事实解释：改变输入，看结论怎么变。', 'Counterfactual explanation: change the input and see how the conclusion changes.') },
   doshi: { cite: 'Doshi-Velez, F., & Kim, B. (2017). Towards a rigorous science of interpretable machine learning. arXiv:1702.08608.', url: 'https://arxiv.org/abs/1702.08608', use: B('评估解释的框架：先判断对不对，再判断解释忠不忠实，再判断人看没看懂。', 'The evaluation framework: is it right, is the explanation faithful, do people understand it.') },
   domingos: { cite: 'Domingos, P., & Pazzani, M. (1997). On the optimality of the simple Bayesian classifier under zero-one loss. Machine Learning, 29, 103–130.', verify: true, use: B('朴素贝叶斯：排序可以很好，但概率本身往往不准、偏自信。', 'Naive Bayes: the ranking can be good while the probabilities themselves are often inaccurate and over-confident.') },
+  gigerenzer: { cite: 'Gigerenzer, G., & Hoffrage, U. (1995). How to improve Bayesian reasoning without instruction: Frequency formats. Psychological Review, 102(4), 684–704.', verify: true, use: B('把概率换成“1000 只猫里有几只”（自然频数）后，人更容易理解贝叶斯更新。本页第 08 步用这个讲法。', 'Re-stating probabilities as "out of 1000 cats, how many" (natural frequencies) makes Bayesian updating much easier to follow. Step 08 of this page uses that framing.') },
+  b3b1: { cite: '3Blue1Brown. (2019). Bayes theorem, the geometry of changing beliefs [video / lesson].', url: 'https://www.3blue1brown.com/lessons/bayes-theorem', verify: true, use: B('“新证据来了，先把不符合的情形划掉，再重新数占比”的几何讲法。', 'The geometric telling: when new evidence arrives, cross out the cases that do not fit, then recount the shares.') },
   cohen: { cite: 'Cohen, J. (1960). A coefficient of agreement for nominal scales. Educational and Psychological Measurement, 20(1), 37–46.', use: B('两个标注者的一致性（κ）。', 'Agreement between two annotators (κ).') },
   docs: { cite: 'Project docs: ml/share/docs/反应识别与事件报告.md; Colab CatPose_XAI_Tutorial §5.10–5.12; code ml/catpose/{reactions,interpret,smoothing}.py.', use: B('本页数字和规则的出处：门槛、概率、窗口都能在这些文件里逐行找到。', 'Where this page\'s numbers and rules come from: thresholds, probabilities and windows can be found line by line in these files.') },
 };
@@ -41,19 +43,19 @@ export const STAGE_REFS: Record<string, string[]> = {
   baseline: ['leys', 'rousseeuw'],
   rules: ['fgs', 'bennett', 'catsprot', 'humphrey', 'docs'],
   vote: ['docs'],
-  guess: ['fgs', 'bennett', 'leyhausen', 'hall98', 'humphrey', 'catsprot', 'koh', 'domingos', 'cohen', 'docs'],
+  guess: ['gigerenzer', 'b3b1', 'fgs', 'bennett', 'leyhausen', 'hall98', 'humphrey', 'catsprot', 'koh', 'domingos', 'cohen', 'docs'],
   check: ['wachter', 'miller', 'doshi', 'cohen', 'koh'],
 };
 
 /* nodes that need their own "why this number" */
 export const NODE_WHY: Record<string, { why: Bi; refs: string[]; limit: Bi }> = {
-  'guess.prior': {
+  'guess.start': {
     why: B('起始概率回答的是：只知道标签、还没看后续行为时，这个行为更常对应哪种状态。大小关系是我们读文献方向定的：耳朵压低时，耳朵位置是猫面部表情量表里的动作单元，所以“紧张”最高（0.40）；但同一个动作也出现在“专注地听”时，所以专注给 0.30，不让紧张独占。突然不动既可能是害怕，也可能是捕猎序列里的潜伏，所以紧张 0.45、想玩 0.20。注意到了（耳朵竖高）更像警惕 / 好奇（0.50）。动起来了则以想玩（0.40）和好奇（0.30）为主。',
       'The starting odds answer: knowing only the label, before seeing any later behaviour, which state does this behaviour more often go with. The ordering is our reading of the direction of the literature: for "ears back", ear position is an action unit of the Feline Grimace Scale, so "tense" is highest (0.40); but the same action also appears when listening attentively, so attentive gets 0.30 and tense does not take it all. Freezing can be fear or the stalking phase of the predatory sequence, so tense 0.45 and playful 0.20. "Noticed" (ears up) is more wary / curious (0.50). "Moving" is mostly playful (0.40) and curious (0.30).'),
     refs: ['fgs', 'leyhausen', 'bennett', 'catsprot', 'docs'],
     limit: B('文献只给出方向，没有给出这些具体数值；“耳朵压低 → 紧张 0.40”是我们的估计，不是论文里的结果。Bennett 等（2017）还提醒，与恐惧最相关的是眨眼、嘴部和头部转向，所以耳朵这条线索本身就偏弱。这 20 个数没有被标注检验过。', 'The literature gives a direction, not these exact numbers; "ears back → tense 0.40" is our estimate, not a result from a paper. Bennett et al. (2017) also warn that the actions most related to fear are blinking, mouth and head turning, so the ear cue is weak to begin with. None of these 20 numbers has been checked against annotation.'),
   },
-  'guess.lik': {
+  'guess.cue.table': {
     why: B('每条线索一行：猫处在某种状态时，这条线索出现的可能。大小关系的依据：紧张的猫更常随后躲开或跑开（0.60 / 0.55，放松时只有 0.05 / 0.02）；扑玩在想玩时最高（0.70），因为物体玩耍与捕猎的结构相同；放松时更常很快平静下来（0.60）。',
       'One row per cue: how likely the cue appears when the cat is in each state. The ordering: tense cats more often move or run away afterwards (0.60 / 0.55 against 0.05 / 0.02 when relaxed); pouncing is highest when playful (0.70), since object play has the structure of predation; relaxed cats more often settle quickly (0.60).'),
     refs: ['leyhausen', 'hall98', 'humphrey', 'docs'],

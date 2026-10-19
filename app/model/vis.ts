@@ -9,5 +9,6 @@ export type Vis =
   | { t: 'table'; head: string[]; rows: { label: string; cells: string[]; hi?: boolean }[]; hiCol?: number; caption?: string }
   | { t: 'checks'; items: { text: string; ok: boolean | null }[]; caption?: string }
   | { t: 'chain'; items: { label: string; state: 'on' | 'off' | 'dim' }[]; caption?: string }
+  | { t: 'crowd'; groups: { label: string; color: string; total: number; keep: number }[]; caption?: string }
   | { t: 'points'; pts: { x: number; y: number; color: string; r?: number }[]; segs?: { a: [number, number]; b: [number, number]; color: string; dash?: boolean }[]; caption?: string };
 

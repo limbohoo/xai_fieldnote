@@ -53,13 +53,12 @@ function Inner({ clip, events, setLang }: { clip: ClipData; events: EventRec[]; 
   useEffect(() => {
     const fmax = {} as Record<FeatureKey, number>;
     FEATURES.forEach((k, j) => { fmax[k] = Math.max(1e-6, ...clip.frames.map((x) => { const v = x.raw?.[j]; return fin(v) ? Math.abs(v) : 0; })); });
-    const a = createScene(host.current!, { lang, base, clip, out, events, checks: events.map(checkEvent), fmax }, (i) => setSel(i), (c) => { setCol(c); setSel(7); setTab('numbers'); }, (id) => { const n = nodeById(id); if (n) setDetail(n.level === 3 ? { l2: n.parent, l3: n.id } : { l2: n.id, l3: null }); });
+    const a = createScene(host.current!, { lang, base, clip, out, events, checks: events.map(checkEvent), fmax }, (i) => { setSel(i); setDetail(null); }, (c) => { setCol(c); setSel(7); setTab('numbers'); }, (id) => { const n = nodeById(id); if (!n) return; setSel(Math.max(0, STAGE_IDS.indexOf(n.stage))); setDetail(n.level === 3 ? { l2: n.parent, l3: n.id } : { l2: n.id, l3: null }); });
     api.current = a; const { detail: dt, ...st } = live.current; a.select(st.sel, !dt); a.update(st); a.setView(dt ? { stage: st.sel, ...dt } : null);
     return () => { a.dispose(); api.current = null; };
   }, [clip, out, events, lang, base]);
   useEffect(() => { api.current?.update({ fi, kfi, feat, gl, gc, col, ps }); }, [fi, kfi, feat, gl, gc, col, ps, out, lang]);
-  useEffect(() => { api.current?.select(sel, follow && !live.current.detail); if (live.current.detail) { const first = childrenOf(STAGE_IDS[sel])[0]?.id ?? null; setDetail({ l2: first, l3: null }); } }, [sel]);
-  useEffect(() => { api.current?.setView(detail ? { stage: sel, ...detail } : null); }, [detail]);
+  useEffect(() => { const a = api.current; if (!a) return; a.select(sel, false); if (detail) a.setView({ stage: sel, ...detail }); else a.setView(null, follow); }, [sel, detail]);
   const enter = () => setDetail({ l2: childrenOf(STAGE_IDS[sel])[0]?.id ?? null, l3: null });
   const up = () => setDetail((d) => (d && d.l3 ? { l2: d.l2, l3: null } : d && d.l2 ? { l2: null, l3: null } : null));
   useEffect(() => {
@@ -93,9 +92,9 @@ function Inner({ clip, events, setLang }: { clip: ClipData; events: EventRec[]; 
     <div className="ex">
       <div className="ex-scene">
         <div ref={host} className="ex-canvas" role="img" aria-label={t('系统的 3D 模型：九个步骤自下而上排成一摞，可拖动旋转、滚轮缩放、点击选择', 'The system as a 3D model: nine stages stacked bottom to top. Drag to rotate, scroll to zoom, click to select.')} />
-        {detail ? null : <nav className="ex-rail" aria-label={t('步骤', 'Stages')}>
-          {stages.map((s, i) => <button key={s.id} aria-current={i === sel ? 'step' : undefined} onClick={() => setSel(i)}><i>{s.no}</i><span>{s.name}</span></button>)}
-        </nav>}
+        <nav className="ex-rail" aria-label={t('步骤', 'Stages')}>
+          {stages.map((s, i) => <button key={s.id} aria-current={i === sel ? 'step' : undefined} onClick={() => { setSel(i); setDetail(null); }}><i>{s.no}</i><span>{s.name}</span></button>)}
+        </nav>
         <div className="ex-top">
           <button onClick={() => setPlaying((p) => !p)} aria-label={playing ? t('暂停', 'Pause') : t('播放', 'Play')}>{playing ? '❚❚' : '▶'}</button>
           <button onClick={() => setSpeed((s) => (s === 1 ? 3 : s === 3 ? 8 : 1))} aria-label={t('播放速度', 'Speed')}>{speed}×</button>

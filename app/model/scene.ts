@@ -3,16 +3,16 @@ import { OrbitControls } from 'three/examples/jsm/controls/OrbitControls.js';
 import { FEATURES, LIK, PRIOR, STATES, Z, fin, type Check, type ClipData, type EventRec, type FeatureKey, type Step } from '../case/core';
 import { FIDX, LCOL } from '../case/vocab';
 import { NODES, STAGE_IDS, childrenOf, type Node } from './nodes';
-import { CH, CW, drawVis } from './vis';
+import { buildVis3D, disposeObj, disposeObj3dCaches, type Mode } from './obj3d';
 import { cueKeys, cueName, featShort, featName, rp, stateShort, type Lang } from './i18n';
 
 /* The model as a stack of 3D objects, bottom to top: one object per stage, each showing the actual tensor of the chosen frame. */
 export interface SceneData { lang: Lang; base: ReturnType<typeof import('../case/core').run>['base']; clip: ClipData; out: Step[]; events: EventRec[]; checks: Check[]; fmax: Record<FeatureKey, number> }
 export interface SceneState { fi: number; kfi: number; feat: FeatureKey; gl: string; gc: string[]; col: number; ps: Record<string, number> }
 export interface View { stage: number; l2: string | null; l3: string | null }
-export interface SceneApi { update: (s: SceneState) => void; select: (i: number, fly: boolean) => void; setView: (v: View | null) => void; overview: () => void; dispose: () => void }
+export interface SceneApi { update: (s: SceneState) => void; select: (i: number, fly: boolean) => void; setView: (v: View | null, flyNull?: boolean) => void; overview: () => void; dispose: () => void }
 
-export const GAP = 12;
+export const GAP = 22;
 const NAMES: Record<Lang, string[]> = { zh: ['找猫', '标点', '防抖', '量特征', '和平时比', '套规则', '投票', '推测', '检验'], en: ['Detect', 'Keypoints', 'Smooth', 'Features', 'Baseline', 'Rules', 'Vote', 'Guess', 'Check'] };
 const FCOL = ['#6c9bff', '#ffb84d', '#4fd08c', '#8a94a6', '#8a94a6', '#ff7a7a'];
 
@@ -182,10 +182,10 @@ function sCheck(g: THREE.Group, d: SceneData): Upd {
 export function createScene(el: HTMLElement, d: SceneData, onPick: (i: number) => void, onCol: (c: number) => void, onNode: (id: string) => void): SceneApi {
   const W = () => Math.max(1, el.clientWidth), H = () => Math.max(1, el.clientHeight);
   const renderer = new THREE.WebGLRenderer({ antialias: true }); renderer.setPixelRatio(Math.min(2, devicePixelRatio)); renderer.setSize(W(), H()); renderer.setClearColor('#05070b'); el.appendChild(renderer.domElement);
-  const scene = new THREE.Scene(); scene.fog = new THREE.Fog('#05070b', 40, 110);
+  const scene = new THREE.Scene(); scene.fog = new THREE.Fog('#05070b', 120, 700);
   scene.add(new THREE.AmbientLight('#ffffff', 0.9)); const sun = new THREE.DirectionalLight('#ffffff', 1.6); sun.position.set(6, 10, 12); scene.add(sun);
-  const cam = new THREE.PerspectiveCamera(40, W() / H(), 0.1, 300);
-  const ctl = new OrbitControls(cam, renderer.domElement); ctl.enableDamping = true; ctl.maxDistance = 90; ctl.minDistance = 3;
+  const cam = new THREE.PerspectiveCamera(40, W() / H(), 0.1, 1500);
+  const ctl = new OrbitControls(cam, renderer.domElement); ctl.enableDamping = true; ctl.maxDistance = 500; ctl.minDistance = 3;
 
   const colBars: THREE.Mesh[] = [], reg: Reg = (m, c) => { m.userData.col = c; colBars.push(m); };
   const builders: ((g: THREE.Group, d: SceneData, reg: Reg) => Upd)[] = [sDetect, sKeypoints, sSmooth, sFeatures, sBaseline, sSpace, sVote, sGuess, sCheck];
@@ -201,53 +201,53 @@ export function createScene(el: HTMLElement, d: SceneData, onPick: (i: number) =
   const NP = 10, streams = stages.slice(0, -1).map((_, i) => { const geo = new THREE.BufferGeometry(); geo.setAttribute('position', new THREE.Float32BufferAttribute(new Float32Array(NP * 3), 3)); const p = new THREE.Points(geo, new THREE.PointsMaterial({ color: '#6c9bff', size: 0.2, transparent: true, opacity: 0.9 })); p.frustumCulled = false; scene.add(p);
     scene.add(new THREE.Line(new THREE.BufferGeometry().setFromPoints([new THREE.Vector3(0, i * GAP + 4.2, 0), new THREE.Vector3(0, (i + 1) * GAP - 4.2, 0)]), new THREE.LineBasicMaterial({ color: '#1d2a4d' }))); return geo; });
 
-    /* second and third level: cards of the parts inside one stage, laid out as a tree */
-  const SW = 7.6, SH = (SW * CH) / CW, DX = 9.2, DY = -6.4;
-  interface Slab { node: Node; mesh: THREE.Mesh; cv: HTMLCanvasElement; tex: THREE.CanvasTexture; edge: THREE.LineSegments; front: THREE.MeshBasicMaterial; pos: THREE.Vector3 }
-  const details = new Map<number, { g: THREE.Group; slabs: Slab[] }>();
+    /* the whole structure at once: one row per stage, its parts (level 2) to the right, their smallest steps (level 3) below */
+  const DX = 11.5, X0 = 16, DY = -9.5;
+  interface Obj { node: Node; g: THREE.Group; content: THREE.Group; hit: THREE.Mesh; title: ReturnType<typeof makeLabel>; sig: string; pos: THREE.Vector3; stage: number }
+  const objs: Obj[] = [];
   let view: View | null = null, last: SceneState | null = null;
-  const drawSlab = (sl: Slab) => { if (!last) return; drawVis(sl.cv, sl.node.vis({ d, s: last, lang: d.lang, ps: last.ps }), sl.node.title[d.lang]); sl.tex.needsUpdate = true; };
-  const buildDetail = (i: number) => {
-    const g = new THREE.Group(); g.position.set(70, i * GAP, 0); scene.add(g);
-    const slabs: Slab[] = [], l2 = childrenOf(STAGE_IDS[i]);
-    const mk = (node: Node, x: number, y: number) => {
-      const cv = document.createElement('canvas'); cv.width = CW; cv.height = CH; const tex = new THREE.CanvasTexture(cv); tex.colorSpace = THREE.SRGBColorSpace;
-      const side = new THREE.MeshStandardMaterial({ color: '#141b2d' }), front = new THREE.MeshBasicMaterial({ map: tex });
-      const mesh = new THREE.Mesh(new THREE.BoxGeometry(SW, SH, 0.3), [side, side, side, side, front, side]); mesh.position.set(x, y, 0); mesh.userData.node = node.id; g.add(mesh);
-      const edge = new THREE.LineSegments(new THREE.EdgesGeometry(mesh.geometry), new THREE.LineBasicMaterial({ color: '#2a3550' })); edge.position.copy(mesh.position); g.add(edge);
-      const sl: Slab = { node, mesh, cv, tex, edge, front, pos: mesh.position.clone() }; slabs.push(sl); return sl;
-    };
+  const modeOf = (id: string): Mode => { const cur = view?.l3 ?? view?.l2; return !cur || id === cur ? 'on' : 'path'; };
+  const refresh = (o: Obj) => {
+    if (!last) return; const m = modeOf(o.node.id), v = o.node.vis({ d, s: last, lang: d.lang, ps: last.ps }), sig = m + JSON.stringify(v);
+    if (sig === o.sig) return; o.sig = sig; disposeObj(o.content); o.content.clear(); o.content.add(buildVis3D(v, m));
+  };
+  const tmp = new THREE.Vector3();
+  const refreshNear = () => objs.forEach((o) => { o.g.getWorldPosition(tmp); if (!o.sig || tmp.distanceTo(cam.position) < 75) refresh(o); });
+  const line = (a: THREE.Vector3, b: THREE.Vector3, c = '#2a3550') => scene.add(new THREE.Line(new THREE.BufferGeometry().setFromPoints([a, b]), new THREE.LineBasicMaterial({ color: c })));
+  STAGE_IDS.forEach((sid, i) => {
+    const l2 = childrenOf(sid);
     l2.forEach((n, k) => {
-      const x = (k - (l2.length - 1) / 2) * DX; mk(n, x, 0);
-      if (k < l2.length - 1) g.add(new THREE.Line(new THREE.BufferGeometry().setFromPoints([new THREE.Vector3(x + SW / 2, 0, 0), new THREE.Vector3(x + DX - SW / 2, 0, 0)]), new THREE.LineBasicMaterial({ color: '#3a4764' })));
-      childrenOf(n.id).forEach((c3, j) => { mk(c3, x, DY * (j + 1)); g.add(new THREE.Line(new THREE.BufferGeometry().setFromPoints([new THREE.Vector3(x, -SH / 2, 0), new THREE.Vector3(x, DY * (j + 1) + SH / 2, 0)]), new THREE.LineBasicMaterial({ color: '#3a4764' }))); });
+      const x = X0 + k * DX, y = i * GAP, mk = (node: Node, yy: number) => {
+        const og = new THREE.Group(); og.position.set(x, yy, 0); scene.add(og); const content = new THREE.Group(); og.add(content);
+        const title = makeLabel(node.title[d.lang], '#e6ebf5', 0.62); title.sprite.position.set(0, 4.3, 0); og.add(title.sprite);
+        const hit = new THREE.Mesh(new THREE.BoxGeometry(10.4, 7.6, 7), new THREE.MeshBasicMaterial({ transparent: true, opacity: 0, depthWrite: false })); hit.userData.node = node.id; og.add(hit);
+        const o: Obj = { node, g: og, content, hit, title, sig: '', pos: og.position.clone(), stage: i }; objs.push(o); return o;
+      };
+      mk(n, y);
+      line(new THREE.Vector3(k === 0 ? 6 : x - DX + 5.4, y, 0), new THREE.Vector3(x - 5.4, y, 0), '#3a4764');
+      childrenOf(n.id).forEach((c3, j) => { mk(c3, y + DY * (j + 1)); line(new THREE.Vector3(x, y - 4, 0), new THREE.Vector3(x, y + DY * (j + 1) + 4.8, 0), '#3a4764'); });
     });
-    const det = { g, slabs }; details.set(i, det); return det;
-  };
-  const highlight = () => {
-    if (!view) return; const det = details.get(view.stage); if (!det) return;
-    det.slabs.forEach((sl) => { const id = sl.node.id, cur = view!.l3 ?? view!.l2, on = id === cur, onPath = !!cur && (cur.startsWith(id + '.') || id === view!.l2);
-      sl.front.color.set(on ? '#ffffff' : onPath ? '#cfd6e6' : '#8a92a6'); (sl.edge.material as THREE.LineBasicMaterial).color.set(on ? '#ffffff' : onPath ? '#6c9bff' : '#2a3550'); });
-  };
+  });
+  const maxParts = Math.max(...STAGE_IDS.map((sid) => childrenOf(sid).length));
+  const header = (txt: string, x: number) => { const h = makeLabel(txt, '#6c9bff', 1.1); h.sprite.position.set(x, 9 * GAP - 4, 0); scene.add(h.sprite); };
+  header(d.lang === 'en' ? 'LEVEL 1: THE NINE STAGES' : '第一级：九层', 0); header(d.lang === 'en' ? 'LEVEL 2: PARTS OF EACH STAGE  →   (LEVEL 3 BELOW)' : '第二级：每层的部件 →（第三级在下方）', X0 + ((maxParts - 1) * DX) / 2);
 
   let sel = 0; const goalPos = new THREE.Vector3(), goalTgt = new THREE.Vector3(); let flying = false;
   const fly = (pos: THREE.Vector3, tgt: THREE.Vector3) => { goalPos.copy(pos); goalTgt.copy(tgt); flying = true; };
-  const focus = (i: number) => fly(new THREE.Vector3(9, i * GAP + 5, 19), new THREE.Vector3(0, i * GAP + 0.5, 0));
-  cam.position.set(9, 5, 19); ctl.target.set(0, 0, 0);
+  const fitDist = (w: number) => (w / 2) / (Math.tan(THREE.MathUtils.degToRad(20)) * Math.min(1.7, cam.aspect));
+  const focus = (i: number) => { const n = childrenOf(STAGE_IDS[i]).length, right = X0 + (n - 1) * DX + 5.4, cx = (right - 5.4) / 2; fly(new THREE.Vector3(cx + 8, i * GAP + 8, fitDist(right + 10) + 6), new THREE.Vector3(cx, i * GAP - 3.5, 0)); };
+  cam.position.set(40, 10, 70); ctl.target.set(30, -3, 0);
   const api: SceneApi = {
-    update: (s) => { last = s; stages.forEach((st) => st.upd(s)); if (view) details.get(view.stage)?.slabs.forEach(drawSlab); },
-    setView(v) {
-      view = v;
-      if (!v) { focus(sel); return; }
-      const det = details.get(v.stage) ?? buildDetail(v.stage); det.slabs.forEach(drawSlab); highlight();
-      const id = v.l3 ?? v.l2, sl = det.slabs.find((x) => x.node.id === id), gp = det.g.position;
-      const fitDist = (w: number) => (w / 2) / (Math.tan(THREE.MathUtils.degToRad(20)) * Math.min(1.7, cam.aspect));
-      if (sl) fly(new THREE.Vector3(gp.x + sl.pos.x, gp.y + sl.pos.y + 0.2, fitDist(SW * 1.18)), new THREE.Vector3(gp.x + sl.pos.x, gp.y + sl.pos.y, 0));
-      else { const n = det.slabs.filter((x) => x.node.level === 2).length; fly(new THREE.Vector3(gp.x, gp.y - 2, fitDist(n * DX)), new THREE.Vector3(gp.x, gp.y - 2, 0)); }
+    update: (s) => { last = s; stages.forEach((st) => st.upd(s)); refreshNear(); },
+    setView(v, flyNull = true) {
+      view = v; refreshNear();
+      if (!v) { if (flyNull) focus(sel); return; }
+      const id = v.l3 ?? v.l2, ob = objs.find((x) => x.node.id === id);
+      if (ob) fly(new THREE.Vector3(ob.pos.x + 5.5, ob.pos.y + 6.2, fitDist(11.5) + 2), new THREE.Vector3(ob.pos.x, ob.pos.y - 0.3, 0)); else focus(v.stage);
     },
     select(i, f) { sel = i; stages.forEach((st, k) => { st.title.material.opacity = k === i ? 1 : 0.45; }); if (f) focus(i); },
-    overview: () => fly(new THREE.Vector3(26, 4 * GAP + 8, 52), new THREE.Vector3(0, 4 * GAP, 0)),
-    dispose() { cancelAnimationFrame(raf); ro.disconnect(); ctl.dispose(); scene.traverse((o) => { const m = o as THREE.Mesh; m.geometry?.dispose?.(); const mt = m.material as THREE.Material | THREE.Material[] | undefined; (Array.isArray(mt) ? mt : mt ? [mt] : []).forEach((x) => { (x as THREE.SpriteMaterial).map?.dispose(); x.dispose(); }); }); renderer.dispose(); renderer.domElement.remove(); },
+    overview: () => fly(new THREE.Vector3(60, 4 * GAP + 40, 330), new THREE.Vector3(X0 + ((maxParts - 1) * DX) / 2 - 10, 4 * GAP - 4, 0)),
+    dispose() { cancelAnimationFrame(raf); ro.disconnect(); ctl.dispose(); scene.traverse((o) => { const m = o as THREE.Mesh; m.geometry?.dispose?.(); const mt = m.material as THREE.Material | THREE.Material[] | undefined; (Array.isArray(mt) ? mt : mt ? [mt] : []).forEach((x) => { (x as THREE.SpriteMaterial).map?.dispose(); x.dispose(); }); }); renderer.dispose(); disposeObj3dCaches(); renderer.domElement.remove(); },
   };
 
   const ray = new THREE.Raycaster(), mouse = new THREE.Vector2(); let down: [number, number] | null = null;
@@ -256,16 +256,18 @@ export function createScene(el: HTMLElement, d: SceneData, onPick: (i: number) =
   cv.addEventListener('pointerup', (e) => {
     if (!down || Math.hypot(e.clientX - down[0], e.clientY - down[1]) > 4) return;
     const r = cv.getBoundingClientRect(); mouse.set(((e.clientX - r.left) / r.width) * 2 - 1, -((e.clientY - r.top) / r.height) * 2 + 1); ray.setFromCamera(mouse, cam);
-    if (view) { const det = details.get(view.stage); const sh = det ? ray.intersectObjects(det.slabs.map((x) => x.mesh), false)[0] : undefined; if (sh) onNode(sh.object.userData.node as string); return; }
+    const sh = ray.intersectObjects(objs.map((x) => x.hit), false)[0], st0 = ray.intersectObjects(stages.map((x) => x.hit), false)[0];
+    if (sh && (!st0 || sh.distance < st0.distance)) { onNode(sh.object.userData.node as string); return; }
     const bar = ray.intersectObjects(colBars, false)[0];
-    if (bar && sel === 7) { onCol(bar.object.userData.col as number); return; }
+    if (bar && sel === 7 && !(sh && sh.distance < bar.distance)) { onCol(bar.object.userData.col as number); return; }
     const hit = ray.intersectObjects(stages.map((s) => s.hit), false)[0]; if (hit) onPick(hit.object.userData.i as number);
   });
-  const clock = new THREE.Clock(); let raf = 0, prevT = 0;
+  const clock = new THREE.Clock(); let raf = 0, prevT = 0, lastRef = 0;
   const loop = () => {
     raf = requestAnimationFrame(loop); const t = clock.getElapsedTime(), dt = Math.min(0.25, t - prevT); prevT = t;
     if (flying) { const k = 1 - Math.exp(-dt * 5); cam.position.lerp(goalPos, k); ctl.target.lerp(goalTgt, k); if (cam.position.distanceTo(goalPos) < 0.05) flying = false; }
     streams.forEach((geo, i) => { const p = geo.getAttribute('position') as THREE.BufferAttribute; for (let k = 0; k < NP; k++) { const u = (t * 0.25 + k / NP) % 1; p.setXYZ(k, 0, i * GAP + 4.2 + u * (GAP - 8.4), 0); } p.needsUpdate = true; });
+    if (t - lastRef > 0.4) { lastRef = t; refreshNear(); }
     ctl.update(); renderer.render(scene, cam);
   };
   loop();

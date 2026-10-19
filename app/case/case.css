@@ -151,7 +151,7 @@
 .cl-panel-hint { margin: 0; font-size: 14px; color: #dbe6ff; }
 .cl-panel-grid { display: grid; grid-template-columns: minmax(0, 1fr); gap: 16px; }
 .cl-panel-media { display: grid; grid-template-columns: minmax(0, 1fr) minmax(0, 1fr); gap: 14px; }
-.cl-p-tile { position: relative; background: #0a1a5e; border-radius: 8px; overflow: hidden; aspect-ratio: 16 / 9; border: 1px solid rgba(255,255,255,.22); }
+.cl-p-tile { position: relative; background: #000; border-radius: 8px; overflow: hidden; aspect-ratio: 16 / 9; border: 1px solid rgba(255,255,255,.22); }
 .cl-p-tile .cl-canvas { display: block; width: 100%; height: 100%; }
 .cl-p-video iframe { position: absolute; inset: 0; width: 100%; height: 100%; border: 0; }
 .cl-p-off { position: absolute; inset: 0; display: grid; place-items: center; }
@@ -230,3 +230,6 @@
   .cl-mini-in { padding: 6px 24px; grid-template-columns: 84px minmax(0, 1fr); }
   .cl-p-ctrl { flex-wrap: wrap; }
 }
+
+.cl-p-skel { background: #fff; border-color: #fff; }
+.cl-p-skel .cl-p-cap { background: #eef2ff; color: #1739c4; }

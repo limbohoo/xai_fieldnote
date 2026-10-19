@@ -2052,3 +2052,10 @@ summary > span:last-child {
     display: none;
   }
 }
+
+/* Entry card to the case lab, below the hero of the reading guide. */
+.case-banner { display:grid; gap:8px; margin:40px auto 8px; max-width:1180px; padding:24px 28px; border:1px solid var(--border); border-left:3px solid var(--blue); border-radius:5px; background:#f5f7fb; }
+.case-banner strong { font-size:22px; font-weight:550; letter-spacing:-.03em; color:#151a24; }
+.case-banner-copy { font-size:15px; line-height:1.7; color:#4b586b; max-width:820px; }
+.case-banner:hover { background:#eef3ff; }
+.case-banner:focus-visible { outline:3px solid var(--blue); outline-offset:3px; }

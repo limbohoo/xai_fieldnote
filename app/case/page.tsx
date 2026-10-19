@@ -34,7 +34,7 @@ export default function CasePage() {
               <span className="cl-ev ev-proto">真实视频原型</span><small>只在一段视频上跑过，没有人工标注</small>
               <span className="cl-ev ev-hand">手设假设</span><small>是我们自己定的数字，还没有数据检验</small>
             </div>
-            <p className="cl-note">系统<b>不读猫的情绪</b>。它给出带把握程度的猜测，把握不够就不说。</p>
+            <p className="cl-note">系统<b>不读猫的情绪</b>。它给出带把握程度的推测，把握不够就不说。</p>
           </header>
         </CaseLab>
       </main>

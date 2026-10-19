@@ -230,6 +230,8 @@
   .cl-mini-in { padding: 6px 24px; grid-template-columns: 84px minmax(0, 1fr); }
   .cl-p-ctrl { flex-wrap: wrap; }
 }
+.cl-phone-bars { margin: 6px 0 10px; }
+.cl-phone-bars .cl-bar { grid-template-columns: 6.6em minmax(0, 1fr) 2.6em; font-size: 13px; }
 
 .cl-p-skel { background: #fff; border-color: #fff; }
 .cl-p-skel .cl-p-cap { background: #eef2ff; color: #1739c4; }

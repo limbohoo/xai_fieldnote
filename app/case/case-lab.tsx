@@ -475,6 +475,13 @@ function OwnerStep({ L, onWatch }: { L: L; onWatch: (i: number) => void }) {
             ) : (
               <div className="cl-phone-body">
                 <p className="cl-phone-time">片段 {L.ev} · {mmss(e.start_s)} · {RPLAIN[e.reaction]}</p>
+                <dl className="cl-fields" aria-label="事件标签（字段名与 labels_template.csv 一致）">
+                  <div><dt>event_id</dt><dd>{L.ev}</dd></div>
+                  <div><dt>time</dt><dd>{mmss(e.start_s)}</dd></div>
+                  <div><dt>reaction<small>行为标签</small></dt><dd>{RPLAIN[e.reaction]}</dd></div>
+                  <div><dt>system_guess<small>情绪标签</small></dt><dd style={g && g.show ? { color: STATE_COL[g.top] } : undefined}>{g && g.show ? STATE_TEXT[g.top] : '— 不给出'}</dd></div>
+                  <div><dt>confidence<small>把握</small></dt><dd>{g && g.show ? g.band : '低'}</dd></div>
+                </dl>
                 <button className="cl-play" onClick={() => onWatch(L.ev)}>▶ 看这一段视频（上面的画面会跳到这里）<span className="cl-num">④</span></button>
                 <div className="cl-phone-card">
                   <p className="cl-phone-concl" style={{ color: g && g.show ? STATE_COL[g.top] : '#667083' }}>

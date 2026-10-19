@@ -8,8 +8,8 @@ import {
 import { usePhotoAvailable, type Layers } from './viewer';
 import { MiniBar, Panel } from './panel';
 import { CatMap } from './catmap';
-
-import { COLAB_URL, CUES, DPLAIN, FEAT, FIDX, LCOL, RPLAIN, STATE_TEXT, TELL, VIDEO_ID, amount, driverText, fmt, mmss } from './vocab';
+import { useLang } from '../i18n';
+import { COLAB_URL, FIDX, LCOL, VIDEO_ID, amountOf, fmt, mmss, useVocab, type Vocab } from './vocab';
 
 /* ---------- small layout pieces ---------- */
 function Head({ no, en, title, desc }: { no: string; en: string; title: string; desc: string }) {
@@ -21,17 +21,22 @@ function Head({ no, en, title, desc }: { no: string; en: string; title: string; 
     </div>
   );
 }
-const EVID = { ok: ['已验证', 'ev-ok'], proto: ['真实视频原型', 'ev-proto'], hand: ['手设假设', 'ev-hand'] } as const;
+const EVID = {
+  ok: [['已验证', 'Verified'], 'ev-ok'], proto: [['真实视频原型', 'Real-video prototype'], 'ev-proto'], hand: [['手设假设', 'Hand-set hypothesis'], 'ev-hand'],
+} as const;
 function Evidence({ kind, note }: { kind: keyof typeof EVID; note?: string }) {
-  return <span className={'cl-ev ' + EVID[kind][1]}>{EVID[kind][0]}{note ? <small>{note}</small> : null}</span>;
+  const V = useVocab();
+  const [label, cls] = [EVID[kind][0], EVID[kind][1]];
+  return <span className={'cl-ev ' + cls}>{V.t(label[0], label[1])}{note ? <small>{note}</small> : null}</span>;
 }
 function More({ title, children }: { title: string; children: ReactNode }) {
+  const V = useVocab();
   return (
     <details className="cl-more">
       <summary><span>{title}</span><b aria-hidden="true">＋</b></summary>
       <div className="cl-more-body">
         {children}
-        <p className="cl-colab"><a href={COLAB_URL} target="_blank" rel="noreferrer">在 Colab 里打开完整笔记，可以自己运行 ↗</a></p>
+        <p className="cl-colab"><a href={COLAB_URL} target="_blank" rel="noreferrer">{V.t('在 Colab 里打开完整笔记，可以自己运行 ↗', 'Open the full notebook in Colab and run it yourself ↗')}</a></p>
       </div>
     </details>
   );
@@ -46,41 +51,42 @@ interface L {
 
 /* ---------- step 1 ---------- */
 function Step1({ L }: { L: L }) {
+  const V = useVocab();
   const f = L.frame, m = L.minConf;
   const nf = f.fc ? f.fc.filter((v) => v >= m).length : 0, nb = f.bc ? f.bc.filter((v) => v >= m).length : 0;
-  const tip = (i: number, n: string) => { const ok = (f.fc?.[i] ?? 0) >= m; return <span>{n}耳尖 <b className={'num ' + (ok ? 'ok' : 'bad')}>{(f.fc?.[i] ?? 0).toFixed(2)}{ok ? ' ✓' : ' ✗'}</b></span>; };
+  const tip = (i: number, n: string) => { const ok = (f.fc?.[i] ?? 0) >= m; return <span>{n} <b className={'num ' + (ok ? 'ok' : 'bad')}>{(f.fc?.[i] ?? 0).toFixed(2)}{ok ? ' ✓' : ' ✗'}</b></span>; };
   const both = f.fc && f.fc[24] >= m && f.fc[29] >= m;
   return (
     <section className="cl-step" id="s1">
-      <Head no="01" en="FIND THE CAT" title="找到猫，再找到它身上的点" desc="先在画面里框出猫，再在脸上标出 48 个点、身体上标出 20 个点（耳朵、眼睛、鼻子、四肢……）。每个点都带一个“把握”：网络自己觉得这个点标得有多准。" />
+      <Head no="01" en="FIND THE CAT" title={V.t('找到猫，再找到它身上的点', 'Find the cat, then find the points on it')} desc={V.t('先在画面里框出猫，再在脸上标出 48 个点、身体上标出 20 个点（耳朵、眼睛、鼻子、四肢……）。每个点都带一个“把握”：网络自己觉得这个点标得有多准。', 'First box the cat in the frame, then mark 48 points on the face and 20 on the body (ears, eyes, nose, limbs…). Each point carries a “confidence”: how sure the network is that the point is placed correctly.')} />
       <div className="cl-grid">
         <div className="cl-prose">
-          <p>把握低的点，系统不会拿去用。把右边的“把握门槛”往上拉，看画面里哪些点被丢掉，尤其是<b>两个耳尖</b>还在不在：耳朵相关的判断，全靠它们。</p>
-          <p>点标得不可靠时，系统宁可说“这一帧量不出来”，也不会硬凑一个数字。</p>
-          <Evidence kind="ok" note="在固定的测试图片上检查过" />
+          <p>{V.t('把握低的点，系统不会拿去用。把右边的“把握门槛”往上拉，看画面里哪些点被丢掉，尤其是', 'Points with low confidence are not used. Raise the “confidence bar” on the right and see which points get dropped, especially whether the ')}<b>{V.t('两个耳尖', 'two ear tips')}</b>{V.t('还在不在：耳朵相关的判断，全靠它们。', ' are still there: every ear-related judgement depends on them.')}</p>
+          <p>{V.t('点标得不可靠时，系统宁可说“这一帧量不出来”，也不会硬凑一个数字。', 'When points are unreliable, the system would rather say “cannot measure this frame” than force a number.')}</p>
+          <Evidence kind="ok" note={V.t('在固定的测试图片上检查过', 'Checked on fixed test images')} />
         </div>
         <div className="cl-widget">
-          <div className="cl-sl"><label htmlFor="cl-minconf">把握门槛</label>
+          <div className="cl-sl"><label htmlFor="cl-minconf">{V.t('把握门槛', 'Confidence bar')}</label>
             <input id="cl-minconf" type="range" min={0} max={0.9} step={0.05} value={m} onChange={(e) => L.setMinConf(+e.target.value)} />
             <span className="num">{m.toFixed(2)}</span></div>
           {f.fp ? (
             <dl className="cl-kv">
-              <dt>脸</dt><dd><span className="num">{nf} / 48</span> 个点够把握</dd>
-              <dt>身体</dt><dd><span className="num">{nb} / 20</span> 个点够把握</dd>
-              <dt>耳朵</dt><dd>{tip(24, '左')}　{tip(29, '右')}</dd>
+              <dt>{V.t('脸', 'Face')}</dt><dd><span className="num">{nf} / 48</span> {V.t('个点够把握', 'points confident enough')}</dd>
+              <dt>{V.t('身体', 'Body')}</dt><dd><span className="num">{nb} / 20</span> {V.t('个点够把握', 'points confident enough')}</dd>
+              <dt>{V.t('耳朵', 'Ears')}</dt><dd>{tip(24, V.t('左耳尖', 'Left ear tip'))}　{tip(29, V.t('右耳尖', 'Right ear tip'))}</dd>
             </dl>
-          ) : <p className="cl-warn">这一帧没有找到猫，所以没有标出任何点。系统在这种情况下不下判断，标签会变成“看不清”。</p>}
-          {f.fp && !both ? <p className="cl-warn">有一个耳尖的把握低于门槛，这一帧的“耳朵高度”量不出来，系统把它当作“缺失”。</p> : null}
-          <p className="cl-note">系统实际用的门槛是 0.25。这里拖动只影响这一帧的显示，以及下一步里这一帧的数字。</p>
+          ) : <p className="cl-warn">{V.t('这一帧没有找到猫，所以没有标出任何点。系统在这种情况下不下判断，标签会变成“看不清”。', 'No cat was found on this frame, so no points are drawn. In this case the system makes no judgement and the label becomes “cannot see”.')}</p>}
+          {f.fp && !both ? <p className="cl-warn">{V.t('有一个耳尖的把握低于门槛，这一帧的“耳朵高度”量不出来，系统把它当作“缺失”。', 'One ear tip is below the confidence bar, so “ear height” cannot be measured on this frame; the system treats it as missing.')}</p> : null}
+          <p className="cl-note">{V.t('系统实际用的门槛是 0.25。这里拖动只影响这一帧的显示，以及下一步里这一帧的数字。', 'The system actually uses a bar of 0.25. Dragging here only affects the display of this frame, and this frame’s numbers in the next step.')}</p>
         </div>
       </div>
-      <More title="展开：细节与验证 · Colab 理论版 §1–§3、§6.4">
+      <More title={V.t('展开：细节与验证 · Colab 理论版 §1–§3、§6.4', 'Expand: details and checks · Colab theory notebook §1–§3, §6.4')}>
         <ul className="cl-list">
-          <li><b>找猫：</b>用现成的找物体模型 YOLOv8。在 132 张测试图上，大一点的版本（YOLOv8s）找到了 93.9% 的猫，小一点的（YOLOv8n）是 90.2%。评估时还发现过一个错误：红蓝颜色通道弄反了，改正后找到率从 85.6% 升到 90.2%。</li>
-          <li><b>身体 20 点：</b>网络先给每个点画一张“可能在哪里”的热力图，再取最可能的位置（MobileNetV3 + FPN，soft-argmax）。79.4% 的点落在离真实位置不到猫身大小 10% 的范围内（PCK@0.1），平均误差是猫身大小的 8.3%（NME）。腿和爪还偏低（64–71%），猫贴近镜头时身体的点会乱。</li>
-          <li><b>脸 48 点：</b>同一种做法，但更准：99.0% 的点落在离真实位置不到 5% 的范围内（PCK@0.05），平均误差 1.21%。脸的位置先由身体的头部点推出，再用脸上的点修正一遍。</li>
-          <li><b>防抖：</b>点的位置每帧会抖一点，用 One-Euro 滤波：猫不动时压住抖动，猫快速动时不拖后腿 <Cite ids={[31]} />。</li>
-          <li><b>遮挡测试</b> <Cite ids={[32]} />：用灰块遮住画面的不同位置，看耳朵的点会跑多少，来检查网络是不是在看猫。在 1 张图、1 个点上，93% 的影响来自猫身上、78% 来自头部，没有发现它靠背景“作弊”。这只是一次粗略的检查，<b>不是对系统的正式评估</b>。</li>
+          <li><b>{V.t('找猫：', 'Finding the cat: ')}</b>{V.t('用现成的找物体模型 YOLOv8。在 132 张测试图上，大一点的版本（YOLOv8s）找到了 93.9% 的猫，小一点的（YOLOv8n）是 90.2%。评估时还发现过一个错误：红蓝颜色通道弄反了，改正后找到率从 85.6% 升到 90.2%。', 'An off-the-shelf object detector, YOLOv8. On 132 test images the larger version (YOLOv8s) found 93.9% of cats, the smaller (YOLOv8n) 90.2%. During evaluation we also found a bug: the red and blue channels were swapped; after fixing it, the detection rate rose from 85.6% to 90.2%.')}</li>
+          <li><b>{V.t('身体 20 点：', 'Body, 20 points: ')}</b>{V.t('网络先给每个点画一张“可能在哪里”的热力图，再取最可能的位置（MobileNetV3 + FPN，soft-argmax）。79.4% 的点落在离真实位置不到猫身大小 10% 的范围内（PCK@0.1），平均误差是猫身大小的 8.3%（NME）。腿和爪还偏低（64–71%），猫贴近镜头时身体的点会乱。', 'The network first draws a heatmap of where each point might be, then takes the most likely location (MobileNetV3 + FPN, soft-argmax). 79.4% of points fall within 10% of the cat’s body size from the true position (PCK@0.1); the mean error is 8.3% of body size (NME). Legs and paws are lower (64–71%), and body points get scrambled when the cat is close to the lens.')}</li>
+          <li><b>{V.t('脸 48 点：', 'Face, 48 points: ')}</b>{V.t('同一种做法，但更准：99.0% 的点落在离真实位置不到 5% 的范围内（PCK@0.05），平均误差 1.21%。脸的位置先由身体的头部点推出，再用脸上的点修正一遍。', 'The same approach, but more accurate: 99.0% of points fall within 5% from the true position (PCK@0.05); mean error 1.21%. The face position is first inferred from the head points on the body, then corrected with the face points.')}</li>
+          <li><b>{V.t('防抖：', 'Smoothing: ')}</b>{V.t('点的位置每帧会抖一点，用 One-Euro 滤波：猫不动时压住抖动，猫快速动时不拖后腿', 'point positions jitter slightly every frame; the One-Euro filter suppresses the jitter when the cat is still and does not lag when it moves fast')} <Cite ids={[31]} />。</li>
+          <li><b>{V.t('遮挡测试', 'Occlusion test')}</b> <Cite ids={[32]} />{V.t('：用灰块遮住画面的不同位置，看耳朵的点会跑多少，来检查网络是不是在看猫。在 1 张图、1 个点上，93% 的影响来自猫身上、78% 来自头部，没有发现它靠背景“作弊”。这只是一次粗略的检查，', ': grey blocks cover different parts of the picture to see how far the ear points move, checking whether the network is looking at the cat. On 1 image and 1 point, 93% of the influence came from the cat’s body and 78% from the head; no sign of background “cheating”. This is a rough check, ')}<b>{V.t('不是对系统的正式评估', 'not a formal evaluation of the system')}</b>{V.t('。', '.')}</li>
         </ul>
       </More>
     </section>
@@ -89,37 +95,38 @@ function Step1({ L }: { L: L }) {
 
 /* ---------- step 2 ---------- */
 function Step2({ L }: { L: L }) {
-  const F0 = FEAT[FIDX[L.feat]], j = FIDX[L.feat], f = L.frame;
+  const V = useVocab();
+  const F0 = V.FEAT[FIDX[L.feat]], j = FIDX[L.feat], f = L.frame;
   const rec = f.raw ? f.raw[j] : null;
   const gated = F0.gate && !!f.pose;
   return (
     <section className="cl-step" id="s2">
-      <Head no="02" en="MEASURE" title="把这些点变成几项看得懂的数字" desc="点本身只是一堆坐标。系统把它们量成几项数字，分别对应耳朵、眼睛和身体。" />
+      <Head no="02" en="MEASURE" title={V.t('把这些点变成几项看得懂的数字', 'Turn these points into a few numbers you can read')} desc={V.t('点本身只是一堆坐标。系统把它们量成几项数字，分别对应耳朵、眼睛和身体。', 'The points are just coordinates. The system measures them as a few numbers, for the ears, the eyes and the body.')} />
       <div className="cl-grid">
         <div className="cl-prose">
-          <p>每一项都除以“两眼之间的距离”或“身长”，所以猫离镜头远一点、头歪一点，都不影响。点一项，上面的画面会画出它是怎么量的。</p>
-          <p>有一个重要的保护：<b>猫转头或抬头时，耳朵和眼睛在画面里看起来会变扁</b>，量出的数字会骗人。这时系统直接暂停脸部的数字，不去硬算。</p>
+          <p>{V.t('每一项都除以“两眼之间的距离”或“身长”，所以猫离镜头远一点、头歪一点，都不影响。点一项，上面的画面会画出它是怎么量的。', 'Each measure is divided by the distance between the eyes or by body length, so the cat being farther from the lens or its head being tilted makes no difference. Click a measure and the picture above shows how it is measured.')}</p>
+          <p>{V.t('有一个重要的保护：', 'There is one important safeguard: ')}<b>{V.t('猫转头或抬头时，耳朵和眼睛在画面里看起来会变扁', 'when the cat turns its head or lifts it, the ears and eyes look flattened in the picture')}</b>{V.t('，量出的数字会骗人。这时系统直接暂停脸部的数字，不去硬算。', ', and the measured numbers would mislead. In that case the system pauses the face numbers rather than forcing them.')}</p>
           <Evidence kind="proto" />
         </div>
         <div className="cl-widget">
-          <div className="cl-seg" role="group" aria-label="选择特征">
-            {FEAT.map((x) => <button key={x.k} aria-pressed={x.k === L.feat} className={x.used ? '' : 'dim'} onClick={() => L.setFeat(x.k)}>{x.name}{x.used ? '' : '（未用）'}</button>)}
+          <div className="cl-seg" role="group" aria-label={V.t('选择特征', 'Choose a feature')}>
+            {V.FEAT.map((x) => <button key={x.k} aria-pressed={x.k === L.feat} className={x.used ? '' : 'dim'} onClick={() => L.setFeat(x.k)}>{x.name}{x.used ? '' : V.t('（未用）', ' (unused)')}</button>)}
           </div>
           <dl className="cl-kv">
-            <dt>它量的是什么</dt><dd>{F0.def}</dd>
-            <dt>可靠吗</dt><dd>{F0.rel}{F0.used ? '' : '；'}{F0.used ? null : <b>目前没有用在任何规则里</b>}</dd>
-            <dt>这一帧</dt>
-            <dd>{gated ? <><b>已暂停</b>：{f.pose!.includes('sideways') ? '头转向了侧面' : '头抬起或低下了'}，这一帧不算脸部的数字。</> :
-              !f.sm ? '没有找到猫' : <><span className="num">{fmt(rec, 3)}</span>{rec === null ? '（点不可信，算不出来）' : '（程序记录的值）'}</>}</dd>
+            <dt>{V.t('它量的是什么', 'What it measures')}</dt><dd>{F0.def}</dd>
+            <dt>{V.t('可靠吗', 'How reliable')}</dt><dd>{F0.rel}{F0.used ? '' : '；'}{F0.used ? null : <b>{V.t('目前没有用在任何规则里', 'Not used in any rule yet')}</b>}</dd>
+            <dt>{V.t('这一帧', 'This frame')}</dt>
+            <dd>{gated ? <><b>{V.t('已暂停', 'Paused')}</b>{V.t('：', ': ')}{f.pose!.includes('sideways') ? V.t('头转向了侧面', 'the head turned to the side') : V.t('头抬起或低下了', 'the head was lifted or lowered')}{V.t('，这一帧不算脸部的数字。', '; face numbers are not counted on this frame.')}</> :
+              !f.sm ? V.t('没有找到猫', 'No cat found') : <><span className="num">{fmt(rec, 3)}</span>{rec === null ? V.t('（点不可信，算不出来）', ' (points not reliable; cannot compute)') : V.t('（程序记录的值）', ' (value recorded by the program)')}</>}</dd>
           </dl>
         </div>
       </div>
-      <More title="展开：细节与验证 · Colab 理论版 §4.1–§4.13">
+      <More title={V.t('展开：细节与验证 · Colab 理论版 §4.1–§4.13', 'Expand: details and checks · Colab theory notebook §4.1–§4.13')}>
         <ul className="cl-list">
-          <li><b>为什么不受远近和歪头影响：</b>先用两眼的连线定出“水平”和“头顶方向”，再除以两眼间距，所以平移、缩放、头在画面里歪一点，数字都不变。耳朵这一项的依据，是猫面部表情研究里的“耳朵位置”动作 <Cite ids={[28, 29]} />。</li>
-          <li><b>每一项有多可靠：</b>用“模型的测量误差 ÷ 不同猫之间的真实差异”来衡量，越小越好：耳朵高度 0.15、眼睛睁开 0.41、耳朵外转 0.54、口鼻 0.52。低于约 0.3，才算“量到的是猫，而不是测量的噪声”，所以只有耳朵高度可以单独触发标签。</li>
-          <li><b>转头时暂停：</b>左右眼到鼻子的距离差得太多（超过 0.2，说明是侧脸），或者低头 / 抬头比平时多了 30% 以上，就暂停脸部的数字。否则抬头会被误当成“耳朵压低”，这在真实视频上出现过。</li>
-          <li><b>活动量：</b>取各个点速度的<b>中间值</b>，并且最高只算每秒 3 个身长，因为某个点被认错时，速度会突然爆表。头的高低和口鼻宽度，目前没有用在任何规则里。</li>
+          <li><b>{V.t('为什么不受远近和歪头影响：', 'Why distance and head tilt do not matter: ')}</b>{V.t('先用两眼的连线定出“水平”和“头顶方向”，再除以两眼间距，所以平移、缩放、头在画面里歪一点，数字都不变。耳朵这一项的依据，是猫面部表情研究里的“耳朵位置”动作', 'First the line between the eyes defines “horizontal” and “up”, then everything is divided by the eye distance, so shifting, scaling or tilting the head in the picture leaves the numbers unchanged. The basis for the ear measure is the “ear position” action unit in feline facial-expression research')} <Cite ids={[28, 29]} />。</li>
+          <li><b>{V.t('每一项有多可靠：', 'How reliable each measure is: ')}</b>{V.t('用“模型的测量误差 ÷ 不同猫之间的真实差异”来衡量，越小越好：耳朵高度 0.15、眼睛睁开 0.41、耳朵外转 0.54、口鼻 0.52。低于约 0.3，才算“量到的是猫，而不是测量的噪声”，所以只有耳朵高度可以单独触发标签。', 'Measured as “model measurement error ÷ true difference between cats”; smaller is better: ear height 0.15, eye opening 0.41, ear rotation 0.54, muzzle 0.52. Only below about 0.3 do we count it as “measuring the cat, not measurement noise”, so only ear height can trigger a label on its own.')}</li>
+          <li><b>{V.t('转头时暂停：', 'Pausing when the head turns: ')}</b>{V.t('左右眼到鼻子的距离差得太多（超过 0.2，说明是侧脸），或者低头 / 抬头比平时多了 30% 以上，就暂停脸部的数字。否则抬头会被误当成“耳朵压低”，这在真实视频上出现过。', 'If the distances from the left and right eyes to the nose differ too much (more than 0.2, meaning a side view), or the head is lowered or raised more than 30% beyond usual, the face numbers are paused. Otherwise a raised head is mistaken for “ears back”; this happened on real video.')}</li>
+          <li><b>{V.t('活动量：', 'Activity: ')}</b>{V.t('取各个点速度的', 'the ')}<b>{V.t('中间值', 'median')}</b>{V.t('，并且最高只算每秒 3 个身长，因为某个点被认错时，速度会突然爆表。头的高低和口鼻宽度，目前没有用在任何规则里。', ' of the point speeds, and capped at 3 body lengths per second, because when a point is misidentified its speed would suddenly explode. Head height and muzzle width are not used in any rule yet.')}</li>
         </ul>
       </More>
     </section>
@@ -128,8 +135,9 @@ function Step2({ L }: { L: L }) {
 
 /* ---------- step 3 ---------- */
 function Step3({ L }: { L: L }) {
+  const V = useVocab();
   const { base, out, calib, feat } = L;
-  const F0 = FEAT[FIDX[feat]], j = FIDX[feat], frames = L.clip.frames;
+  const F0 = V.FEAT[FIDX[feat]], j = FIDX[feat], frames = L.clip.frames;
   const vals = frames.map((f) => (f.sm && fin(f.sm[j]) ? (f.sm[j] as number) : null));
   const finite = vals.filter((v): v is number => v !== null);
   const W = 800, H = 190, pl = 6, pr = 6, pt = 10, pb = 18;
@@ -148,21 +156,21 @@ function Step3({ L }: { L: L }) {
   const anyBack = !!(cnt.ears_back || cnt.freeze);
   return (
     <section className="cl-step" id="s3">
-      <Head no="03" en="COMPARE WITH ITSELF" title="和它自己的平时比，不和“平均的猫”比" desc="不同的猫耳朵本来就长得不一样，折耳猫的耳朵永远是“低”的。所以每个数字都换算成：比这只猫自己的平时，多了或少了多少。" />
+      <Head no="03" en="COMPARE WITH ITSELF" title={V.t('和它自己的平时比，不和“平均的猫”比', 'Compare with its own usual, not with an “average cat”')} desc={V.t('不同的猫耳朵本来就长得不一样，折耳猫的耳朵永远是“低”的。所以每个数字都换算成：比这只猫自己的平时，多了或少了多少。', 'Cats differ: a fold-eared cat’s ears always look “low”. So each number is converted into how much more or less it is than this cat’s own usual.')} />
       <div className="cl-grid">
         <div className="cl-prose">
-          <p>系统先用视频开头的一小段，记下<b>这只猫自己的“平时的样子”</b>：每一项数字平时在哪里，平时会抖多大。之后每一帧都换算成一个“偏离度”（专业上叫 z 值）：偏离了平时多少个“正常抖动”。</p>
-          <p className="cl-formula">偏离度 z = (这一帧的数字 − 平时的中间值) ÷ 平时正常抖动的幅度</p>
-          <p>右边的按钮演示我们 10 月 13 日发现的<b>最大的不稳定来源</b>：同一段视频，只改“用开头多少帧来记平时”，最后各种标签所占的比例就完全不同。</p>
+          <p>{V.t('系统先用视频开头的一小段，记下', 'The system first uses a short stretch at the start of the video to record ')}<b>{V.t('这只猫自己的“平时的样子”', 'this cat’s own “usual look”')}</b>{V.t('：每一项数字平时在哪里，平时会抖多大。之后每一帧都换算成一个“偏离度”（专业上叫 z 值）：偏离了平时多少个“正常抖动”。', ': where each number usually sits, and how much it normally wobbles. Every later frame is then converted into a “deviation score” (the z value): how many “normal wobbles” it is from usual.')}</p>
+          <p className="cl-formula">{V.t('偏离度 z = (这一帧的数字 − 平时的中间值) ÷ 平时正常抖动的幅度', 'deviation z = (this frame’s number − usual middle value) ÷ size of normal wobble')}</p>
+          <p>{V.t('右边的按钮演示我们 10 月 13 日发现的', 'The buttons on the right demonstrate the ')}<b>{V.t('最大的不稳定来源', 'biggest source of instability we found on 13 October')}</b>{V.t('：同一段视频，只改“用开头多少帧来记平时”，最后各种标签所占的比例就完全不同。', ': on the same video, changing only “how many opening frames are used to learn usual” changes the share of each label completely.')}</p>
           <Evidence kind="proto" />
         </div>
         <div className="cl-widget">
-          <div className="cl-row"><span className="cl-note">用开头多少帧记它的平时：</span>
-            <div className="cl-seg" role="group" aria-label="基线长度">{[60, 90, 150, 300].map((n) => <button key={n} aria-pressed={calib === n} onClick={() => L.setCalib(n)}>{n} 帧</button>)}</div></div>
-          <div className="cl-seg" role="group" aria-label="选择特征">
-            {FEAT.map((x) => <button key={x.k} aria-pressed={x.k === feat} className={x.used ? '' : 'dim'} onClick={() => L.setFeat(x.k)}>{x.name}{x.used ? '' : '（未用）'}</button>)}
+          <div className="cl-row"><span className="cl-note">{V.t('用开头多少帧记它的平时：', 'How many opening frames to learn its usual:')}</span>
+            <div className="cl-seg" role="group" aria-label={V.t('基线长度', 'Baseline length')}>{[60, 90, 150, 300].map((n) => <button key={n} aria-pressed={calib === n} onClick={() => L.setCalib(n)}>{n} {V.t('帧', 'frames')}</button>)}</div></div>
+          <div className="cl-seg" role="group" aria-label={V.t('选择特征', 'Choose a feature')}>
+            {V.FEAT.map((x) => <button key={x.k} aria-pressed={x.k === feat} className={x.used ? '' : 'dim'} onClick={() => L.setFeat(x.k)}>{x.name}{x.used ? '' : V.t('（未用）', ' (unused)')}</button>)}
           </div>
-          <svg viewBox={`0 0 ${W} ${H}`} className="cl-chart" role="img" aria-label={`${F0.name}随时间的变化，以及它平时的范围`}>
+          <svg viewBox={`0 0 ${W} ${H}`} className="cl-chart" role="img" aria-label={V.t(`${F0.name}随时间的变化，以及它平时的范围`, `${F0.name} over time, and its usual range`)}>
             <rect x={X(0)} y={pt} width={Math.max(0, X(calEnd) - X(0))} height={H - pt - pb} fill="#234fe5" opacity={0.1} />
             {med !== undefined && sc !== undefined ? <>
               <rect x={pl} y={Y(med + sc)} width={W - pl - pr} height={Y(med - sc) - Y(med + sc)} fill="#7d8ba3" opacity={0.16} />
@@ -173,22 +181,22 @@ function Step3({ L }: { L: L }) {
             </> : null}
             <path d={d} fill="none" stroke="#151a24" strokeWidth={1.5} />
             <line x1={X(L.frame.t)} x2={X(L.frame.t)} y1={pt} y2={H - pb} stroke="#234fe5" strokeWidth={1.5} />
-            <text x={X(0) + 4} y={H - 4} fontSize={11} fill="#667083">蓝底：用来记“平时”的 {calib} 帧；灰带：平时 ± 1 个正常抖动；虚线：规则里的门槛</text>
+            <text x={X(0) + 4} y={H - 4} fontSize={11} fill="#667083">{V.t(`蓝底：用来记“平时”的 ${calib} 帧；灰带：平时 ± 1 个正常抖动；虚线：规则里的门槛`, `Blue: the ${calib} frames used to learn “usual”; grey band: usual ± 1 normal wobble; dashed: rule thresholds`)}</text>
           </svg>
           <dl className="cl-kv">
-            <dt>它平时</dt><dd className="num">{med === undefined || sc === undefined ? '（这项没有足够的数据）' : `中间值 ${fmt(med, 3)}，正常抖动 ${fmt(sc, 3)}${sc <= MODEL_ERROR[feat] + 1e-5 ? '（按测量误差取了下限）' : ''}`}</dd>
-            <dt>这一帧</dt><dd className="num">{fin(z) ? `偏离度 z = ${fmt(z, 2)} → ${Math.abs(z) < 1 ? '在它平时的范围里' : `偏离了平时 ${Math.abs(z).toFixed(1)} 个正常抖动`}` : L.step.calibrating ? '还在记平时的样子' : '没有数值'}</dd>
+            <dt>{V.t('它平时', 'Its usual')}</dt><dd className="num">{med === undefined || sc === undefined ? V.t('（这项没有足够的数据）', '(not enough data for this measure)') : V.t(`中间值 ${fmt(med, 3)}，正常抖动 ${fmt(sc, 3)}${sc <= MODEL_ERROR[feat] + 1e-5 ? '（按测量误差取了下限）' : ''}`, `middle value ${fmt(med, 3)}, normal wobble ${fmt(sc, 3)}${sc <= MODEL_ERROR[feat] + 1e-5 ? ' (floored at the measurement error)' : ''}`)}</dd>
+            <dt>{V.t('这一帧', 'This frame')}</dt><dd className="num">{fin(z) ? V.t(`偏离度 z = ${fmt(z, 2)} → ${Math.abs(z) < 1 ? '在它平时的范围里' : `偏离了平时 ${Math.abs(z).toFixed(1)} 个正常抖动`}`, `deviation z = ${fmt(z, 2)} → ${Math.abs(z) < 1 ? 'within its usual range' : `${Math.abs(z).toFixed(1)} normal wobbles from usual`}`) : L.step.calibrating ? V.t('还在记平时的样子', 'still learning the usual look') : V.t('没有数值', 'no value')}</dd>
           </dl>
-          <p><b>用 {calib} 帧记平时，整段视频的标签分布：</b>{order.filter((o) => cnt[o]).map((o) => <span key={o} className="cl-share" style={{ color: LCOL[o] }}>{RPLAIN[o]} {Math.round((cnt[o] / tot) * 100)}%</span>)}</p>
-          {!anyBack ? <p className="cl-warn">这样记“平时”，整段视频里没有一次“耳朵压低”或“突然不动”。同一只猫、同一段视频，只因为开头取的帧数不同。</p> : null}
+          <p><b>{V.t(`用 ${calib} 帧记平时，整段视频的标签分布：`, `Label shares over the whole video, with ${calib} frames used for usual:`)}</b>{order.filter((o) => cnt[o]).map((o) => <span key={o} className="cl-share" style={{ color: LCOL[o] }}>{V.RPLAIN[o]} {Math.round((cnt[o] / tot) * 100)}%</span>)}</p>
+          {!anyBack ? <p className="cl-warn">{V.t('这样记“平时”，整段视频里没有一次“耳朵压低”或“突然不动”。同一只猫、同一段视频，只因为开头取的帧数不同。', 'Learning “usual” this way, there is not a single “ears back” or “froze” in the whole video. Same cat, same video; only the number of opening frames differs.')}</p> : null}
         </div>
       </div>
-      <More title="展开：细节与验证 · Colab 理论版 §4.9–§4.10">
+      <More title={V.t('展开：细节与验证 · Colab 理论版 §4.9–§4.10', 'Expand: details and checks · Colab theory notebook §4.9–§4.10')}>
         <ul className="cl-list">
-          <li><b>为什么用“中间值”和 MAD，而不是平均值和标准差：</b>记平时的那一小段里，如果猫恰好有一次大动作，平均值会被拉歪；中间值和 MAD（每个数与中间值之差的中间值）不怕少数几帧的异常。乘上 1.4826 后，MAD 在正常情况下就等于标准差。完整的算式是 z = (这一帧的数字 − 中间值) ÷ max(1.4826 × MAD, 测量误差)。</li>
-          <li><b>为什么要设下限：</b>如果记平时的那段里猫几乎一动不动，“正常抖动”会趋近于 0，之后任何微小的抖动都会被放大成很大的偏离度。所以分母至少取模型自己的测量误差。各项的下限：耳朵高度 {MODEL_ERROR.ear_height}、耳朵外转 {MODEL_ERROR.ear_angle}°、眼睛开合 {MODEL_ERROR.eye_aperture}、口鼻 {MODEL_ERROR.muzzle_ratio}、头 {MODEL_ERROR.head_drop}、活动 {MODEL_ERROR.activity}。没加下限之前，在真实视频上出现过 40% 的误报。</li>
-          <li><b>实测有多敏感：</b>同一段 36 秒视频，用 60 / 90 / 150 / 300 帧记平时，记完平时之后的帧里，“耳朵压低 + 突然不动”分别占 0% / 32% / 28% / 34%：60 帧时一次都没有，300 帧时“耳朵压低”占 25%（150 帧时只有 7%）。结论：<b>正式测试前，先单独拍一段猫平静、脸朝镜头的视频，记下它的平时并存成文件，之后每次都读取这个文件</b>，不要依赖每段视频自己的开头。</li>
-          <li>“平时”只反映这只猫在<b>被记录的那一段</b>里的样子。如果那一段里它恰好很紧张，之后所有的偏离都会被算歪。</li>
+          <li><b>{V.t('为什么用“中间值”和 MAD，而不是平均值和标准差：', 'Why the middle value and MAD, not the mean and standard deviation: ')}</b>{V.t('记平时的那一小段里，如果猫恰好有一次大动作，平均值会被拉歪；中间值和 MAD（每个数与中间值之差的中间值）不怕少数几帧的异常。乘上 1.4826 后，MAD 在正常情况下就等于标准差。完整的算式是 z = (这一帧的数字 − 中间值) ÷ max(1.4826 × MAD, 测量误差)。', 'If the cat happens to make one big movement during the usual segment, the mean is pulled off; the middle value and MAD (the middle of each number’s distance from the middle value) are not thrown off by a few outlier frames. Multiplied by 1.4826, MAD equals the standard deviation under normal conditions. The full formula is z = (this frame’s number − middle value) ÷ max(1.4826 × MAD, measurement error).')}</li>
+          <li><b>{V.t('为什么要设下限：', 'Why there is a floor: ')}</b>{V.t('如果记平时的那段里猫几乎一动不动，“正常抖动”会趋近于 0，之后任何微小的抖动都会被放大成很大的偏离度。所以分母至少取模型自己的测量误差。各项的下限：耳朵高度 ', 'If the cat barely moves during the usual segment, “normal wobble” approaches 0 and any tiny later wobble becomes a huge deviation. So the denominator is at least the model’s own measurement error. Floors: ear height ')}{MODEL_ERROR.ear_height}{V.t('、耳朵外转 ', ', ear rotation ')}{MODEL_ERROR.ear_angle}°{V.t('、眼睛开合 ', ', eye opening ')}{MODEL_ERROR.eye_aperture}{V.t('、口鼻 ', ', muzzle ')}{MODEL_ERROR.muzzle_ratio}{V.t('、头 ', ', head ')}{MODEL_ERROR.head_drop}{V.t('、活动 ', ', activity ')}{MODEL_ERROR.activity}{V.t('。没加下限之前，在真实视频上出现过 40% 的误报。', '. Before the floor was added, 40% false alarms occurred on real video.')}</li>
+          <li><b>{V.t('实测有多敏感：', 'How sensitive it is in practice: ')}</b>{V.t('同一段 36 秒视频，用 60 / 90 / 150 / 300 帧记平时，记完平时之后的帧里，“耳朵压低 + 突然不动”分别占 0% / 32% / 28% / 34%：60 帧时一次都没有，300 帧时“耳朵压低”占 25%（150 帧时只有 7%）。结论：', 'On the same 36-second video, learning usual from 60 / 90 / 150 / 300 frames gives “ears back + froze” shares of 0% / 32% / 28% / 34% among the later frames: 60 frames gave none, while 300 frames gave “ears back” 25% (only 7% with 150). Conclusion: ')}<b>{V.t('正式测试前，先单独拍一段猫平静、脸朝镜头的视频，记下它的平时并存成文件，之后每次都读取这个文件', 'before a formal test, film a separate calm video of the cat facing the lens, record its usual and save it as a file, then read that file every time')}</b>{V.t('，不要依赖每段视频自己的开头。', ', rather than relying on each video’s own opening.')}</li>
+          <li>{V.t('“平时”只反映这只猫在', '“Usual” only reflects this cat within ')}<b>{V.t('被记录的那一段', 'the segment that was recorded')}</b>{V.t('里的样子。如果那一段里它恰好很紧张，之后所有的偏离都会被算歪。', '. If the cat happened to be very tense in that segment, every later deviation is miscalculated.')}</li>
         </ul>
       </More>
     </section>
@@ -197,8 +205,11 @@ function Step3({ L }: { L: L }) {
 
 /* ---------- step 4 ---------- */
 const Z4: FeatureKey[] = ['ear_height', 'ear_angle', 'eye_aperture', 'activity'];
-const Z4_NAME: Record<string, string> = { ear_height: '耳朵高度偏离', ear_angle: '耳朵外转偏离', eye_aperture: '眼睛睁开偏离', activity: '活动量偏离' };
+const Z4_NAME: Record<string, [string, string]> = {
+  ear_height: ['耳朵高度偏离', 'Ear height deviation'], ear_angle: ['耳朵外转偏离', 'Ear rotation deviation'], eye_aperture: ['眼睛睁开偏离', 'Eye opening deviation'], activity: ['活动量偏离', 'Activity deviation'],
+};
 function Step4({ L }: { L: L }) {
+  const V = useVocab();
   const [z, setZ] = useState<Record<string, number>>({ ear_height: 0, ear_angle: 0, eye_aperture: 0, activity: 0 });
   const [prev, setPrev] = useState('resting');
   const r = classify(z as ZMap, false, prev);
@@ -206,11 +217,11 @@ function Step4({ L }: { L: L }) {
   const act = prev === 'active' ? Z.ACTIVE_STAY : Z.ACTIVE, still = prev === 'freeze' ? Z.STILL_STAY : Z.STILL;
   const tipLow = z.ear_height <= -back, angle = z.ear_angle >= Z.AUX && (tipLow || z.ear_height <= -Z.EAR_CO), backOk = tipLow || angle;
   const rows: [Reaction, string, boolean][] = [
-    ['freeze', `耳朵压低，并且身体静止：活动量 ≤ ${still.toFixed(1)}`, backOk && z.activity <= still],
-    ['ears_back', `耳尖高度 ≤ ${(-back).toFixed(1)}；或耳朵外转 ≥ +2.0 且耳尖高度 ≤ −0.5`, backOk],
-    ['alert', `耳尖高度 ≥ +${up.toFixed(1)}，并且没有在快速活动（活动量 < ${act.toFixed(1)}）`, z.ear_height >= up && !(z.activity >= act)],
-    ['active', `活动量 ≥ +${act.toFixed(1)}`, z.activity >= act],
-    ['resting', '以上都不满足', true],
+    ['freeze', V.t(`耳朵压低，并且身体静止：活动量 ≤ ${still.toFixed(1)}`, `Ears back and the body still: activity ≤ ${still.toFixed(1)}`), backOk && z.activity <= still],
+    ['ears_back', V.t(`耳尖高度 ≤ ${(-back).toFixed(1)}；或耳朵外转 ≥ +2.0 且耳尖高度 ≤ −0.5`, `ear-tip height ≤ ${(-back).toFixed(1)}; or ear rotation ≥ +2.0 and ear-tip height ≤ −0.5`), backOk],
+    ['alert', V.t(`耳尖高度 ≥ +${up.toFixed(1)}，并且没有在快速活动（活动量 < ${act.toFixed(1)}）`, `ear-tip height ≥ +${up.toFixed(1)}, and not moving fast (activity < ${act.toFixed(1)})`), z.ear_height >= up && !(z.activity >= act)],
+    ['active', V.t(`活动量 ≥ +${act.toFixed(1)}`, `activity ≥ +${act.toFixed(1)}`), z.activity >= act],
+    ['resting', V.t('以上都不满足', 'None of the above'), true],
   ];
   const useNow = () => {
     const n: Record<string, number> = {};
@@ -219,40 +230,40 @@ function Step4({ L }: { L: L }) {
   };
   return (
     <section className="cl-step" id="s4">
-      <Head no="04" en="RULES" title="用几条能读懂的规则，得到行为标签" desc="规则就是几行“如果……就……”。下面是程序里的原样规则：拖动滑块当作假想的偏离度，看标签怎么变。" />
+      <Head no="04" en="RULES" title={V.t('用几条能读懂的规则，得到行为标签', 'A few readable rules turn the numbers into a behaviour label')} desc={V.t('规则就是几行“如果……就……”。下面是程序里的原样规则：拖动滑块当作假想的偏离度，看标签怎么变。', 'The rules are a few “if … then …” lines, exactly as in the program. Drag the sliders as hypothetical deviation scores and see how the label changes.')} />
       <div className="cl-grid">
         <div className="cl-prose">
-          <p>一个细节：一个标签出现之后，要<b>更明显地回到平时</b>才会消失（耳尖偏低 1.5 才出现，回到 1.0 以内才消失）。这样数字在门槛附近晃动时，标签不会来回闪。把“之前的标签”换一换，同样的数字会得到不同的结果。</p>
-          <p>标签描述的是<b>看得见的行为</b>，不是情绪：“耳朵压低”不等于“害怕”。</p>
-          <Evidence kind="proto" note="阈值是手设的，未经标注验证" />
+          <p>{V.t('一个细节：一个标签出现之后，要', 'One detail: once a label appears, it only goes away after the value ')}<b>{V.t('更明显地回到平时', 'returns clearly to usual')}</b>{V.t('才会消失（耳尖偏低 1.5 才出现，回到 1.0 以内才消失）。这样数字在门槛附近晃动时，标签不会来回闪。把“之前的标签”换一换，同样的数字会得到不同的结果。', '(ear tips must drop 1.5 to appear, and must come back within 1.0 to disappear). That way the label does not flicker when the numbers wobble near a threshold. Change the “previous label” and the same numbers give a different result.')}</p>
+          <p>{V.t('标签描述的是', 'Labels describe ')}<b>{V.t('看得见的行为', 'visible behaviour')}</b>{V.t('，不是情绪：“耳朵压低”不等于“害怕”。', ', not emotion: “ears back” is not the same as “afraid”.')}</p>
+          <Evidence kind="proto" note={V.t('阈值是手设的，未经标注验证', 'Thresholds are hand-set and not checked against annotations')} />
         </div>
         <div className="cl-widget">
           {Z4.map((k) => (
-            <div className="cl-sl" key={k}><label htmlFor={'cl-z-' + k}>{Z4_NAME[k]}</label>
+            <div className="cl-sl" key={k}><label htmlFor={'cl-z-' + k}>{V.t(Z4_NAME[k][0], Z4_NAME[k][1])}</label>
               <input id={'cl-z-' + k} type="range" min={-4} max={4} step={0.1} value={z[k]} onChange={(e) => setZ({ ...z, [k]: +e.target.value })} />
               <span className="num">{z[k].toFixed(1)}</span></div>
           ))}
-          <div className="cl-row"><label htmlFor="cl-prev" className="cl-note">之前的标签：</label>
+          <div className="cl-row"><label htmlFor="cl-prev" className="cl-note">{V.t('之前的标签：', 'Previous label: ')}</label>
             <select id="cl-prev" className="cl-btn" value={prev} onChange={(e) => setPrev(e.target.value)}>
-              {['resting', 'ears_back', 'freeze', 'alert', 'active'].map((k) => <option key={k} value={k}>{RPLAIN[k]}</option>)}
+              {['resting', 'ears_back', 'freeze', 'alert', 'active'].map((k) => <option key={k} value={k}>{V.RPLAIN[k]}</option>)}
             </select>
-            <button className="cl-btn" onClick={useNow}>用这一帧的真实值</button></div>
-          <p className="cl-verdict">标签：<span style={{ color: LCOL[r.key] }}>{RPLAIN[r.key]}</span></p>
+            <button className="cl-btn" onClick={useNow}>{V.t('用这一帧的真实值', 'Use this frame’s real values')}</button></div>
+          <p className="cl-verdict">{V.t('标签：', 'Label: ')}<span style={{ color: LCOL[r.key] }}>{V.RPLAIN[r.key]}</span></p>
           <div className="cl-tbl"><table>
-            <thead><tr><th>从上往下，第一条满足的就是标签</th><th>条件（已按“之前的标签”调整门槛）</th><th /></tr></thead>
+            <thead><tr><th>{V.t('从上往下，第一条满足的就是标签', 'The first one that holds from the top is the label')}</th><th>{V.t('条件（已按“之前的标签”调整门槛）', 'Condition (thresholds adjusted for the previous label)')}</th><th /></tr></thead>
             <tbody>{rows.map(([k, text, met]) => (
-              <tr key={k} className={k === r.key ? 'hit' : ''}><td>{RPLAIN[k]}</td><td>{text}</td>
-                <td className={met ? 'ok' : 'dimc'}>{k === r.key ? '◀ 这条' : met ? '满足，但前面的优先' : '不满足'}</td></tr>))}</tbody>
+              <tr key={k} className={k === r.key ? 'hit' : ''}><td>{V.RPLAIN[k]}</td><td>{text}</td>
+                <td className={met ? 'ok' : 'dimc'}>{k === r.key ? V.t('◀ 这条', '◀ this one') : met ? V.t('满足，但前面的优先', 'holds, but an earlier one takes priority') : V.t('不满足', 'does not hold')}</td></tr>))}</tbody>
           </table></div>
-          {r.drivers.length ? <p className="cl-note">触发它的条件：{r.drivers.map((d) => `${d.feature} ${d.z.toFixed(1)} ${d.test} ${d.bar.toFixed(1)}`).join('；')}</p> : null}
+          {r.drivers.length ? <p className="cl-note">{V.t('触发它的条件：', 'Conditions that triggered it: ')}{r.drivers.map((d) => `${d.feature} ${d.z.toFixed(1)} ${d.test} ${d.bar.toFixed(1)}`).join(V.t('；', '; '))}</p> : null}
         </div>
       </div>
-      <More title="展开：细节与验证 · Colab 理论版 §5.0">
+      <More title={V.t('展开：细节与验证 · Colab 理论版 §5.0', 'Expand: details and checks · Colab theory notebook §5.0')}>
         <ul className="cl-list">
-          <li><b>先描述，再解释：</b>动物行为学的做法是，先<b>描述</b>看得见的行为（记在一张“行为谱”里），再去<b>解释</b>它意味着什么。这一步只做第一层，不需要任何情绪标签 <Cite ids={[28]} />。</li>
-          <li><b>门槛的具体数字：</b>出现时，耳尖高度 ±1.5、耳朵外转 +2.0、眼睛睁开 +2.0、活动量 +2.0（动）或 −1.0（静止）；消失时放宽到耳尖 ±1.0、活动 +1.5、静止 −0.5。<b>这些数字是我们按文献的方向自己定的，没有经过人工标注检验。</b></li>
-          <li><b>只有可靠的数字才能单独触发：</b>耳尖高度可以；耳朵外转只在耳尖也偏低（至少 −0.5）时才能触发“耳朵压低”；眼睛睁开只当“注意到了什么”的补充。违反这一条，曾造成 40% 的误报。</li>
-          <li><b>防闪烁：</b>一个新标签要在最近 0.3 秒里占多数（至少 60% 的帧）才会显示。按时间而不是帧数算，电脑慢一点延迟也一样；用“占多数”而不是“连续 N 帧”，标签在两个相邻状态之间来回跳时也能切换过去。</li>
+          <li><b>{V.t('先描述，再解释：', 'Describe first, then explain: ')}</b>{V.t('动物行为学的做法是，先', 'Animal behaviour research first ')}<b>{V.t('描述', 'describes')}</b>{V.t('看得见的行为（记在一张“行为谱”里），再去', ' the visible behaviour (recorded in an “ethogram”), then ')}<b>{V.t('解释', 'explains')}</b>{V.t('它意味着什么。这一步只做第一层，不需要任何情绪标签 ', ' what it means. This step only does the first layer and needs no emotion labels ')}<Cite ids={[28]} />。</li>
+          <li><b>{V.t('门槛的具体数字：', 'The actual threshold values: ')}</b>{V.t('出现时，耳尖高度 ±1.5、耳朵外转 +2.0、眼睛睁开 +2.0、活动量 +2.0（动）或 −1.0（静止）；消失时放宽到耳尖 ±1.0、活动 +1.5、静止 −0.5。', 'To appear: ear-tip height ±1.5, ear rotation +2.0, eye opening +2.0, activity +2.0 (moving) or −1.0 (still); to disappear: relaxed to ear tips ±1.0, activity +1.5, still −0.5.')}<b>{V.t('这些数字是我们按文献的方向自己定的，没有经过人工标注检验。', 'These numbers are our own choice following the direction of the literature, and have not been checked against human annotation.')}</b></li>
+          <li><b>{V.t('只有可靠的数字才能单独触发：', 'Only reliable numbers can trigger on their own: ')}</b>{V.t('耳尖高度可以；耳朵外转只在耳尖也偏低（至少 −0.5）时才能触发“耳朵压低”；眼睛睁开只当“注意到了什么”的补充。违反这一条，曾造成 40% 的误报。', 'ear-tip height can; ear rotation can trigger “ears back” only when the ear tip is also low (at least −0.5); eye opening only supports “noticed something”. Breaking this rule once caused 40% false alarms.')}</li>
+          <li><b>{V.t('防闪烁：', 'Against flicker: ')}</b>{V.t('一个新标签要在最近 0.3 秒里占多数（至少 60% 的帧）才会显示。按时间而不是帧数算，电脑慢一点延迟也一样；用“占多数”而不是“连续 N 帧”，标签在两个相邻状态之间来回跳时也能切换过去。', 'A new label is shown only once it makes up the majority (at least 60% of frames) of the last 0.3 s. Counting in time rather than frames means a slower computer has the same delay; using a majority rather than “N consecutive frames” lets the label still switch when it jumps back and forth between two neighbouring states.')}</li>
         </ul>
       </More>
     </section>
@@ -261,6 +272,7 @@ function Step4({ L }: { L: L }) {
 
 /* ---------- step 5 ---------- */
 function Step5({ L }: { L: L }) {
+  const V = useVocab();
   const e = L.events[L.ev];
   const [reaction, setReaction] = useState<string>(e.reaction);
   const [cues, setCues] = useState<string[]>(e.interp?.cues ?? []);
@@ -269,46 +281,47 @@ function Step5({ L }: { L: L }) {
   const g = guess(reaction, cues, face);
   if (!g) return null;
   const order = g.post.map((_, i) => i).sort((a, b) => g.post[b] - g.post[a]);
-  const tell = TELL[`${g.top}|${g.second}`] || TELL[`${g.second}|${g.top}`] || '';
+  const tell = V.TELL[`${g.top}|${g.second}`] || V.TELL[`${g.second}|${g.top}`] || '';
   const decisive = cues.filter((c) => { const alt = guess(reaction, cues.filter((x) => x !== c), face)!; return alt.top !== g.top || alt.band !== g.band; });
-  const cueName = (c: string) => CUES.find((x) => x[0] === c)![1];
+  const cueName = (c: string) => V.CUES.find((x) => x[0] === c)![1];
+  const bandWord = (b: string) => (V.lang === 'en' ? { 高: 'high', 中: 'medium', 低: 'low' }[b] : b);
   return (
     <section className="cl-step" id="s5">
-      <Head no="05" en="WHAT HAPPENS NEXT" title="同一个动作可以有几种含义，所以看它接下来做什么" desc="耳朵压低，随后躲开更像紧张；随后去看个究竟，更像只是在专注听。所以系统不在这一刻下结论。" />
+      <Head no="05" en="WHAT HAPPENS NEXT" title={V.t('同一个动作可以有几种含义，所以看它接下来做什么', 'The same action can mean several things, so look at what comes next')} desc={V.t('耳朵压低，随后躲开更像紧张；随后去看个究竟，更像只是在专注听。所以系统不在这一刻下结论。', 'Ears back followed by moving away looks more like tension; followed by going to look, more like just listening. So the system draws no conclusion at this moment.')} />
       <div className="cl-grid">
         <div className="cl-prose">
-          <p>系统先给五种可能的状态一个“起点”（比如耳朵压低，起点偏向紧张），再让“它接下来 5 秒做了什么”一条一条去调整。选一个真实事件，再勾选或取消“随后发生的事”，看推测怎么变。</p>
-          <p><b>这些概率是我们按文献的方向自己定的，没有一条被标注数据检验过。</b>正因为它们决定了推测，才要把“为什么”摆出来；把握不够时，系统<b>不给出情绪</b>。</p>
+          <p>{V.t('系统先给五种可能的状态一个“起点”（比如耳朵压低，起点偏向紧张），再让“它接下来 5 秒做了什么”一条一条去调整。选一个真实事件，再勾选或取消“随后发生的事”，看推测怎么变。', 'The system first gives the five possible states a “starting point” (for ears back, the starting point leans to tension), then adjusts it one cue at a time with “what the cat did in the next 5 seconds”. Pick a real event, then tick or untick the things that happened afterwards, and watch the guess change.')}</p>
+          <p><b>{V.t('这些概率是我们按文献的方向自己定的，没有一条被标注数据检验过。', 'These probabilities are our own choices following the direction of the literature; none has been checked against annotated data.')}</b>{V.t('正因为它们决定了推测，才要把“为什么”摆出来；把握不够时，系统', ' Because they drive the guess, the “why” has to be shown; when confidence is low, the system ')}<b>{V.t('不给出情绪', 'gives no emotion')}</b>{V.t('。', '.')}</p>
           <Evidence kind="hand" />
         </div>
         <div className="cl-widget">
-          <div className="cl-row"><span className="cl-note">真实事件：</span>
-            <div className="cl-seg" role="group" aria-label="选择事件">{L.events.map((x, i) => <button key={i} aria-pressed={L.ev === i} onClick={() => L.pickEvent(i)}>#{i} {mmss(x.start_s)} {RPLAIN[x.reaction]}</button>)}</div></div>
-          <div className="cl-row"><span className="cl-note">它当时的标签：</span>
-            <div className="cl-seg" role="group" aria-label="选择标签">{(['ears_back', 'freeze', 'alert', 'active'] as const).map((k) => <button key={k} aria-pressed={reaction === k} onClick={() => setReaction(k)}>{RPLAIN[k]}</button>)}</div></div>
-          <div className="cl-cues" role="group" aria-label="随后发生的事">
-            {CUES.map(([k, name]) => <label key={k}><input type="checkbox" checked={cues.includes(k)} onChange={(ev) => setCues(ev.target.checked ? [...cues, k] : cues.filter((x) => x !== k))} />{name}</label>)}
+          <div className="cl-row"><span className="cl-note">{V.t('真实事件：', 'Real event: ')}</span>
+            <div className="cl-seg" role="group" aria-label={V.t('选择事件', 'Choose an event')}>{L.events.map((x, i) => <button key={i} aria-pressed={L.ev === i} onClick={() => L.pickEvent(i)}>#{i} {mmss(x.start_s)} {V.RPLAIN[x.reaction]}</button>)}</div></div>
+          <div className="cl-row"><span className="cl-note">{V.t('它当时的标签：', 'Its label at the time: ')}</span>
+            <div className="cl-seg" role="group" aria-label={V.t('选择标签', 'Choose a label')}>{(['ears_back', 'freeze', 'alert', 'active'] as const).map((k) => <button key={k} aria-pressed={reaction === k} onClick={() => setReaction(k)}>{V.RPLAIN[k]}</button>)}</div></div>
+          <div className="cl-cues" role="group" aria-label={V.t('随后发生的事', 'What happened afterwards')}>
+            {V.CUES.map(([k, name]) => <label key={k}><input type="checkbox" checked={cues.includes(k)} onChange={(ev) => setCues(ev.target.checked ? [...cues, k] : cues.filter((x) => x !== k))} />{name}</label>)}
           </div>
-          <div className="cl-sl"><label htmlFor="cl-face">脸看得清的比例</label>
+          <div className="cl-sl"><label htmlFor="cl-face">{V.t('脸看得清的比例', 'Share of the face that is visible')}</label>
             <input id="cl-face" type="range" min={0} max={1} step={0.05} value={face} onChange={(ev) => setFace(+ev.target.value)} /><span className="num">{Math.round(face * 100)}%</span></div>
           <div className="cl-bars">{order.map((i, n) => (
-            <div className={'cl-bar' + (n === 0 ? ' top' : '')} key={i}><span>{STATE_TEXT[STATES[i]]}</span>
+            <div className={'cl-bar' + (n === 0 ? ' top' : '')} key={i}><span>{V.STATE_TEXT[STATES[i]]}</span>
               <span className="track"><span className="fill" style={{ width: (g.post[i] * 100).toFixed(1) + '%' }} /></span><span className="num">{Math.round(g.post[i] * 100)}%</span></div>))}</div>
           {g.show ? <>
-            <p className="cl-verdict">看起来像：{STATE_TEXT[g.top]}<span className="cl-pill" style={{ color: STATE_COL[g.top] }}>推测 · 把握{g.band}</span></p>
-            <p>也可能是：<b>{STATE_TEXT[g.second]}</b>{tell ? '。怎么分辨：' + tell : ''}</p>
-          </> : <p className="cl-verdict">把握不够，<span style={{ color: '#a3abb8' }}>不给出情绪</span>，只写看到的行为。</p>}
-          {decisive.map((c) => { const alt = guess(reaction, cues.filter((x) => x !== c), face)!; return <p key={c}>关键的一步：{cueName(c)}。如果没有这一步，{!alt.show ? '把握就不够，不会给出推测。' : alt.top !== g.top ? `看起来更像“${STATE_TEXT[alt.top]}”。` : `把握会从“${g.band}”变为“${alt.band}”。`}</p>; })}
-          {face < 0.3 && g.band !== '低' ? <p className="cl-note">脸大部分时间看不清，所以即使线索很强，把握也最多给“中”。</p> : null}
+            <p className="cl-verdict">{V.t('看起来像：', 'Looks like: ')}{V.STATE_TEXT[g.top]}<span className="cl-pill" style={{ color: STATE_COL[g.top] }}>{V.t(`推测 · 把握${g.band}`, `guess · confidence ${bandWord(g.band)}`)}</span></p>
+            <p>{V.t('也可能是：', 'Could also be: ')}<b>{V.STATE_TEXT[g.second]}</b>{tell ? V.t('。怎么分辨：', '. How to tell apart: ') + tell : ''}</p>
+          </> : <p className="cl-verdict">{V.t('把握不够，', 'Confidence is too low, so ')}<span style={{ color: '#a3abb8' }}>{V.t('不给出情绪', 'no emotion is given')}</span>{V.t('，只写看到的行为。', '; only the behaviour is written down.')}</p>}
+          {decisive.map((c) => { const alt = guess(reaction, cues.filter((x) => x !== c), face)!; return <p key={c}>{V.t('关键的一步：', 'Key step: ')}{cueName(c)}{V.t('。如果没有这一步，', '. Without this step, ')}{!alt.show ? V.t('把握就不够，不会给出推测。', 'confidence would be too low and no guess would be given.') : alt.top !== g.top ? V.t(`看起来更像“${V.STATE_TEXT[alt.top]}”。`, `it would look more like “${V.STATE_TEXT[alt.top]}”.`) : V.t(`把握会从“${bandWord(g.band)}”变为“${bandWord(alt.band)}”。`, `confidence would change from “${bandWord(g.band)}” to “${bandWord(alt.band)}”.`)}</p>; })}
+          {face < 0.3 && g.band !== '低' ? <p className="cl-note">{V.t('脸大部分时间看不清，所以即使线索很强，把握也最多给“中”。', 'The face is mostly not visible, so even strong cues get at most “medium” confidence.')}</p> : null}
         </div>
       </div>
-      <More title="展开：细节与验证 · Colab 理论版 §5.10–§5.12">
+      <More title={V.t('展开：细节与验证 · Colab 理论版 §5.10–§5.12', 'Expand: details and checks · Colab theory notebook §5.10–§5.12')}>
         <ul className="cl-list">
-          <li><b>怎么调整（朴素贝叶斯）：</b>每看到一条新线索，就按“在每种状态下，这条线索有多常出现”，把五种状态的分数重新算一遍。算式是 <span className="cl-formula inline">P(状态 | 标签, 线索) ∝ P(状态 | 标签) × 每条线索 P(线索 | 状态) 相乘</span>“朴素”是指假设各条线索互不影响，这是一种简化；好处是每一步都能打印出来，也就是卡片上的“为什么这么推测”。这种<b>先得到人能读懂的中间结果，再由它得出结论</b>的结构，和“概念瓶颈模型”是同一类 <Cite ids={[10]} />。</li>
-          <li><b>把握分三档：</b>设最高的概率为 p₁、第二高的为 p₂。p₁ ≥ 0.6 且比 p₂ 至少高 0.3，算“高”；p₁ ≥ 0.45 且至少高 0.15，算“中”；其余算“低”，不显示情绪。依据脸部的标签，在脸大部分时间（&gt; 70%）看不清时直接算“低”；任何推测在脸看不清时最多给“中”。</li>
-          <li><b>逃跑不是扑玩：</b>早先的版本只看“动得快不快”，受惊逃跑会被推测成“想玩，高把握”。现在“扑玩”要求同时不是在离开；又快又在离开，另算“快速跑开”，指向紧张。猫蹲低时在画面里会变小，现在也不再被当成“离开”。</li>
-          <li><b>用标注来修正：</b>把我们手设的数字当作 10 条“虚拟标注”，真实标注一条条加进去：新概率 = (10 × 原来的概率 + 标注里的次数) ÷ (10 + 标注总数)（Dirichlet / Beta 伪计数）。3 条标注几乎改变不了结论，约 30 条之后，数据才开始占主导。要注意标注的人可能被系统的推测带偏，所以要先看视频、写下自己的判断，再显示系统的推测。</li>
-          <li>解释说的是<b>系统为什么这样判断</b>，不是猫真正在想什么。“如果没有这一步，就……”这种对比的说法，更接近人们期待的解释 <Cite ids={[2]} />。</li>
+          <li><b>{V.t('怎么调整（朴素贝叶斯）：', 'How it is adjusted (naive Bayes): ')}</b>{V.t('每看到一条新线索，就按“在每种状态下，这条线索有多常出现”，把五种状态的分数重新算一遍。算式是 ', 'Each new cue re-scores the five states by “how often this cue appears in each state”. The formula is ')}<span className="cl-formula inline">{V.t('P(状态 | 标签, 线索) ∝ P(状态 | 标签) × 每条线索 P(线索 | 状态) 相乘', 'P(state | label, cues) ∝ P(state | label) × the product of P(cue | state) over the cues')}</span>{V.t('“朴素”是指假设各条线索互不影响，这是一种简化；好处是每一步都能打印出来，也就是卡片上的“为什么这么推测”。这种', '“Naive” means assuming the cues do not influence each other, a simplification; the benefit is that every step can be printed, which is the “why this guess” on the card. This structure, ')}<b>{V.t('先得到人能读懂的中间结果，再由它得出结论', 'first an intermediate result people can read, then the conclusion from it')}</b>{V.t('的结构，和“概念瓶颈模型”是同一类 ', ', is of the same kind as the “concept bottleneck model” ')}<Cite ids={[10]} />。</li>
+          <li><b>{V.t('把握分三档：', 'Three confidence bands: ')}</b>{V.t('设最高的概率为 p₁、第二高的为 p₂。p₁ ≥ 0.6 且比 p₂ 至少高 0.3，算“高”；p₁ ≥ 0.45 且至少高 0.15，算“中”；其余算“低”，不显示情绪。依据脸部的标签，在脸大部分时间（> 70%）看不清时直接算“低”；任何推测在脸看不清时最多给“中”。', 'Let p₁ be the highest probability and p₂ the second. p₁ ≥ 0.6 and at least 0.3 above p₂ is “high”; p₁ ≥ 0.45 and at least 0.15 above is “medium”; the rest is “low” and no emotion is shown. For labels that rest on the face, if the face is mostly unclear (> 70% of the time) it is simply “low”; any guess gets at most “medium” when the face is unclear.')}</li>
+          <li><b>{V.t('逃跑不是扑玩：', 'Running away is not pouncing: ')}</b>{V.t('早先的版本只看“动得快不快”，受惊逃跑会被推测成“想玩，高把握”。现在“扑玩”要求同时不是在离开；又快又在离开，另算“快速跑开”，指向紧张。猫蹲低时在画面里会变小，现在也不再被当成“离开”。', 'An earlier version only looked at “how fast”, so a startled escape was guessed as “playful, high confidence”. Now “pouncing” also requires that the cat is not leaving; fast and leaving counts separately as “runs off”, which points to tension. A crouching cat looks smaller in the picture, and that is no longer counted as “leaving”.')}</li>
+          <li><b>{V.t('用标注来修正：', 'Correcting with annotations: ')}</b>{V.t('把我们手设的数字当作 10 条“虚拟标注”，真实标注一条条加进去：新概率 = (10 × 原来的概率 + 标注里的次数) ÷ (10 + 标注总数)（Dirichlet / Beta 伪计数）。3 条标注几乎改变不了结论，约 30 条之后，数据才开始占主导。要注意标注的人可能被系统的推测带偏，所以要先看视频、写下自己的判断，再显示系统的推测。', 'Treat our hand-set numbers as 10 “virtual annotations”, and add real annotations one by one: new probability = (10 × old probability + count in annotations) ÷ (10 + total annotations) (Dirichlet / Beta pseudo-counts). Three annotations barely change the conclusion; after about 30, the data starts to dominate. Annotators may be swayed by the system’s guess, so they should watch the video and write their own judgement before the system’s guess is shown.')}</li>
+          <li>{V.t('解释说的是', 'The explanation says ')}<b>{V.t('系统为什么这样判断', 'why the system judged this way')}</b>{V.t('，不是猫真正在想什么。“如果没有这一步，就……”这种对比的说法，更接近人们期待的解释 ', ', not what the cat actually thinks. The contrastive form “without this step, …” is closer to the explanation people expect ')}<Cite ids={[2]} />。</li>
         </ul>
       </More>
     </section>
@@ -317,13 +330,14 @@ function Step5({ L }: { L: L }) {
 
 /* ---------- step 6 ---------- */
 function Step6({ L }: { L: L }) {
+  const V = useVocab();
   const e = L.events[L.ev];
   const [tog, setTog] = useState<Record<string, boolean>>({});
   useEffect(() => setTog({}), [L.ev]);
   const checks: Check[] = useMemo(() => L.events.map(checkEvent), [L.events]);
   const res = checks[L.ev];
   const cited = res.cited;
-  const name = (k: FeatureKey) => FEAT[FIDX[k]].name;
+  const name = (k: FeatureKey) => V.FEAT[FIDX[k]].name;
   const usual: Partial<Record<FeatureKey, boolean>> = {};
   cited.forEach((k) => { if (tog[k]) usual[k] = true; });
   if (tog.__rest) USED.forEach((k) => { if (!cited.includes(k)) usual[k] = true; });
@@ -332,46 +346,46 @@ function Step6({ L }: { L: L }) {
   const passN = checks.filter((c) => c.pass).length, missN = checks.filter((c) => c.oldMissed).length;
   return (
     <section className="cl-step" id="s6">
-      <Head no="06" en="IS THE EXPLANATION FAITHFUL" title="卡片上写的原因，是真正的原因吗？" desc="课程要求验证：系统说它依据什么，就必须真的是依据什么。因为标签来自一条条能读的规则，所以可以精确检验。" />
+      <Head no="06" en="IS THE EXPLANATION FAITHFUL" title={V.t('卡片上写的原因，是真正的原因吗？', 'Is the reason written on the card the real one?')} desc={V.t('课程要求验证：系统说它依据什么，就必须真的是依据什么。因为标签来自一条条能读的规则，所以可以精确检验。', 'The course requires a check: if the system says what it relies on, it must really rely on that. Because labels come from readable rules, the check can be exact.')} />
       <div className="cl-grid">
         <div className="cl-prose">
-          <p>做法是问“如果……会怎样”：把卡片上写的依据<b>改回这只猫平时的样子</b>，标签应该变；把<b>没写</b>的数字改回平时，标签应该不变 <Cite ids={[30]} />。学术上叫“反事实解释”。</p>
-          <p>用上一步选中的事件自己试一试：先勾“写出的依据”，再勾“没写出的数字”。</p>
-          <Evidence kind="ok" note="说的和规则一致；规则本身对不对，还没有标注可以检验" />
+          <p>{V.t('做法是问“如果……会怎样”：把卡片上写的依据', 'The method asks “what if …”: set the evidence written on the card ')}<b>{V.t('改回这只猫平时的样子', 'back to how this cat usually looks')}</b>{V.t('，标签应该变；把', ', and the label should change; set the numbers that were ')}<b>{V.t('没写', 'not written')}</b>{V.t('的数字改回平时，标签应该不变 ', ' back to usual, and the label should not change ')}<Cite ids={[30]} />{V.t('。学术上叫“反事实解释”。', '. In the literature this is a “counterfactual explanation”.')}</p>
+          <p>{V.t('用上一步选中的事件自己试一试：先勾“写出的依据”，再勾“没写出的数字”。', 'Try it yourself on the event selected in the previous step: first tick the “evidence written”, then the “numbers not written”.')}</p>
+          <Evidence kind="ok" note={V.t('说的和规则一致；规则本身对不对，还没有标注可以检验', 'It matches the rules; whether the rules are right has not yet been checked against annotations')} />
         </div>
         <div className="cl-widget">
-          <p className="cl-note">事件：<b>#{L.ev} {mmss(e.start_s)} {RPLAIN[e.reaction]}</b>（在上一步里切换）</p>
-          <div className="cl-cues" role="group" aria-label="改回平时">
-            {cited.map((k) => <label key={k}><input type="checkbox" checked={!!tog[k]} onChange={(ev) => setTog({ ...tog, [k]: ev.target.checked })} />{name(k)}（{res.roles[k] === 'main' ? '主要' : '补充'}）</label>)}
-            <label><input type="checkbox" checked={!!tog.__rest} onChange={(ev) => setTog({ ...tog, __rest: ev.target.checked })} />没写出的数字（{USED.filter((k) => !cited.includes(k)).map(name).join('、') || '无'}）</label>
+          <p className="cl-note">{V.t('事件：', 'Event: ')}<b>#{L.ev} {mmss(e.start_s)} {V.RPLAIN[e.reaction]}</b>{V.t('（在上一步里切换）', ' (switch it in the previous step)')}</p>
+          <div className="cl-cues" role="group" aria-label={V.t('改回平时', 'Set back to usual')}>
+            {cited.map((k) => <label key={k}><input type="checkbox" checked={!!tog[k]} onChange={(ev) => setTog({ ...tog, [k]: ev.target.checked })} />{name(k)}（{res.roles[k] === 'main' ? V.t('主要', 'main') : V.t('补充', 'supporting')}）</label>)}
+            <label><input type="checkbox" checked={!!tog.__rest} onChange={(ev) => setTog({ ...tog, __rest: ev.target.checked })} />{V.t('没写出的数字（', 'Numbers not written (')}{USED.filter((k) => !cited.includes(k)).map(name).join(V.t('、', ', ')) || V.t('无', 'none')}{V.t('）', ')')}</label>
           </div>
-          <p>{nothing ? <>还没有改动：标签是 <b>{RPLAIN[e.reaction]}</b>。</> : <>改回平时后，标签变成 <b style={{ color: LCOL[now] }}>{RPLAIN[now]}</b>。{changed
-            ? (anyCited && !restOn ? <span className="ok"> ✓ 改回写出的依据，标签变了：写出的就是原因。</span> : restOn && !anyCited ? <span className="bad"> 没写出的数字也能让标签变，说明有没写出的原因。</span> : null)
-            : (restOn && !anyCited ? <span className="ok"> ✓ 没写出的数字改回平时，标签没变：没有隐藏的原因。</span> : anyCited ? <span className="bad"> 只改了一部分依据，标签没变：它可能是“补充”，或者另一条依据在撑着。</span> : null)}</>}</p>
+          <p>{nothing ? <>{V.t('还没有改动：标签是 ', 'Nothing changed yet: the label is ')}<b>{V.RPLAIN[e.reaction]}</b>{V.t('。', '.')}</> : <>{V.t('改回平时后，标签变成 ', 'After setting them back to usual, the label becomes ')}<b style={{ color: LCOL[now] }}>{V.RPLAIN[now]}</b>{V.t('。', '.')}{changed
+            ? (anyCited && !restOn ? <span className="ok">{V.t(' ✓ 改回写出的依据，标签变了：写出的就是原因。', ' ✓ Setting back the written evidence changed the label: what is written is the cause.')}</span> : restOn && !anyCited ? <span className="bad">{V.t(' 没写出的数字也能让标签变，说明有没写出的原因。', ' Numbers that were not written can also change the label, so there is an unwritten cause.')}</span> : null)
+            : (restOn && !anyCited ? <span className="ok">{V.t(' ✓ 没写出的数字改回平时，标签没变：没有隐藏的原因。', ' ✓ Setting the unwritten numbers back to usual left the label unchanged: no hidden cause.')}</span> : anyCited ? <span className="bad">{V.t(' 只改了一部分依据，标签没变：它可能是“补充”，或者另一条依据在撑着。', ' Only part of the evidence was changed and the label stayed: it may be “supporting”, or another piece of evidence is holding it up.')}</span> : null)}</>}</p>
           <dl className="cl-kv">
-            <dt>能重现</dt><dd className={res.reproduces ? 'ok' : 'bad'}>{res.reproduces ? '✓ 用记录的数值重跑规则，得到同样的标签' : '✗ 得不到同样的标签'}</dd>
-            <dt>写出的是原因</dt><dd>{cited.map((k) => `${name(k)}：单独改回平时 → ${RPLAIN[res.alone[k] as string]}`).join('；')}；全部改回 → {RPLAIN[res.allUsual]}</dd>
-            <dt>没有隐藏的原因</dt><dd className={!res.hidden ? 'ok' : 'bad'}>{!res.hidden ? '✓ 没写出的数字改回平时，标签不变' : '✗ 有没写出的原因'}</dd>
+            <dt>{V.t('能重现', 'Reproducible')}</dt><dd className={res.reproduces ? 'ok' : 'bad'}>{res.reproduces ? V.t('✓ 用记录的数值重跑规则，得到同样的标签', '✓ Rerunning the rules on the recorded values gives the same label') : V.t('✗ 得不到同样的标签', '✗ The same label is not obtained')}</dd>
+            <dt>{V.t('写出的是原因', 'Cited is the cause')}</dt><dd>{cited.map((k) => V.t(`${name(k)}：单独改回平时 → ${V.RPLAIN[res.alone[k] as string]}`, `${name(k)}: set back alone → ${V.RPLAIN[res.alone[k] as string]}`)).join(V.t('；', '; '))}{V.t('；全部改回 → ', '; all set back → ')}{V.RPLAIN[res.allUsual]}</dd>
+            <dt>{V.t('没有隐藏的原因', 'No hidden cause')}</dt><dd className={!res.hidden ? 'ok' : 'bad'}>{!res.hidden ? V.t('✓ 没写出的数字改回平时，标签不变', '✓ Setting the unwritten numbers back to usual leaves the label unchanged') : V.t('✗ 有没写出的原因', '✗ There is an unwritten cause')}</dd>
           </dl>
           <hr />
-          <p><b>这段视频的 {L.events.length} 个事件，自动检验：{passN} / {L.events.length} 通过。</b>旧版卡片（只列“和 2 秒前相比”变了什么）在 {missN} 个事件里没有写出主要依据。</p>
+          <p><b>{V.t(`这段视频的 ${L.events.length} 个事件，自动检验：${passN} / ${L.events.length} 通过。`, `Automatic check of the ${L.events.length} events in this video: ${passN} / ${L.events.length} pass.`)}</b>{V.t(`旧版卡片（只列“和 2 秒前相比”变了什么）在 ${missN} 个事件里没有写出主要依据。`, `The old card (which only listed what changed compared with 2 s earlier) did not state the main evidence in ${missN} events.`)}</p>
           <div className="cl-tbl"><table>
-            <thead><tr><th>#</th><th>标签</th><th>依据（主 / 补）</th><th>全部改回平时 →</th><th>没写的无影响</th><th>推测能重现</th><th>结果</th></tr></thead>
+            <thead><tr><th>#</th><th>{V.t('标签', 'Label')}</th><th>{V.t('依据（主 / 补）', 'Evidence (main / supporting)')}</th><th>{V.t('全部改回平时 →', 'all set back to usual →')}</th><th>{V.t('没写的无影响', 'unwritten has no effect')}</th><th>{V.t('推测能重现', 'Guess reproducible')}</th><th>{V.t('结果', 'Result')}</th></tr></thead>
             <tbody>{checks.map((c, i) => (
-              <tr key={i} className={i === L.ev ? 'hit' : ''}><td>{i}</td><td>{RPLAIN[L.events[i].reaction]}</td>
-                <td>{c.cited.map((k) => name(k) + (c.roles[k] === 'main' ? '主' : '补')).join('，')}</td><td>{RPLAIN[c.allUsual]}</td>
-                <td className={!c.hidden ? 'ok' : 'bad'}>{!c.hidden ? '是' : '否'}</td><td className={c.guessOk ? 'ok' : 'bad'}>{c.guessOk ? '是' : '否'}</td>
-                <td className={c.pass ? 'ok' : 'bad'}>{c.pass ? '通过' : '未通过'}</td></tr>))}</tbody>
+              <tr key={i} className={i === L.ev ? 'hit' : ''}><td>{i}</td><td>{V.RPLAIN[L.events[i].reaction]}</td>
+                <td>{c.cited.map((k) => name(k) + (c.roles[k] === 'main' ? V.t('主', ' main') : V.t('补', ' supp.'))).join(V.t('，', ', '))}</td><td>{V.RPLAIN[c.allUsual]}</td>
+                <td className={!c.hidden ? 'ok' : 'bad'}>{!c.hidden ? V.t('是', 'yes') : V.t('否', 'no')}</td><td className={c.guessOk ? 'ok' : 'bad'}>{c.guessOk ? V.t('是', 'yes') : V.t('否', 'no')}</td>
+                <td className={c.pass ? 'ok' : 'bad'}>{c.pass ? V.t('通过', 'pass') : V.t('未通过', 'fail')}</td></tr>))}</tbody>
           </table></div>
         </div>
       </div>
-      <More title="展开：细节与验证 · Colab 理论版 §6.14、§6.5–§6.10">
+      <More title={V.t('展开：细节与验证 · Colab 理论版 §6.14、§6.5–§6.10', 'Expand: details and checks · Colab theory notebook §6.14, §6.5–§6.10')}>
         <ul className="cl-list">
-          <li><b>课程要求的三层检验：</b>系统判断得对不对（第一层）、解释说的是不是真话（第二层）、用户有没有看懂并恰当地信任（第三层）<Cite ids={[20]} />。这一步做的是第二层。</li>
-          <li><b>五项检验：</b>能重现（用记录下来的数字重新跑一遍规则）；写出的就是原因（依据改回平时，标签变）；没有隐藏的原因（没写的改回平时，标签不变）；推测能重现；另外逐条去掉后续线索，那些去掉后推测或把握会变的，就写成“关键的一步”。前四项都通过，这个事件才算通过。</li>
-          <li><b>它抓出了什么：</b>旧版卡片列的是“和 2 秒前相比”的变化，而标签是按“和它平时比”的偏离决定的。实际出现过：标题写“耳朵压低”，依据里只有“身体静下来了”。现在卡片、画面上的红圈，都只写判断真正依据的特征。</li>
-          <li><b>为什么能检验得这么精确：</b>因为这个系统从一开始就设计成“能被读懂”的：点 → 几项数字 → 一条条规则。对看不透的黑盒模型，同样的问题只能近似回答，那正是 SHAP、LIME 这类方法的用武之地；这里我们没有用到它们。</li>
-          <li><b>它不能说明什么：</b>解释和规则一致，不代表规则对猫的判断是对的。判断对不对，要靠人工标注（第一层）；主人有没有看懂，要靠用户研究（第三层）。这两项我们都还没有做完。</li>
+          <li><b>{V.t('课程要求的三层检验：', 'The three layers of checks the course asks for: ')}</b>{V.t('系统判断得对不对（第一层）、解释说的是不是真话（第二层）、用户有没有看懂并恰当地信任（第三层）', 'whether the system judges correctly (layer 1), whether the explanation tells the truth (layer 2), and whether users understand it and trust it appropriately (layer 3)')}<Cite ids={[20]} />{V.t('。这一步做的是第二层。', '. This step does layer 2.')}</li>
+          <li><b>{V.t('五项检验：', 'Five checks: ')}</b>{V.t('能重现（用记录下来的数字重新跑一遍规则）；写出的就是原因（依据改回平时，标签变）；没有隐藏的原因（没写的改回平时，标签不变）；推测能重现；另外逐条去掉后续线索，那些去掉后推测或把握会变的，就写成“关键的一步”。前四项都通过，这个事件才算通过。', 'reproducible (rerun the rules on the recorded numbers); the cited is the cause (set the evidence back to usual, the label changes); no hidden cause (set the unwritten back to usual, the label stays); the guess reproduces; and, removing later cues one at a time, those whose removal changes the guess or confidence are written up as “key steps”. An event passes only when the first four all pass.')}</li>
+          <li><b>{V.t('它抓出了什么：', 'What it caught: ')}</b>{V.t('旧版卡片列的是“和 2 秒前相比”的变化，而标签是按“和它平时比”的偏离决定的。实际出现过：标题写“耳朵压低”，依据里只有“身体静下来了”。现在卡片、画面上的红圈，都只写判断真正依据的特征。', 'The old card listed changes relative to 2 s earlier, while the label was decided by deviation from usual. It happened in practice: the title said “ears back” but the evidence only said “body went still”. Now the card and the red ring on the picture show only the features the judgement really used.')}</li>
+          <li><b>{V.t('为什么能检验得这么精确：', 'Why it can be checked this precisely: ')}</b>{V.t('因为这个系统从一开始就设计成“能被读懂”的：点 → 几项数字 → 一条条规则。对看不透的黑盒模型，同样的问题只能近似回答，那正是 SHAP、LIME 这类方法的用武之地；这里我们没有用到它们。', 'Because this system was designed from the start to be readable: points → a few numbers → rules, one by one. For an opaque black box the same question can only be answered approximately; that is where methods like SHAP and LIME come in. We do not use them here.')}</li>
+          <li><b>{V.t('它不能说明什么：', 'What it cannot show: ')}</b>{V.t('解释和规则一致，不代表规则对猫的判断是对的。判断对不对，要靠人工标注（第一层）；主人有没有看懂，要靠用户研究（第三层）。这两项我们都还没有做完。', 'That the explanation matches the rules does not mean the rules are right about the cat. Whether judgements are right needs human annotation (layer 1); whether owners understand needs user research (layer 3). We have not finished either.')}</li>
         </ul>
       </More>
     </section>
@@ -379,16 +393,27 @@ function Step6({ L }: { L: L }) {
 }
 
 /* ---------- step 7: what the owner gets ---------- */
-const BUDGET_NAME: Record<string, string> = { resting: '平静', active: '活跃 / 探索', alert: '警觉', ears_back: '耳朵后压', freeze: '僵住', unknown: '看不清', absent: '不在画面里' };
-const BUDGET_COL: Record<string, string> = { resting: '#9aa6ba', active: '#234fe5', alert: '#c98a14', ears_back: '#d9622b', freeze: '#b02a37', unknown: '#cdd3de', absent: '#e3e8f0' };
-const STATE_COL: Record<State, string> = { tense: '#c2410c', curious: '#2563eb', playful: '#7c3aed', attentive: '#0f766e', calm: '#64748b' };
-const USUAL: Record<string, string> = { ear_height: '耳朵回到它平时的高度', ear_angle: '耳朵回到它平时的角度', eye_aperture: '眼睛回到它平时的样子', activity: '身体的活动回到平时的水平' };
-const CHANGE_TEXT: Record<string, [string, string, string]> = {
-  ear_height: ['耳朵', '比刚才低了', '比刚才竖起来了'], ear_angle: ['耳朵', '更朝前了', '向外转了'], eye_aperture: ['眼睛', '眯起来了', '睁大了'],
-  muzzle_ratio: ['口鼻', '收紧了', '放松了'], head_drop: ['头', '抬高了', '放低了'], activity: ['身体', '静下来了', '动起来了'],
+type Pair = [string, string];
+const BUDGET_NAME: Record<string, Pair> = {
+  calibrating: ['正在记平时', 'Learning usual'], resting: ['平静', 'Calm'], active: ['活跃 / 探索', 'Active / exploring'], alert: ['警觉', 'Alert'], ears_back: ['耳朵后压', 'Ears back'], freeze: ['僵住', 'Frozen'], unknown: ['看不清', 'Cannot see'], absent: ['不在画面里', 'Out of frame'],
 };
-const TRIGGER_TEXT = { sound: '之前突然出现较大的声音', motion: '之前画面里别的地方有东西在动' };
-const PRIOR_K = 10;
+const BUDGET_COL: Record<string, string> = { calibrating: '#cdd3de', resting: '#9aa6ba', active: '#234fe5', alert: '#c98a14', ears_back: '#d9622b', freeze: '#b02a37', unknown: '#cdd3de', absent: '#e3e8f0' };
+const STATE_COL: Record<State, string> = { tense: '#c2410c', curious: '#2563eb', playful: '#7c3aed', attentive: '#0f766e', calm: '#64748b' };
+const USUAL: Record<string, Pair> = {
+  ear_height: ['耳朵回到它平时的高度', 'the ears return to their usual height'], ear_angle: ['耳朵回到它平时的角度', 'the ears return to their usual angle'],
+  eye_aperture: ['眼睛回到它平时的样子', 'the eyes return to their usual look'], activity: ['身体的活动回到平时的水平', 'the body’s movement returns to its usual level'],
+};
+const CHANGE_TEXT: Record<string, [Pair, Pair, Pair]> = {
+  ear_height: [['耳朵', 'Ears'], ['比刚才低了', 'lower than a moment ago'], ['比刚才竖起来了', 'pricked up compared with a moment ago']],
+  ear_angle: [['耳朵', 'Ears'], ['更朝前了', 'turned more forward'], ['向外转了', 'turned outward']],
+  eye_aperture: [['眼睛', 'Eyes'], ['眯起来了', 'narrowed'], ['睁大了', 'widened']],
+  muzzle_ratio: [['口鼻', 'Muzzle'], ['收紧了', 'tightened'], ['放松了', 'relaxed']],
+  head_drop: [['头', 'Head'], ['抬高了', 'raised'], ['放低了', 'lowered']],
+  activity: [['身体', 'Body'], ['静下来了', 'went still'], ['动起来了', 'started moving']],
+};
+const TRIGGER_TEXT: Record<string, Pair> = {
+  sound: ['之前突然出现较大的声音', 'a loud sound just before'], motion: ['之前画面里别的地方有东西在动', 'something else moved in the picture just before'],
+};
 
 function ownerGuess(e: EventRec) { return e.interp ? guess(e.reaction, e.interp.cues, e.interp.face_visible) : null; }
 function fixedPrior(reaction: string, labels: Record<number, { verdict: 'right' | 'wrong' | 'unsure'; actual?: State }>, events: EventRec[]): { before: number[]; after: number[]; n: number } {
@@ -404,8 +429,10 @@ function fixedPrior(reaction: string, labels: Record<number, { verdict: 'right' 
   });
   return { before: base, after: base.map((v, i) => (PRIOR_K * v + cnt[i]) / (PRIOR_K + n)), n };
 }
+const PRIOR_K = 10;
 
 function OwnerStep({ L, onWatch }: { L: L; onWatch: (i: number) => void }) {
+  const V = useVocab();
   const [view, setView] = useState<'home' | 'card'>('home');
   const [labels, setLabels] = useState<Record<number, { verdict: 'right' | 'wrong' | 'unsure'; actual?: State }>>({});
   const e = L.events[L.ev];
@@ -413,109 +440,115 @@ function OwnerStep({ L, onWatch }: { L: L; onWatch: (i: number) => void }) {
   const res = checkEvent(e);
   const shown = (i: number) => { const x = ownerGuess(L.events[i]); return !!x && x.show; };
   const nShown = L.events.filter((_, i) => shown(i)).length;
+  const bud = (k: string) => (BUDGET_NAME[k] ? V.t(BUDGET_NAME[k][0], BUDGET_NAME[k][1]) : k);
 
   // overview: time share from the whole clip, using the calibration length chosen in step 3
   const cnt: Record<string, number> = {}; let tot = 0;
   L.out.forEach((o, i) => { if (o.calibrating) return; const k = L.clip.frames[i].box ? o.label : 'absent'; cnt[k] = (cnt[k] || 0) + 1; tot++; });
   const budget = Object.entries(cnt).sort((a, b) => b[1] - a[1]);
   const topK = budget[0]?.[0] ?? 'resting', topShare = budget[0] ? Math.round((budget[0][1] / tot) * 100) : 0;
-  const summary = (topK === 'resting' ? `这段时间它大部分时候很平静（${topShare}%）。` : `这段时间它花得最多的是“${BUDGET_NAME[topK]}”（${topShare}%）。`) + (nShown ? `有 ${nShown} 个时刻值得看一看。` : '');
+  const summary = (topK === 'resting'
+    ? V.t(`这段时间它大部分时候很平静（${topShare}%）。`, `For most of this time it was calm (${topShare}%).`)
+    : V.t(`这段时间它花得最多的是“${bud(topK)}”（${topShare}%）。`, `The state it spent the most time in was “${bud(topK)}” (${topShare}%).`))
+    + (nShown ? V.t(`有 ${nShown} 个时刻值得看一看。`, ` ${nShown} moments are worth a look.`) : '');
 
   const decisive = g && g.show && e.interp ? e.interp.cues.filter((c) => { const alt = guess(e.reaction, e.interp!.cues.filter((x) => x !== c), e.interp!.face_visible); return !!alt && !!g && (alt.top !== g.top || alt.band !== g.band); }) : [];
-  const cueName = (c: string) => CUES.find((x) => x[0] === c)![1];
-  const ifLines = Object.entries(res.alone).filter(([, now]) => now !== e.reaction).map(([k, now]) => `如果${USUAL[k]}，就不会标为「${RPLAIN[e.reaction]}」，而是「${RPLAIN[now as string]}」。`);
+  const cueName = (c: string) => V.CUES.find((x) => x[0] === c)![1];
+  const bandWord = (b: string) => (V.lang === 'en' ? { 高: 'high', 中: 'medium', 低: 'low' }[b] : b);
+  const ifLines = Object.entries(res.alone).filter(([, now]) => now !== e.reaction).map(([k, now]) =>
+    V.t(`如果${V.t(USUAL[k][0], USUAL[k][1])}，就不会标为「${V.RPLAIN[e.reaction]}」，而是「${V.RPLAIN[now as string]}」。`, `If ${USUAL[k][1]}, it would not be labelled “${V.RPLAIN[e.reaction]}” but “${V.RPLAIN[now as string]}”.`));
   const label = labels[L.ev];
   const fp = fixedPrior(e.reaction, labels, L.events);
-  const tell = g ? TELL[`${g.top}|${g.second}`] || TELL[`${g.second}|${g.top}`] || '' : '';
+  const tell = g ? V.TELL[`${g.top}|${g.second}`] || V.TELL[`${g.second}|${g.top}`] || '' : '';
   const setLabel = (v: 'right' | 'wrong' | 'unsure', actual?: State) => setLabels({ ...labels, [L.ev]: { verdict: v, actual } });
 
   return (
     <section className="cl-step" id="s7">
-      <Head no="07" en="THE OWNER'S REPORT" title="最后：把这一切变成主人看得懂的报告" desc="前面六步是系统内部的活。主人看到的，是一份一分钟内能读完、又能自己核对的报告。" />
+      <Head no="07" en="THE OWNER'S REPORT" title={V.t('最后：把这一切变成主人看得懂的报告', 'Finally: turn all this into a report the owner can read')} desc={V.t('前面六步是系统内部的活。主人看到的，是一份一分钟内能读完、又能自己核对的报告。', 'The first six steps are the system’s internal work. What the owner sees is a report that takes under a minute to read and that they can check for themselves.')} />
       <div className="cl-grid">
         <div className="cl-prose">
-          <p>报告分三层，每一层只回答主人的下一个问题：</p>
+          <p>{V.t('报告分三层，每一层只回答主人的下一个问题：', 'The report has three layers, each answering the owner’s next question only:')}</p>
           <ol className="cl-steps-list">
-            <li><b>总览：</b>这段时间它过得怎么样？一句话，加上时间怎么分布。</li>
-            <li><b>值得看的时刻：</b>哪几个时刻要看一眼？每个时刻一行，只写“看起来像什么”和把握。</li>
-            <li><b>点开一个时刻：</b>才是完整的卡片，也就是右边手机里现在显示的这一张。</li>
+            <li><b>{V.t('总览：', 'Overview: ')}</b>{V.t('这段时间它过得怎么样？一句话，加上时间怎么分布。', 'How did it spend this time? One sentence, plus how the time was distributed.')}</li>
+            <li><b>{V.t('值得看的时刻：', 'Moments worth a look: ')}</b>{V.t('哪几个时刻要看一眼？每个时刻一行，只写“看起来像什么”和把握。', 'Which moments should be looked at? One line each, only “looks like what” and confidence.')}</li>
+            <li><b>{V.t('点开一个时刻：', 'Open one moment: ')}</b>{V.t('才是完整的卡片，也就是右边手机里现在显示的这一张。', 'Only then the full card: the one now shown on the phone on the right.')}</li>
           </ol>
-          <p>一张卡片按下面的顺序读（对应右边的圆圈数字）：</p>
+          <p>{V.t('一张卡片按下面的顺序读（对应右边的圆圈数字）：', 'A card is read in this order (matching the numbers in circles on the right):')}</p>
           <ol className="cl-steps-list circled">
-            <li><b>先给结论，并写明这只是推测</b>，附上把握程度。把握不够时，只写看到的行为，不给情绪，而且折叠起来。</li>
-            <li><b>另一种可能，以及怎么分辨。</b>让主人知道还有别的解释。</li>
-            <li><b>为什么：</b>只写真正的依据，和“如果……就不会”。前面第 6 步检验过的，就是这一块。</li>
-            <li><b>视频：</b>主人用自己对它的了解来判断，而不是只信系统。</li>
-            <li><b>主人说对不对。</b>这个回答不是摆设，见下面。</li>
+            <li><b>{V.t('先给结论，并写明这只是推测', 'Give the conclusion first, and say it is only a guess')}</b>{V.t('，附上把握程度。把握不够时，只写看到的行为，不给情绪，而且折叠起来。', ', with the confidence. When confidence is low, only the behaviour is written, with no emotion, and it is folded away.')}</li>
+            <li><b>{V.t('另一种可能，以及怎么分辨。', 'Another possibility, and how to tell them apart.')}</b>{V.t('让主人知道还有别的解释。', 'So the owner knows there are other explanations.')}</li>
+            <li><b>{V.t('为什么：', 'Why: ')}</b>{V.t('只写真正的依据，和“如果……就不会”。前面第 6 步检验过的，就是这一块。', 'Only the real evidence, and “if … then not”. This is the part step 6 checked.')}</li>
+            <li><b>{V.t('视频：', 'Video: ')}</b>{V.t('主人用自己对它的了解来判断，而不是只信系统。', 'The owner judges using what they know about the cat, rather than trusting the system alone.')}</li>
+            <li><b>{V.t('主人说对不对。', 'The owner says whether it is right.')}</b>{V.t('这个回答不是摆设，见下面。', ' The answer is not decorative; see below.')}</li>
           </ol>
-          <Evidence kind="proto" note="还没有给真实的主人读过" />
+          <Evidence kind="proto" note={V.t('还没有给真实的主人读过', 'Not yet read by a real owner')} />
         </div>
         <div className="cl-widget">
-          <div className="cl-row"><span className="cl-note">事件（和上面同一个）：</span>
-            <div className="cl-seg" role="group" aria-label="选择事件">{L.events.map((x, i) => <button key={i} aria-pressed={L.ev === i} onClick={() => L.pickEvent(i)}>#{i} {mmss(x.start_s)}</button>)}</div></div>
+          <div className="cl-row"><span className="cl-note">{V.t('事件（和上面同一个）：', 'Event (same as above): ')}</span>
+            <div className="cl-seg" role="group" aria-label={V.t('选择事件', 'Choose an event')}>{L.events.map((x, i) => <button key={i} aria-pressed={L.ev === i} onClick={() => L.pickEvent(i)}>#{i} {mmss(x.start_s)}</button>)}</div></div>
           <div className="cl-phone">
-            <div className="cl-seg cl-phone-tabs" role="group" aria-label="手机里的页面">
-              <button aria-pressed={view === 'home'} onClick={() => setView('home')}>今天</button>
-              <button aria-pressed={view === 'card'} onClick={() => setView('card')}>这个时刻</button>
+            <div className="cl-seg cl-phone-tabs" role="group" aria-label={V.t('手机里的页面', 'Pages on the phone')}>
+              <button aria-pressed={view === 'home'} onClick={() => setView('home')}>{V.t('今天', 'Today')}</button>
+              <button aria-pressed={view === 'card'} onClick={() => setView('card')}>{V.t('这个时刻', 'This moment')}</button>
             </div>
             {view === 'home' ? (
               <div className="cl-phone-body">
-                <p className="cl-phone-title">你不在的时候</p>
+                <p className="cl-phone-title">{V.t('你不在的时候', 'While you were away')}</p>
                 <p className="cl-phone-lead">{summary}</p>
                 <div className="cl-phone-card">
-                  <p className="cl-phone-h">它的时间都花在哪里</p>
+                  <p className="cl-phone-h">{V.t('它的时间都花在哪里', 'Where its time went')}</p>
                   <div className="cl-budget">{budget.map(([k, n]) => <span key={k} style={{ flex: n, background: BUDGET_COL[k] }} />)}</div>
-                  <p className="cl-phone-legend">{budget.map(([k, n]) => <span key={k}><i style={{ background: BUDGET_COL[k] }} />{BUDGET_NAME[k]} <b>{Math.round((n / tot) * 100)}%</b></span>)}</p>
+                  <p className="cl-phone-legend">{budget.map(([k, n]) => <span key={k}><i style={{ background: BUDGET_COL[k] }} />{bud(k)} <b>{Math.round((n / tot) * 100)}%</b></span>)}</p>
                 </div>
-                <p className="cl-phone-h">值得看的时刻</p>
+                <p className="cl-phone-h">{V.t('值得看的时刻', 'Moments worth a look')}</p>
                 {L.events.map((x, i) => { const xg = ownerGuess(x); const ok = !!xg && xg.show; return ok ? (
                   <button key={i} className="cl-phone-row" style={{ borderLeftColor: STATE_COL[xg!.top] }} onClick={() => { L.pickEvent(i); setView('card'); }}>
-                    <span className="t">片段 {i} · {mmss(x.start_s)}</span><span className="g" style={{ color: STATE_COL[xg!.top] }}>看起来像：{STATE_TEXT[xg!.top]}</span><span className="b" style={{ color: STATE_COL[xg!.top] }}>推测 · 把握{xg!.band}</span></button>) : null; })}
-                <p className="cl-phone-fold">另有 {L.events.length - nShown} 个时刻把握不够，没有给推测，已折叠。</p>
+                    <span className="t">{V.t('片段', 'Clip')} {i} · {mmss(x.start_s)}</span><span className="g" style={{ color: STATE_COL[xg!.top] }}>{V.t('看起来像：', 'Looks like: ')}{V.STATE_TEXT[xg!.top]}</span><span className="b" style={{ color: STATE_COL[xg!.top] }}>{V.t(`推测 · 把握${xg!.band}`, `guess · confidence ${bandWord(xg!.band)}`)}</span></button>) : null; })}
+                <p className="cl-phone-fold">{V.t(`另有 ${L.events.length - nShown} 个时刻把握不够，没有给推测，已折叠。`, `${L.events.length - nShown} other moments are not confident enough, so no guess is given; they are folded away.`)}</p>
               </div>
             ) : (
               <div className="cl-phone-body">
-                <p className="cl-phone-time">片段 {L.ev} · {mmss(e.start_s)}</p>
-                <dl className="cl-fields" aria-label="事件标签（字段名与 labels_template.csv 一致）">
+                <p className="cl-phone-time">{V.t('片段', 'Clip')} {L.ev} · {mmss(e.start_s)}</p>
+                <dl className="cl-fields" aria-label={V.t('事件标签（字段名与 labels_template.csv 一致）', 'Event labels (field names match labels_template.csv)')}>
                   <div><dt>event_id</dt><dd>{L.ev}</dd></div>
                   <div><dt>time</dt><dd>{mmss(e.start_s)}</dd></div>
-                  <div><dt>reaction<small>行为标签</small></dt><dd>{RPLAIN[e.reaction]}</dd></div>
-                  <div><dt>system_guess<small>情绪标签</small></dt><dd style={g && g.show ? { color: STATE_COL[g.top] } : undefined}>{g && g.show ? STATE_TEXT[g.top] : '— 不给出'}</dd></div>
-                  <div><dt>confidence<small>把握</small></dt><dd>{g && g.show ? g.band : '低'}</dd></div>
+                  <div><dt>reaction<small>{V.t('行为标签', 'behaviour label')}</small></dt><dd>{V.RPLAIN[e.reaction]}</dd></div>
+                  <div><dt>system_guess<small>{V.t('情绪标签', 'emotion label')}</small></dt><dd style={g && g.show ? { color: STATE_COL[g.top] } : undefined}>{g && g.show ? V.STATE_TEXT[g.top] : V.t('— 不给出', '— none given')}</dd></div>
+                  <div><dt>confidence<small>{V.t('把握', 'confidence')}</small></dt><dd>{g && g.show ? bandWord(g.band) : V.t('低', 'low')}</dd></div>
                 </dl>
-                <div className="cl-phone-card"><p className="cl-phone-h">系统在猫身上看到的</p><CatMap z={zEvent(e)} compact /></div>
-                <button className="cl-play" onClick={() => onWatch(L.ev)}>▶ 看这一段视频（上面的画面会跳到这里）<span className="cl-num">④</span></button>
+                <div className="cl-phone-card"><p className="cl-phone-h">{V.t('系统在猫身上看到的', 'What the system sees on the cat')}</p><CatMap z={zEvent(e)} compact /></div>
+                <button className="cl-play" onClick={() => onWatch(L.ev)}>{V.t('▶ 看这一段视频（上面的画面会跳到这里）', '▶ Watch this clip (the picture above jumps here)')}<span className="cl-num">④</span></button>
                 <div className="cl-phone-card">
                   <p className="cl-phone-concl" style={{ color: g && g.show ? STATE_COL[g.top] : '#667083' }}>
-                    {g && g.show ? `看起来像：${STATE_TEXT[g.top]}` : RPLAIN[e.reaction]}<span className="cl-num">①</span></p>
-                  <p className={'cl-phone-badge' + (g && g.show ? '' : ' muted')} style={g && g.show ? { color: STATE_COL[g.top] } : undefined}>{g && g.show ? `推测 · 把握${g.band}` : '把握不够，不做推测'}</p>
-                  {g && g.show ? <p className="cl-phone-h" style={{ marginTop: 10 }}>它此刻最可能的状态（系统推测的占比）</p> : null}
-                  {g && g.show ? <div className="cl-bars cl-phone-bars" aria-label="系统对五种状态的推测占比">{g.post.map((_, i) => i).sort((a, b) => g.post[b] - g.post[a]).map((i, n) => (
-                    <div className={'cl-bar' + (n === 0 ? ' top' : '')} key={i}><span>{STATE_TEXT[STATES[i]]}</span>
+                    {g && g.show ? V.t(`看起来像：${V.STATE_TEXT[g.top]}`, `Looks like: ${V.STATE_TEXT[g.top]}`) : V.RPLAIN[e.reaction]}<span className="cl-num">①</span></p>
+                  <p className={'cl-phone-badge' + (g && g.show ? '' : ' muted')} style={g && g.show ? { color: STATE_COL[g.top] } : undefined}>{g && g.show ? V.t(`推测 · 把握${g.band}`, `guess · confidence ${bandWord(g.band)}`) : V.t('把握不够，不做推测', 'Confidence too low; no guess')}</p>
+                  {g && g.show ? <p className="cl-phone-h" style={{ marginTop: 10 }}>{V.t('它此刻最可能的状态（系统推测的占比）', 'Its most likely state right now (the system’s share estimate)')}</p> : null}
+                  {g && g.show ? <div className="cl-bars cl-phone-bars" aria-label={V.t('系统对五种状态的推测占比', 'The system’s share estimate for the five states')}>{g.post.map((_, i) => i).sort((a, b) => g.post[b] - g.post[a]).map((i, n) => (
+                    <div className={'cl-bar' + (n === 0 ? ' top' : '')} key={i}><span>{V.STATE_TEXT[STATES[i]]}</span>
                       <span className="track"><span className="fill" style={{ width: (g.post[i] * 100).toFixed(1) + '%', ...(n === 0 ? { background: STATE_COL[STATES[i]] } : {}) }} /></span><span className="num">{Math.round(g.post[i] * 100)}%</span></div>))}</div> : null}
-                  {g && g.show ? <p className="cl-phone-p">也可能是：<b>{STATE_TEXT[g.second]}</b>{tell ? `。怎么分辨：${tell}` : ''}<span className="cl-num">②</span></p> : null}
-                  {decisive.map((c) => { const alt = guess(e.reaction, e.interp!.cues.filter((x) => x !== c), e.interp!.face_visible)!; return <p className="cl-phone-p key" key={c}>关键的一步：{cueName(c)}。如果没有这一步，{!alt.show ? '把握就不够，不会给出推测。' : alt.top !== g!.top ? `看起来更像“${STATE_TEXT[alt.top]}”。` : `把握会从“${g!.band}”变为“${alt.band}”。`}</p>; })}
+                  {g && g.show ? <p className="cl-phone-p">{V.t('也可能是：', 'Could also be: ')}<b>{V.STATE_TEXT[g.second]}</b>{tell ? V.t(`。怎么分辨：${tell}`, `. How to tell apart: ${tell}`) : ''}<span className="cl-num">②</span></p> : null}
+                  {decisive.map((c) => { const alt = guess(e.reaction, e.interp!.cues.filter((x) => x !== c), e.interp!.face_visible)!; return <p className="cl-phone-p key" key={c}>{V.t('关键的一步：', 'Key step: ')}{cueName(c)}{V.t('。如果没有这一步，', '. Without this step, ')}{!alt.show ? V.t('把握就不够，不会给出推测。', 'confidence would be too low and no guess would be given.') : alt.top !== g!.top ? V.t(`看起来更像“${V.STATE_TEXT[alt.top]}”。`, `it would look more like “${V.STATE_TEXT[alt.top]}”.`) : V.t(`把握会从“${bandWord(g!.band)}”变为“${bandWord(alt.band)}”。`, `confidence would change from “${bandWord(g!.band)}” to “${bandWord(alt.band)}”.`)}</p>; })}
                 </div>
                 <div className="cl-phone-card">
-                  <p className="cl-phone-h">为什么标为「{RPLAIN[e.reaction]}」<span className="cl-num">③</span></p>
-                  {res.cited.map((k) => <p className="cl-phone-p" key={k}><span className={'cl-role ' + (res.roles[k] === 'main' ? 'main' : '')}>{res.roles[k] === 'main' ? '主要' : '补充'}</span>{driverText({ feature: k, z: e.z[k] ?? 0 })}</p>)}
+                  <p className="cl-phone-h">{V.t('为什么标为「', 'Why it is labelled “')}{V.RPLAIN[e.reaction]}{V.t('」', '”')}<span className="cl-num">③</span></p>
+                  {res.cited.map((k) => <p className="cl-phone-p" key={k}><span className={'cl-role ' + (res.roles[k] === 'main' ? 'main' : '')}>{res.roles[k] === 'main' ? V.t('主要', 'main') : V.t('补充', 'supporting')}</span>{V.driverText({ feature: k, z: e.z[k] ?? 0 })}</p>)}
                   {ifLines.map((x) => <p className="cl-phone-p if" key={x}>{x}</p>)}
-                  <p className="cl-phone-fine">{res.pass ? '已自动检验：把上面的依据改回它平时的样子，标签就会改变。' : '自动检验没有通过，这条解释请谨慎对待。'}</p>
+                  <p className="cl-phone-fine">{res.pass ? V.t('已自动检验：把上面的依据改回它平时的样子，标签就会改变。', 'Automatically checked: setting the evidence above back to its usual look changes the label.') : V.t('自动检验没有通过，这条解释请谨慎对待。', 'The automatic check did not pass; treat this explanation with caution.')}</p>
                 </div>
                 {(e.changes?.length || e.triggers?.length) ? (
                   <div className="cl-phone-card">
-                    <p className="cl-phone-h">和 2 秒前相比</p>
-                    <div className="cl-tags">{e.changes.map(([k, dz]) => { const t = CHANGE_TEXT[k]; return <span key={k}>{t[0]}{dz < 0 ? t[1] : t[2]}（{amount(dz)}）</span>; })}</div>
-                    {e.triggers?.length ? <><p className="cl-phone-h" style={{ marginTop: 10 }}>在这之前</p>{e.triggers.map((k) => <p className="cl-phone-p" key={k}>{TRIGGER_TEXT[k]}</p>)}<p className="cl-phone-fine">只说明先后顺序，不代表是它引起的。</p></> : null}
+                    <p className="cl-phone-h">{V.t('和 2 秒前相比', 'Compared with 2 seconds earlier')}</p>
+                    <div className="cl-tags">{e.changes.map(([k, dz]) => { const t = CHANGE_TEXT[k]; return <span key={k}>{V.t(t[0][0], t[0][1])}{V.t(dz < 0 ? t[1][0] : t[2][0], dz < 0 ? t[1][1] : t[2][1])}{V.t(`（${V.amount(dz)}）`, ` (${V.amount(dz)})`)}</span>; })}</div>
+                    {e.triggers?.length ? <><p className="cl-phone-h" style={{ marginTop: 10 }}>{V.t('在这之前', 'Just before')}</p>{e.triggers.map((k) => <p className="cl-phone-p" key={k}>{V.t(TRIGGER_TEXT[k][0], TRIGGER_TEXT[k][1])}</p>)}<p className="cl-phone-fine">{V.t('只说明先后顺序，不代表是它引起的。', 'This only shows the order of events, not that it caused the reaction.')}</p></> : null}
                   </div>) : null}
                 {(e.notes || []).map((n) => <p className="cl-phone-note" key={n}>⚠ {n}</p>)}
                 <div className="cl-phone-card fb">
-                  <p className="cl-phone-h">{g && g.show ? '这个推测对吗？' : '你觉得它当时怎么了？'}<span className="cl-num">⑤</span></p>
+                  <p className="cl-phone-h">{g && g.show ? V.t('这个推测对吗？', 'Is this guess right?') : V.t('你觉得它当时怎么了？', 'What do you think it was doing?')}<span className="cl-num">⑤</span></p>
                   <div className="cl-fbrow">
-                    {g && g.show ? (['right', 'wrong', 'unsure'] as const).map((v) => <button key={v} aria-pressed={label?.verdict === v} onClick={() => setLabel(v)}>{v === 'right' ? '对' : v === 'wrong' ? '不对' : '说不准'}</button>) : null}
+                    {g && g.show ? (['right', 'wrong', 'unsure'] as const).map((v) => <button key={v} aria-pressed={label?.verdict === v} onClick={() => setLabel(v)}>{v === 'right' ? V.t('对', 'Right') : v === 'wrong' ? V.t('不对', 'Wrong') : V.t('说不准', 'Not sure')}</button>) : null}
                   </div>
                   {(label?.verdict === 'wrong' || !(g && g.show)) ? (
-                    <div className="cl-fbrow"><span className="cl-note">更像是：</span>{STATES.map((st) => <button key={st} aria-pressed={label?.actual === st} onClick={() => setLabel('wrong', st)}>{STATE_TEXT[st].split(' / ')[0]}</button>)}</div>) : null}
+                    <div className="cl-fbrow"><span className="cl-note">{V.t('更像是：', 'More like: ')}</span>{STATES.map((st) => <button key={st} aria-pressed={label?.actual === st} onClick={() => setLabel('wrong', st)}>{V.STATE_TEXT[st].split(V.t(' / ', ' / '))[0]}</button>)}</div>) : null}
                 </div>
               </div>
             )}
@@ -523,22 +556,22 @@ function OwnerStep({ L, onWatch }: { L: L; onWatch: (i: number) => void }) {
         </div>
       </div>
       <div className="cl-loop">
-        <h3>主人的回答，怎么回头修正系统</h3>
-        <p>每点一次“对 / 不对，更像是……”，就多了一条标注。系统把它加进第 5 步里手设的概率：我们的手设数字当作 10 条“虚拟标注”，真实标注一条条加进去。下面是“{RPLAIN[e.reaction]}”这个标签的起点概率，会随着你在手机里的回答而变（在手机里对不同的事件点点看）。</p>
+        <h3>{V.t('主人的回答，怎么回头修正系统', 'How the owner’s answers correct the system afterwards')}</h3>
+        <p>{V.t('每点一次“对 / 不对，更像是……”，就多了一条标注。系统把它加进第 5 步里手设的概率：我们的手设数字当作 10 条“虚拟标注”，真实标注一条条加进去。下面是“', 'Each time you tap “right / wrong, more like …”, one more annotation is added. The system folds it into the probabilities hand-set in step 5: our hand-set numbers count as 10 “virtual annotations”, and real ones are added one by one. Below is the starting odds for the label “')}{V.RPLAIN[e.reaction]}{V.t('”这个标签的起点概率，会随着你在手机里的回答而变（在手机里对不同的事件点点看）。', '”, which changes as you answer on the phone (try different events on the phone).')}</p>
         <div className="cl-bars">{STATES.map((st, i) => { const d = fp.after[i] - fp.before[i]; return (
-          <div className="cl-bar" key={st}><span>{STATE_TEXT[st]}</span>
+          <div className="cl-bar" key={st}><span>{V.STATE_TEXT[st]}</span>
             <span className="track"><span className="fill" style={{ width: (fp.after[i] * 100).toFixed(1) + '%', background: '#9db3ee' }} /></span>
             <span className="num">{Math.round(fp.after[i] * 100)}%{fp.n ? <small className={d > 0.004 ? 'up' : d < -0.004 ? 'down' : ''}> {d > 0.004 ? '↑' : d < -0.004 ? '↓' : ''}</small> : null}</span></div>); })}</div>
-        <p className="cl-note">{fp.n ? `现在用了 ${fp.n} 条“${RPLAIN[e.reaction]}”的标注。` : '还没有标注，显示的是手设的起点。'}几条标注只能轻轻推动概率，约 30 条之后数据才开始占主导。注意：主人的回答也只是另一种判断，不是“真相”，所以要先看视频、写下自己的判断，再看系统的推测。</p>
+        <p className="cl-note">{fp.n ? V.t(`现在用了 ${fp.n} 条“${V.RPLAIN[e.reaction]}”的标注。`, `Now using ${fp.n} annotations for “${V.RPLAIN[e.reaction]}”.`) : V.t('还没有标注，显示的是手设的起点。', 'No annotations yet; the hand-set starting point is shown.')}{V.t('几条标注只能轻轻推动概率，约 30 条之后数据才开始占主导。注意：主人的回答也只是另一种判断，不是“真相”，所以要先看视频、写下自己的判断，再看系统的推测。', 'A few annotations can only nudge the probabilities; data starts to dominate after about 30. Note: the owner’s answer is also just another judgement, not “the truth”, so watch the video and write your own judgement before looking at the system’s guess.')}</p>
       </div>
-      <More title="展开：细节与验证 · Colab 理论版 §6.11、§9.2–§9.4">
+      <More title={V.t('展开：细节与验证 · Colab 理论版 §6.11、§9.2–§9.4', 'Expand: details and checks · Colab theory notebook §6.11, §9.2–§9.4')}>
         <ul className="cl-list">
-          <li><b>为什么按“事件”来写，而不是“猫现在是什么情绪”：</b>主人真正想问的，通常是“它为什么突然感兴趣了 / 不对劲了”。这是一个对比的问题：为什么是现在，而不是刚才？所以每张卡片都在比较变化前后 <Cite ids={[2]} />。</li>
-          <li><b>“之前发生了什么”只说先后，不说原因：</b>一次“声音之后猫警觉了”说明不了什么，因为声音可能本来就一直有。系统还会把每种线索和它平时出现的频率比较（叫“提升度”，接近 1 就是无关）。在这段视频里，声音突变的提升度是 1.0（全程有配乐），所以不能当作线索。</li>
-          <li><b>措辞的规则：</b>说“比它平时”，不说“比一般的猫”；每一句话都能追到一个数字，文字由模板生成，不让语言模型自由发挥；把握程度写在明处，写出没看到的（尾巴、胡须、叫声）；单次事件说“在……之后”，不说“因为……”。</li>
-          <li><b>把握不够就收起来：</b>最高概率不够高、或者依据脸部的标签而脸大部分时间看不清，就不给情绪，只写看到的行为，并折叠在“另有 N 个时刻”里。</li>
-          <li><b>多个摄像头：</b>2 秒内不同摄像头拍到的同一时刻会合并，看得更清楚的在前，另一个作为“换个角度看”；两个视角的推测不一致时，不悄悄选一个，而是注明并把把握降一级。</li>
-          <li><b>还没有验证的：</b>主人是否真的看懂、会不会因此改变对猫的看法，需要一次用户研究（先让主人只看视频写下判断，再看系统的解释，记录是否改变、为什么；再故意放进 2–3 个错误的推测，看能不能发现）。一位主人只能当形成性研究，不能当作“证明有效”。</li>
+          <li><b>{V.t('为什么按“事件”来写，而不是“猫现在是什么情绪”：', 'Why it is written by “event”, not “what emotion the cat is in now”: ')}</b>{V.t('主人真正想问的，通常是“它为什么突然感兴趣了 / 不对劲了”。这是一个对比的问题：为什么是现在，而不是刚才？所以每张卡片都在比较变化前后 ', 'What owners usually want to know is “why did it suddenly get interested / seem off?” It is a contrast question: why now, and not a moment ago? So each card compares before and after the change ')}<Cite ids={[2]} />。</li>
+          <li><b>{V.t('“之前发生了什么”只说先后，不说原因：', '“What happened just before” only gives order, not cause: ')}</b>{V.t('一次“声音之后猫警觉了”说明不了什么，因为声音可能本来就一直有。系统还会把每种线索和它平时出现的频率比较（叫“提升度”，接近 1 就是无关）。在这段视频里，声音突变的提升度是 1.0（全程有配乐），所以不能当作线索。', 'A single “cat alert after a sound” shows nothing, because the sound may have been there all along. The system also compares each cue with how often it normally occurs (“lift”; near 1 means unrelated). In this video the sudden-sound lift is 1.0 (there is background music throughout), so it cannot be used as a cue.')}</li>
+          <li><b>{V.t('措辞的规则：', 'Wording rules: ')}</b>{V.t('说“比它平时”，不说“比一般的猫”；每一句话都能追到一个数字，文字由模板生成，不让语言模型自由发挥；把握程度写在明处，写出没看到的（尾巴、胡须、叫声）；单次事件说“在……之后”，不说“因为……”。', 'Say “compared with its own usual”, not “compared with a typical cat”; every sentence traces back to a number, and the text comes from templates, not free generation by a language model; confidence is stated openly, and what was not seen (tail, whiskers, sounds) is written down; for a single event, say “after …”, not “because …”.')}</li>
+          <li><b>{V.t('把握不够就收起来：', 'Fold away when confidence is low: ')}</b>{V.t('最高概率不够高、或者依据脸部的标签而脸大部分时间看不清，就不给情绪，只写看到的行为，并折叠在“另有 N 个时刻”里。', 'If the top probability is not high enough, or the label rests on the face and the face is mostly unclear, no emotion is given: only the behaviour is written, folded into “N other moments”.')}</li>
+          <li><b>{V.t('多个摄像头：', 'Several cameras: ')}</b>{V.t('2 秒内不同摄像头拍到的同一时刻会合并，看得更清楚的在前，另一个作为“换个角度看”；两个视角的推测不一致时，不悄悄选一个，而是注明并把把握降一级。', 'The same moment seen by different cameras within 2 s is merged; the clearer view comes first and the other is shown as “another angle”. If the two views disagree, the system does not quietly pick one: it says so and lowers the confidence one level.')}</li>
+          <li><b>{V.t('还没有验证的：', 'Not yet validated: ')}</b>{V.t('主人是否真的看懂、会不会因此改变对猫的看法，需要一次用户研究（先让主人只看视频写下判断，再看系统的解释，记录是否改变、为什么；再故意放进 2–3 个错误的推测，看能不能发现）。一位主人只能当形成性研究，不能当作“证明有效”。', 'Whether owners really understand, and whether it changes how they see the cat, needs a user study: first have the owner write a judgement from the video alone, then show the system’s explanation and record whether and why it changed; then deliberately include 2–3 wrong guesses and see whether they are caught. One owner can only serve as a formative study, not as proof that it works.')}</li>
         </ul>
       </More>
     </section>
@@ -549,6 +582,7 @@ function OwnerStep({ L, onWatch }: { L: L; onWatch: (i: number) => void }) {
 const Step1M = memo(Step1), Step2M = memo(Step2), Step3M = memo(Step3), Step4M = memo(Step4), Step5M = memo(Step5), Step6M = memo(Step6), OwnerStepM = memo(OwnerStep);
 
 export function CaseLab({ children }: { children?: ReactNode }) {
+  const V = useVocab();
   const [clip, setClip] = useState<ClipData | null>(null);
   const [events, setEvents] = useState<EventRec[]>([]);
   const [err, setErr] = useState('');
@@ -556,12 +590,13 @@ export function CaseLab({ children }: { children?: ReactNode }) {
     Promise.all([fetch('/case/frames.json').then((r) => r.json()), fetch('/case/events.json').then((r) => r.json())])
       .then(([c, e]) => { setClip(c); setEvents(e); }).catch((x) => setErr(String(x)));
   }, []);
-  if (err) return <><p className="cl-warn">数据没有载入成功：{err}</p>{children}</>;
-  if (!clip) return <><section className="cl-panel cl-panel-loading"><h1>一只猫的耳朵压低了，<span>系统是怎么判断的？</span></h1><p>正在载入这段视频的数据……</p></section>{children}</>;
+  if (err) return <><p className="cl-warn">{V.t('数据没有载入成功：', 'Data failed to load: ')}{err}</p>{children}</>;
+  if (!clip) return <><section className="cl-panel cl-panel-loading"><h1>{V.t('一只猫的耳朵压低了，', 'A cat’s ears went back. ')}<span>{V.t('系统是怎么判断的？', 'How did the system judge it?')}</span></h1><p>{V.t('正在载入这段视频的数据……', 'Loading the data for this video…')}</p></section>{children}</>;
   return <Lab clip={clip} events={events}>{children}</Lab>;
 }
 
 function Lab({ clip, events, children }: { clip: ClipData; events: EventRec[]; children?: ReactNode }) {
+  const V = useVocab();
   const kp = useMemo(() => clip.frames.map((f, i) => (f.kp ? i : -1)).filter((i) => i >= 0), [clip]);
   const nF = clip.frames.length, fps = clip.fps, total = clip.frames[nF - 1].t;
   const [t, setT] = useState(0); // seconds; continuous: the scrubber, or the video clock while it plays
@@ -744,8 +779,8 @@ function Lab({ clip, events, children }: { clip: ClipData; events: EventRec[]; c
       <MiniBar visible={!panelVisible} clip={clip} out={out} fi={fi} kpFrame={frame} kpStep={step} kpFi={fiK} layers={layers} minConf={minConf} geoFeature={geo ? feat : null}
         usePhoto={usePhoto} onScrub={onScrub} barRef={miniRef} />
       {children}
-      <nav className="cl-nav cl-nav-top" aria-label="步骤">
-        {[['s1', '1 找到猫'], ['s2', '2 量数字'], ['s3', '3 和自己比'], ['s4', '4 规则'], ['s5', '5 之后发生了什么'], ['s6', '6 解释是真的吗'], ['s7', '7 给主人的报告'], ['s8', '8 手机 App'], ['s9', '局限']].map(([id, n]) => <a key={id} href={'#' + id}>{n}</a>)}
+      <nav className="cl-nav cl-nav-top" aria-label={V.t('步骤', 'Steps')}>
+        {[['s1', V.t('1 找到猫', '1 Find the cat')], ['s2', V.t('2 量数字', '2 Measure')], ['s3', V.t('3 和自己比', '3 Compare with itself')], ['s4', V.t('4 规则', '4 Rules')], ['s5', V.t('5 之后发生了什么', '5 What happens next')], ['s6', V.t('6 解释是真的吗', '6 Is the explanation true?')], ['s7', V.t('7 给主人的报告', '7 Owner’s report')], ['s8', V.t('8 手机 App', '8 Phone app')], ['s9', V.t('局限', 'Limits')]].map(([id, n]) => <a key={id} href={'#' + id}>{n}</a>)}
       </nav>
       <Step1M L={L} />
       <Step2M L={L} />
@@ -760,10 +795,10 @@ function Lab({ clip, events, children }: { clip: ClipData; events: EventRec[]; c
   );
 }
 
-
 /* ---------- step 8: the phone app ---------- */
 type Verdict = 'right' | 'wrong' | 'unsure';
 function AppStep({ L, onWatch }: { L: L; onWatch: (i: number) => void }) {
+  const V = useVocab();
   const [tab, setTab] = useState<'today' | 'moments' | 'usual'>('today');
   const [filter, setFilter] = useState<'all' | 'guess' | 'behavior'>('all');
   const [open, setOpen] = useState<number | null>(null);
@@ -779,110 +814,112 @@ function AppStep({ L, onWatch }: { L: L; onWatch: (i: number) => void }) {
   const curChk = cur ? checkEvent(cur.e) : null;
   const nFb = Object.keys(fb).length;
   const go = (t: typeof tab) => { setTab(t); setOpen(null); };
+  const bud = (k: string) => (BUDGET_NAME[k] ? V.t(BUDGET_NAME[k][0], BUDGET_NAME[k][1]) : k);
+  const bandWord = (b: string) => (V.lang === 'en' ? { 高: 'high', 中: 'medium', 低: 'low' }[b] : b);
   const Badge = ({ r }: { r: (typeof rows)[number] }) => r.ok
-    ? <span className="cl-app-badge" style={{ color: STATE_COL[r.g!.top] }}>推测 · 把握{r.g!.band}</span>
-    : <span className="cl-app-badge muted">只看到行为</span>;
+    ? <span className="cl-app-badge" style={{ color: STATE_COL[r.g!.top] }}>{V.t(`推测 · 把握${r.g!.band}`, `guess · confidence ${bandWord(r.g!.band)}`)}</span>
+    : <span className="cl-app-badge muted">{V.t('只看到行为', 'behaviour only')}</span>;
 
   return (
     <section className="cl-step" id="s8">
-      <Head no="08" en="THE PHONE APP" title="把报告做成手机 App：只放数据真能判断的东西" desc="前面的卡片是一张静态页面。真正的 App 要让主人来回翻、筛选、点开、回答。下面是按“系统到底算得出什么”来安排的界面，右边可以点。" />
+      <Head no="08" en="THE PHONE APP" title={V.t('把报告做成手机 App：只放数据真能判断的东西', 'Turn the report into a phone app: show only what the data can really judge')} desc={V.t('前面的卡片是一张静态页面。真正的 App 要让主人来回翻、筛选、点开、回答。下面是按“系统到底算得出什么”来安排的界面，右边可以点。', 'The cards above are a static page. A real app lets the owner flip back and forth, filter, open and answer. Below is an interface laid out by what the system can actually compute; you can click on the right.')} />
       <div className="cl-grid">
         <div className="cl-prose">
-          <p>设计从一张账开始：系统能算出什么，界面里就放什么；算不出的，不放，也不假装。</p>
+          <p>{V.t('设计从一张账开始：系统能算出什么，界面里就放什么；算不出的，不放，也不假装。', 'The design starts from a ledger: whatever the system can compute goes on the screen; what it cannot compute is left out, not faked.')}</p>
           <table className="cl-table">
-            <thead><tr><th>系统算得出</th><th>在 App 里的位置</th></tr></thead>
+            <thead><tr><th>{V.t('系统算得出', 'What the system can compute')}</th><th>{V.t('在 App 里的位置', 'Where it is in the app')}</th></tr></thead>
             <tbody>
-              <tr><td>每一段时间的行为（平静、活跃、警觉、耳朵后压、僵住）</td><td>「今天」里的时间条</td></tr>
-              <tr><td>某个时刻的情绪推测，带把握程度</td><td>「今天」顶部的<b>看起来像</b>，和「时刻」里每一行</td></tr>
-              <tr><td>耳朵、身体比它平时变了多少</td><td>点开时刻后的“为什么”</td></tr>
-              <tr><td>主人的回答（对 / 不对 / 说不准）</td><td>每个时刻底部的按钮，回头修正系统</td></tr>
+              <tr><td>{V.t('每一段时间的行为（平静、活跃、警觉、耳朵后压、僵住）', 'Behaviour over each stretch of time (calm, active, alert, ears back, frozen)')}</td><td>{V.t('「今天」里的时间条', 'the time bar under “Today”')}</td></tr>
+              <tr><td>{V.t('某个时刻的情绪推测，带把握程度', 'An emotion guess for a moment, with confidence')}</td><td>{V.t('「今天」顶部的', 'the ')}<b>{V.t('看起来像', 'looks like')}</b>{V.t('，和「时刻」里每一行', ' at the top of “Today”, and each row under “Moments”')}</td></tr>
+              <tr><td>{V.t('耳朵、身体比它平时变了多少', 'How much the ears and body changed from usual')}</td><td>{V.t('点开时刻后的“为什么”', 'the “why” after opening a moment')}</td></tr>
+              <tr><td>{V.t('主人的回答（对 / 不对 / 说不准）', 'The owner’s answer (right / wrong / not sure)')}</td><td>{V.t('每个时刻底部的按钮，回头修正系统', 'the buttons at the bottom of each moment, to correct the system afterwards')}</td></tr>
             </tbody>
           </table>
-          <p><b>不放的东西：</b>尾巴、胡须、瞳孔、叫声，这个系统看不到，所以没有对应的界面，也不会出现在推测里。把握不够的时刻，只写看到的行为，不给情绪。</p>
+          <p><b>{V.t('不放的东西：', 'What is left out: ')}</b>{V.t('尾巴、胡须、瞳孔、叫声，这个系统看不到，所以没有对应的界面，也不会出现在推测里。把握不够的时刻，只写看到的行为，不给情绪。', 'tail, whiskers, pupils and calls: the system cannot see them, so there is no matching screen and they never appear in a guess. For moments with low confidence, only the behaviour is written, with no emotion.')}</p>
           <ol className="cl-steps-list">
-            <li><b>今天：</b>先回答“它现在像什么”，再给时间分布。</li>
-            <li><b>时刻：</b>能筛选“有推测 / 只看到行为”，点开才是完整卡片。</li>
-            <li><b>平常：</b>说明系统看什么、不看什么，和你教了它多少。</li>
+            <li><b>{V.t('今天：', 'Today: ')}</b>{V.t('先回答“它现在像什么”，再给时间分布。', 'first answer “what does it look like now”, then show how the time was spent.')}</li>
+            <li><b>{V.t('时刻：', 'Moments: ')}</b>{V.t('能筛选“有推测 / 只看到行为”，点开才是完整卡片。', 'filter by “with a guess / behaviour only”; opening one gives the full card.')}</li>
+            <li><b>{V.t('平常：', 'Usual: ')}</b>{V.t('说明系统看什么、不看什么，和你教了它多少。', 'explains what the system looks at and what it does not, and how much you have taught it.')}</li>
           </ol>
-          <Evidence kind="hand" note="界面是设计稿，还没有给主人用过" />
+          <Evidence kind="hand" note={V.t('界面是设计稿，还没有给主人用过', 'The interface is a design draft and has not yet been used by an owner')} />
         </div>
         <div className="cl-widget">
-          <div className="cl-phone cl-app" aria-label="手机 App 原型">
+          <div className="cl-phone cl-app" aria-label={V.t('手机 App 原型', 'Phone app prototype')}>
             <div className="cl-app-screen">
               {tab === 'today' ? (
                 <div className="cl-phone-body">
-                  <p className="cl-phone-title">你不在的时候</p>
+                  <p className="cl-phone-title">{V.t('你不在的时候', 'While you were away')}</p>
                   {latest ? (
                     <button className="cl-app-hero" style={{ borderColor: STATE_COL[latest.g!.top] }} onClick={() => { setTab('moments'); setOpen(latest.i); }}>
-                      <small>最近一次 · 片段 {latest.i} · {mmss(latest.e.start_s)}</small>
-                      <b style={{ color: STATE_COL[latest.g!.top] }}>看起来像：{STATE_TEXT[latest.g!.top]}</b>
+                      <small>{V.t('最近一次 · 片段', 'Latest · clip')} {latest.i} · {mmss(latest.e.start_s)}</small>
+                      <b style={{ color: STATE_COL[latest.g!.top] }}>{V.t('看起来像：', 'Looks like: ')}{V.STATE_TEXT[latest.g!.top]}</b>
                       <Badge r={latest} />
                     </button>
-                  ) : <p className="cl-phone-lead">这段时间没有把握足够高的推测，只记录了行为。</p>}
+                  ) : <p className="cl-phone-lead">{V.t('这段时间没有把握足够高的推测，只记录了行为。', 'No guess was confident enough for this period; only behaviour was recorded.')}</p>}
                   <div className="cl-phone-card">
-                    <p className="cl-phone-h">它的时间都花在哪里</p>
+                    <p className="cl-phone-h">{V.t('它的时间都花在哪里', 'Where its time went')}</p>
                     <div className="cl-budget">{budget.map(([k, n]) => <span key={k} style={{ flex: n, background: BUDGET_COL[k] }} />)}</div>
-                    <p className="cl-phone-legend">{budget.slice(0, 4).map(([k, n]) => <span key={k}><i style={{ background: BUDGET_COL[k] }} />{BUDGET_NAME[k]} <b>{Math.round((n / tot) * 100)}%</b></span>)}</p>
+                    <p className="cl-phone-legend">{budget.slice(0, 4).map(([k, n]) => <span key={k}><i style={{ background: BUDGET_COL[k] }} />{bud(k)} <b>{Math.round((n / tot) * 100)}%</b></span>)}</p>
                   </div>
-                  <p className="cl-phone-fold">共 {rows.length} 个时刻，其中 {shown.length} 个给出了推测。</p>
+                  <p className="cl-phone-fold">{V.t(`共 ${rows.length} 个时刻，其中 ${shown.length} 个给出了推测。`, `${rows.length} moments in all, ${shown.length} of them given a guess.`)}</p>
                 </div>
               ) : null}
               {tab === 'moments' && cur === null ? (
                 <div className="cl-phone-body">
-                  <p className="cl-phone-title">时刻</p>
-                  <div className="cl-seg" role="group" aria-label="筛选">
-                    {([['all', '全部'], ['guess', '有推测'], ['behavior', '只看到行为']] as const).map(([k, n]) => <button key={k} aria-pressed={filter === k} onClick={() => setFilter(k)}>{n}</button>)}
+                  <p className="cl-phone-title">{V.t('时刻', 'Moments')}</p>
+                  <div className="cl-seg" role="group" aria-label={V.t('筛选', 'Filter')}>
+                    {([['all', V.t('全部', 'All')], ['guess', V.t('有推测', 'With guess')], ['behavior', V.t('只看到行为', 'Behaviour only')]] as const).map(([k, n]) => <button key={k} aria-pressed={filter === k} onClick={() => setFilter(k)}>{n}</button>)}
                   </div>
                   {list.map((r) => (
                     <button key={r.i} className="cl-phone-row" style={r.ok ? { borderLeftColor: STATE_COL[r.g!.top] } : undefined} onClick={() => setOpen(r.i)}>
-                      <span className="t">片段 {r.i} · {mmss(r.e.start_s)}</span>
-                      <span className="g" style={{ color: r.ok ? STATE_COL[r.g!.top] : '#667083' }}>{r.ok ? `看起来像：${STATE_TEXT[r.g!.top]}` : RPLAIN[r.e.reaction]}</span>
+                      <span className="t">{V.t('片段', 'Clip')} {r.i} · {mmss(r.e.start_s)}</span>
+                      <span className="g" style={{ color: r.ok ? STATE_COL[r.g!.top] : '#667083' }}>{r.ok ? V.t(`看起来像：${V.STATE_TEXT[r.g!.top]}`, `Looks like: ${V.STATE_TEXT[r.g!.top]}`) : V.RPLAIN[r.e.reaction]}</span>
                       <Badge r={r} />
                     </button>))}
-                  {list.length === 0 ? <p className="cl-phone-fold">这一类没有时刻。</p> : null}
+                  {list.length === 0 ? <p className="cl-phone-fold">{V.t('这一类没有时刻。', 'No moments in this category.')}</p> : null}
                 </div>
               ) : null}
               {tab === 'moments' && cur && curChk ? (
                 <div className="cl-phone-body">
-                  <button className="cl-app-back" onClick={() => setOpen(null)}>‹ 时刻</button>
-                  <p className="cl-phone-time">片段 {cur.i} · {mmss(cur.e.start_s)}</p>
+                  <button className="cl-app-back" onClick={() => setOpen(null)}>{V.t('‹ 时刻', '‹ Moments')}</button>
+                  <p className="cl-phone-time">{V.t('片段', 'Clip')} {cur.i} · {mmss(cur.e.start_s)}</p>
                   <div className="cl-phone-card">
-                    <p className="cl-phone-concl" style={{ color: cur.ok ? STATE_COL[cur.g!.top] : '#667083' }}>{cur.ok ? `看起来像：${STATE_TEXT[cur.g!.top]}` : RPLAIN[cur.e.reaction]}</p>
+                    <p className="cl-phone-concl" style={{ color: cur.ok ? STATE_COL[cur.g!.top] : '#667083' }}>{cur.ok ? V.t(`看起来像：${V.STATE_TEXT[cur.g!.top]}`, `Looks like: ${V.STATE_TEXT[cur.g!.top]}`) : V.RPLAIN[cur.e.reaction]}</p>
                     <Badge r={cur} />
-                    {cur.ok ? <p className="cl-phone-p">也可能是：<b>{STATE_TEXT[cur.g!.second]}</b></p> : <p className="cl-phone-p">把握不够，系统只写看到的行为，不给情绪。</p>}
+                    {cur.ok ? <p className="cl-phone-p">{V.t('也可能是：', 'Could also be: ')}<b>{V.STATE_TEXT[cur.g!.second]}</b></p> : <p className="cl-phone-p">{V.t('把握不够，系统只写看到的行为，不给情绪。', 'Confidence is too low; the system only writes the behaviour and gives no emotion.')}</p>}
                   </div>
-                  <div className="cl-phone-card"><p className="cl-phone-h">系统在猫身上看到的</p><CatMap z={zEvent(cur.e)} compact /></div>
-                  <button className="cl-play" onClick={() => onWatch(cur.i)}>▶ 看这一段视频</button>
+                  <div className="cl-phone-card"><p className="cl-phone-h">{V.t('系统在猫身上看到的', 'What the system sees on the cat')}</p><CatMap z={zEvent(cur.e)} compact /></div>
+                  <button className="cl-play" onClick={() => onWatch(cur.i)}>{V.t('▶ 看这一段视频', '▶ Watch this clip')}</button>
                   <div className="cl-phone-card">
-                    <p className="cl-phone-h">为什么标为「{RPLAIN[cur.e.reaction]}」</p>
-                    {curChk.cited.slice(0, 2).map((k) => <p className="cl-phone-p" key={k}>{driverText({ feature: k, z: cur.e.z[k] ?? 0 })}</p>)}
+                    <p className="cl-phone-h">{V.t('为什么标为「', 'Why it is labelled “')}{V.RPLAIN[cur.e.reaction]}{V.t('」', '”')}</p>
+                    {curChk.cited.slice(0, 2).map((k) => <p className="cl-phone-p" key={k}>{V.driverText({ feature: k, z: cur.e.z[k] ?? 0 })}</p>)}
                   </div>
                   <div className="cl-phone-card fb">
-                    <p className="cl-phone-h">{cur.ok ? '这个推测对吗？' : '你觉得它当时怎么了？'}</p>
-                    <div className="cl-fbrow">{(['right', 'wrong', 'unsure'] as const).map((v) => <button key={v} aria-pressed={fb[cur.i] === v} onClick={() => setFb({ ...fb, [cur.i]: v })}>{v === 'right' ? '对' : v === 'wrong' ? '不对' : '说不准'}</button>)}</div>
+                    <p className="cl-phone-h">{cur.ok ? V.t('这个推测对吗？', 'Is this guess right?') : V.t('你觉得它当时怎么了？', 'What do you think it was doing?')}</p>
+                    <div className="cl-fbrow">{(['right', 'wrong', 'unsure'] as const).map((v) => <button key={v} aria-pressed={fb[cur.i] === v} onClick={() => setFb({ ...fb, [cur.i]: v })}>{v === 'right' ? V.t('对', 'Right') : v === 'wrong' ? V.t('不对', 'Wrong') : V.t('说不准', 'Not sure')}</button>)}</div>
                   </div>
                 </div>
               ) : null}
               {tab === 'usual' ? (
                 <div className="cl-phone-body">
-                  <p className="cl-phone-title">平常</p>
+                  <p className="cl-phone-title">{V.t('平常', 'Usual')}</p>
                   <div className="cl-phone-card">
-                    <p className="cl-phone-h">系统在看</p>
-                    <p className="cl-phone-p">耳朵的高度和朝向、眼睛睁开的程度、身体动得多不多。每一项都和<b>它自己的平时</b>比。</p>
+                    <p className="cl-phone-h">{V.t('系统在看', 'What the system watches')}</p>
+                    <p className="cl-phone-p">{V.t('耳朵的高度和朝向、眼睛睁开的程度、身体动得多不多。每一项都和', 'the height and direction of the ears, how wide the eyes are open, and how much the body moves. Each is compared with ')}<b>{V.t('它自己的平时', 'its own usual')}</b>{V.t('比。', '.')}</p>
                   </div>
                   <div className="cl-phone-card">
-                    <p className="cl-phone-h">系统看不到</p>
-                    <p className="cl-phone-p">尾巴、胡须、瞳孔、叫声。所以推测不会提到它们。</p>
+                    <p className="cl-phone-h">{V.t('系统看不到', 'What the system cannot see')}</p>
+                    <p className="cl-phone-p">{V.t('尾巴、胡须、瞳孔、叫声。所以推测不会提到它们。', 'tail, whiskers, pupils, calls. So a guess never mentions them.')}</p>
                   </div>
                   <div className="cl-phone-card">
-                    <p className="cl-phone-h">你教了它</p>
-                    <p className="cl-phone-p">{nFb ? `已回答 ${nFb} 个时刻。` : '还没有回答。在「时刻」里点开一个，告诉系统对不对。'}</p>
+                    <p className="cl-phone-h">{V.t('你教了它', 'What you have taught it')}</p>
+                    <p className="cl-phone-p">{nFb ? V.t(`已回答 ${nFb} 个时刻。`, `${nFb} moments answered.`) : V.t('还没有回答。在「时刻」里点开一个，告诉系统对不对。', 'Nothing answered yet. Open one under “Moments” and tell the system whether it is right.')}</p>
                   </div>
                 </div>
               ) : null}
             </div>
-            <div className="cl-app-tabs" role="tablist" aria-label="App 底部导航">
-              {([['today', '今天'], ['moments', '时刻'], ['usual', '平常']] as const).map(([k, n]) => <button key={k} role="tab" aria-selected={tab === k} onClick={() => go(k)}>{n}</button>)}
+            <div className="cl-app-tabs" role="tablist" aria-label={V.t('App 底部导航', 'App bottom navigation')}>
+              {([['today', V.t('今天', 'Today')], ['moments', V.t('时刻', 'Moments')], ['usual', V.t('平常', 'Usual')]] as const).map(([k, n]) => <button key={k} role="tab" aria-selected={tab === k} onClick={() => go(k)}>{n}</button>)}
             </div>
           </div>
         </div>
@@ -893,21 +930,22 @@ function AppStep({ L, onWatch }: { L: L; onWatch: (i: number) => void }) {
 
 /* ---------- limits and critiques ---------- */
 function Limits() {
+  const V = useVocab();
   const items: [string, string][] = [
-    ['证据太薄', '情绪推测的概率是我们自己定的，没有一条被人工标注检验过；规则也只在一段约 35 秒的网络视频上跑过。这个项目能展示的是“没有验证时怎样负责任地做”：证据等级标在每一步，把握低就不说，主人能用视频自己核对。它不能展示“这个方法被证明有效”。'],
-    ['评估只做到了前两层', '模型对不对（第一层）只有感知部分有验证集指标，行为判断没有标注；解释是否忠实（第二层）已经在部署系统上检验；主人是否看懂（第三层）还没有测。'],
-    ['解释的对象偏窄', '本站的方法图鉴多面向表格和分类模型，这里解释的是关键点回归之上的规则。部署的系统属于“设计即可解释”的那一类，没有用 SHAP 或 LIME；第 1 步的遮挡分析只做了 1 张图、1 个点，只能算健全性检查。'],
-    ['只在一个领域里演示过', '可迁移的是设计模式：替不会说话的对象向第三方解释时，（1）和它自己的平常比；（2）把可核对的依据放在结论旁；（3）把握不够就不下结论；（4）读者的纠正变成标签。这些模式在其他领域是否有效，需要另外的研究。'],
+    [V.t('证据太薄', 'Thin evidence'), V.t('情绪推测的概率是我们自己定的，没有一条被人工标注检验过；规则也只在一段约 35 秒的网络视频上跑过。这个项目能展示的是“没有验证时怎样负责任地做”：证据等级标在每一步，把握低就不说，主人能用视频自己核对。它不能展示“这个方法被证明有效”。', 'The probabilities for emotion guesses are our own; none has been checked against human annotation, and the rules have only run on one web video of about 35 s. What this project can show is how to act responsibly while unverified: the evidence level is marked on every step, low confidence is not spoken, and owners can check against the video. It cannot show that the method has been proven to work.')],
+    [V.t('评估只做到了前两层', 'Evaluation covers only the first two layers', ), V.t('模型对不对（第一层）只有感知部分有验证集指标，行为判断没有标注；解释是否忠实（第二层）已经在部署系统上检验；主人是否看懂（第三层）还没有测。', 'Whether the model is right (layer 1) has validation metrics only for the perception part; the behaviour judgements have no annotations. Whether the explanation is faithful (layer 2) has been checked on the deployed system; whether owners understand it (layer 3) has not been tested.')],
+    [V.t('解释的对象偏窄', 'The scope of explanation is narrow'), V.t('本站的方法图鉴多面向表格和分类模型，这里解释的是关键点回归之上的规则。部署的系统属于“设计即可解释”的那一类，没有用 SHAP 或 LIME；第 1 步的遮挡分析只做了 1 张图、1 个点，只能算健全性检查。', 'The method atlas on this site mostly addresses tabular and classification models; here we explain rules built on keypoint regression. The deployed system is of the “interpretable by design” kind and uses neither SHAP nor LIME; the occlusion analysis in step 1 covers one image and one point, so it is only a sanity check.')],
+    [V.t('只在一个领域里演示过', 'Demonstrated in one domain only'), V.t('可迁移的是设计模式：替不会说话的对象向第三方解释时，（1）和它自己的平常比；（2）把可核对的依据放在结论旁；（3）把握不够就不下结论；（4）读者的纠正变成标签。这些模式在其他领域是否有效，需要另外的研究。', 'What can transfer is a design pattern: when explaining a non-speaking subject to a third party, (1) compare it with its own usual; (2) put checkable evidence next to the conclusion; (3) draw no conclusion when confidence is low; (4) turn readers’ corrections into labels. Whether these patterns work in other domains needs separate research.')],
   ];
   return (
     <section className="cl-step" id="s9">
-      <Head no="09" en="LIMITS" title="这个案例不能说明什么" desc="解释忠实于规则，不代表规则对这只猫的判断是对的。这只猫当时是被吓到的，不是在玩。" />
+      <Head no="09" en="LIMITS" title={V.t('这个案例不能说明什么', 'What this case cannot show')} desc={V.t('解释忠实于规则，不代表规则对这只猫的判断是对的。这只猫当时是被吓到的，不是在玩。', 'An explanation that is faithful to the rules does not mean the rules are right about this cat. At that moment the cat was startled, not playing.')} />
       <div className="cl-limits">
         {items.map(([t, b], i) => (<article key={t}><span className="num">{String(i + 1).padStart(2, '0')}</span><h3>{t}</h3><p>{b}</p></article>))}
       </div>
       <div className="editor-note">
-        <span>数据说明 / DATA</span>
-        <p>案例使用 YouTube 上的一段视频（<a href={'https://www.youtube.com/watch?v=' + VIDEO_ID} target="_blank" rel="noreferrer">“My cat thinks she’s home alone with a ghost – Part 2”，Kiki The Dream Cat ↗</a>），仅供课程学习。本页<b>没有复制这段视频</b>。顶部的播放器是 YouTube 官方嵌入，页面自己发布的内容是从视频里算出的<b>关键点和数字</b>。系统<b>不读猫的情绪</b>，它给出带把握程度的推测。完整的数学推导和可运行的代码，在我们的 <a href={COLAB_URL} target="_blank" rel="noreferrer">Colab 笔记 ↗</a>。</p>
+        <span>{V.t('数据说明 / DATA', 'Data note / DATA')}</span>
+        <p>{V.t('案例使用 YouTube 上的一段视频（', 'The case uses a video on YouTube (')}<a href={'https://www.youtube.com/watch?v=' + VIDEO_ID} target="_blank" rel="noreferrer">{V.t('“My cat thinks she’s home alone with a ghost – Part 2”，Kiki The Dream Cat ↗', '“My cat thinks she’s home alone with a ghost – Part 2”, Kiki The Dream Cat ↗')}</a>{V.t('），仅供课程学习。本页', '), for course study only. This page ')}<b>{V.t('没有复制这段视频', 'does not copy this video')}</b>{V.t('。顶部的播放器是 YouTube 官方嵌入，页面自己发布的内容是从视频里算出的', '. The player at the top is YouTube’s official embed; what the page itself publishes is the ')}<b>{V.t('关键点和数字', 'keypoints and numbers')}</b>{V.t('。系统', ' computed from the video. The system ')}<b>{V.t('不读猫的情绪', 'does not read the cat’s emotions')}</b>{V.t('，它给出带把握程度的推测。完整的数学推导和可运行的代码，在我们的 ', ': it gives guesses with a confidence level. The full mathematical derivation and runnable code are in our ')}<a href={COLAB_URL} target="_blank" rel="noreferrer">{V.t('Colab 笔记 ↗', 'Colab notebook ↗')}</a>{V.t('。', '.')}</p>
       </div>
     </section>
   );

@@ -1,6 +1,7 @@
 'use client';
 import { useEffect, useRef, useState } from 'react';
 import { EAR_L, EAR_R, EYE_L, EYE_R, MUZZLE, TIP_L, TIP_R, faceFeatures, type FeatureKey, type Frame, type Pt, type Step } from './core';
+import { useLang } from '../i18n';
 
 export interface Layers { box: boolean; face: boolean; body: boolean; basis: boolean }
 
@@ -39,6 +40,7 @@ export function Viewer({ fi, frame, step, size, layers, minConf, geoFeature, use
   fi: number; frame: Frame; step: Step; size: [number, number]; layers: Layers; minConf: number;
   geoFeature: FeatureKey | null; usePhoto: boolean; light?: boolean; full?: boolean;
 }) {
+  const { lang } = useLang();
   const ref = useRef<HTMLCanvasElement>(null);
   const [tick, setTick] = useState(0);
 
@@ -132,10 +134,10 @@ export function Viewer({ fi, frame, step, size, layers, minConf, geoFeature, use
     }
     if (!frame.fp && !frame.bp) {
       ctx.fillStyle = C.text; ctx.font = `${14 * DPR}px sans-serif`; ctx.textAlign = 'center';
-      ctx.fillText('这一帧没有找到猫', W / 2, H / 2);
+      ctx.fillText(lang === 'en' ? 'No cat found on this frame' : '这一帧没有找到猫', W / 2, H / 2);
     }
     void accent;
-  }, [fi, frame, step, size, layers, minConf, geoFeature, usePhoto, light, full, tick]);
+  }, [fi, frame, step, size, layers, minConf, geoFeature, usePhoto, light, full, tick, lang]);
 
-  return <canvas ref={ref} className="cl-canvas" width={size[0] * DPR} height={size[1] * DPR} role="img" aria-label="当前这一帧的关键点（骨架视图）" />;
+  return <canvas ref={ref} className="cl-canvas" width={size[0] * DPR} height={size[1] * DPR} role="img" aria-label={lang === 'en' ? 'Keypoints of this frame (skeleton view)' : '当前这一帧的关键点（骨架视图）'} />;
 }

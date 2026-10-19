@@ -9,7 +9,7 @@ const sourcesModule = ts.transpile(read('app/sources.ts'), {
 const { sources } = await import(
   'data:text/javascript;base64,' + Buffer.from(sourcesModule).toString('base64')
 );
-assert.equal(sources.length, 27);
+assert.equal(sources.length, 32);
 sources.forEach((source, i) => {
   assert.equal(source.id, i + 1);
   assert.equal(new URL(source.url).protocol, 'https:');
@@ -22,16 +22,14 @@ const file = ts.createSourceFile(
   true,
   ts.ScriptKind.TSX,
 );
-const declarations = file.statements
-  .filter(ts.isVariableStatement)
-  .flatMap((s) => [...s.declarationList.declarations]);
-const methods = declarations.find(
-  (d) => d.name.getText(file) === 'methods',
-).initializer;
-assert.equal(methods.elements.length, 6);
-const steps = declarations.find((d) => d.name.getText(file) === 'steps')
-  .initializer.expression;
-const titles = steps.elements.map((row) => row.elements[0].text);
+const dataModule = ts.transpile(read('app/learning-data.ts'), {
+  module: ts.ModuleKind.ESNext,
+});
+const { METHODS, STEPS } = await import(
+  'data:text/javascript;base64,' + Buffer.from(dataModule).toString('base64')
+);
+assert.equal(METHODS.length, 6);
+const titles = STEPS.map((step) => step.title.zh);
 assert.deepEqual(titles, [
   '定义应用场景',
   '识别目标用户',
@@ -44,6 +42,12 @@ assert.deepEqual(titles, [
   '技术验证',
   '用户验证与迭代',
 ]);
+[...METHODS, ...STEPS].forEach((row) => {
+  assert(row.title?.en || row.name?.en, 'Missing English text');
+  row.refs.forEach((id) =>
+    assert(id >= 1 && id <= sources.length, 'Unknown reference ' + id),
+  );
+});
 const validIds = new Set(sources.map((s) => s.id));
 function visit(node) {
   if (
@@ -86,7 +90,9 @@ assert.equal(
 );
 assert(content.includes('/xai-learning-workflow-reference.pdf'));
 console.log(
-  'Content checks passed: 27 sources, 6 methods, original 10 steps, 6 preserved inline-note keys, PDF asset and literal citations.',
+  'Content checks passed: ' +
+    sources.length +
+    ' sources, 6 methods, original 10 steps, 6 preserved inline-note keys, PDF asset and literal citations.',
 );
 const sourceUrl =
   'data:text/javascript;base64,' +

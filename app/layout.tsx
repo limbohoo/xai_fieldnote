@@ -1,6 +1,7 @@
 import type { Metadata } from 'next';
 import { Analytics } from '@vercel/analytics/react';
 import './globals.css';
+import { LangProvider } from './i18n';
 
 export const metadata: Metadata = {
   title: 'XAI Fieldnotes · 可解释智能设计学习地图',
@@ -17,7 +18,7 @@ export default function RootLayout({
   return (
     <html lang="zh-CN">
       <body className="antialiased">
-        {children}
+        <LangProvider>{children}</LangProvider>
         <Analytics />
       </body>
     </html>

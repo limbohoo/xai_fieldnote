@@ -199,7 +199,7 @@ function Inner({ clip, events }: { clip: ClipData; events: EventRec[] }) {
           <p className="ex-assume">{D.assume[lang]}</p>
           {D.source ? <div className="ex-source"><b>{D.source.title[lang]}</b><ul>{D.source.items.map((it, i) => <li key={i}>{it[lang]}</li>)}</ul></div> : null}
           <dl className="ex-sym">{symbols[S.id]?.map(([a, b]) => <div key={a}><dt>{a}</dt><dd>{b}</dd></div>)}</dl>
-          {STAGE_REFS[S.id] ? <Sources ids={STAGE_REFS[S.id]} title={t('引用与来源', 'References and sources')} /> : null}
+          {STAGE_REFS[S.id] ? <details className="ex-refd"><summary>{t(`引用与来源（${STAGE_REFS[S.id].length}）`, `References and sources (${STAGE_REFS[S.id].length})`)}</summary><Sources ids={STAGE_REFS[S.id]} title="" /></details> : null}
         </div> : null}
 
         {tab === 'numbers' ? <div className="ex-nums">

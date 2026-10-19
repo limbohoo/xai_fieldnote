@@ -2059,3 +2059,8 @@ summary > span:last-child {
 .case-banner-copy { font-size:15px; line-height:1.7; color:#4b586b; max-width:820px; }
 .case-banner:hover { background:#eef3ff; }
 .case-banner:focus-visible { outline:3px solid var(--blue); outline-offset:3px; }
+
+/* language toggle in the header */
+.lang-toggle { display: inline-flex; align-items: center; gap: 6px; font: inherit; font-size: 13px; color: #2b3445; background: #fff; border: 1px solid #c8d2e3; border-radius: 999px; padding: 5px 12px 5px 9px; cursor: pointer; white-space: nowrap; margin-left: 4px; }
+.lang-toggle:hover { border-color: var(--blue); color: var(--blue); }
+.lang-toggle:focus-visible { outline: 3px solid var(--blue); outline-offset: 2px; }

@@ -1,13 +1,14 @@
 'use client';
-import { createContext, useContext } from 'react';
+import { useLang as useSiteLang, type Lang as SiteLang } from '../i18n';
 import type { FeatureKey } from '../case/core';
-import { RPLAIN, STATE_TEXT, CUES, FEAT } from '../case/vocab';
+import { buildVocab } from '../case/vocab';
+const ZH = buildVocab('zh');
+const RPLAIN = ZH.RPLAIN, STATE_TEXT = ZH.STATE_TEXT, CUES = ZH.CUES, FEAT = ZH.FEAT;
 import type { State } from '../case/core';
 
-export type Lang = 'zh' | 'en';
-export interface Ctx { lang: Lang; t: (zh: string, en: string) => string }
-export const LangCtx = createContext<Ctx>({ lang: 'zh', t: (zh) => zh });
-export const useT = () => useContext(LangCtx);
+export type Lang = SiteLang;
+/* The model section shares the site-wide language (header toggle). */
+export const useT = () => { const { lang, t } = useSiteLang(); return { t, lang }; };
 export const makeT = (lang: Lang) => (zh: string, en: string) => (lang === 'en' ? en : zh);
 
 const RP_EN: Record<string, string> = {

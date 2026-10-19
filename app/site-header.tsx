@@ -1,5 +1,9 @@
+'use client';
 /* oxlint-disable next/no-html-link-for-pages */
+import { LangToggle, useT } from './i18n';
+
 export function SiteHeader({ glossary = false, page }: { glossary?: boolean; page?: 'case' | 'model' }) {
+  const t = useT();
   return (
     <header className="topbar">
       <a className="brand" href="/">
@@ -11,18 +15,19 @@ export function SiteHeader({ glossary = false, page }: { glossary?: boolean; pag
           <span className="brand-sub">DESIGN × HUMAN–AI INTERACTION</span>
         </span>
       </a>
-      <nav aria-label="主要导航">
-        <a href="/#mapping">领域与问题</a>
-        <a href="/#methods">方法与案例</a>
-        <a href="/#atlas">方法图鉴</a>
-        <a href="/#process">流程与验证</a>
-        <a href="/#frontiers">延伸阅读</a>
-        <a href="/case" aria-current={page === 'case' ? 'page' : undefined}>案例实验室</a>
-        <a href="/model" aria-current={page === 'model' ? 'page' : undefined}>模型图解</a>
+      <nav aria-label={t('主要导航', 'Main navigation')}>
+        <a href="/#mapping">{t('领域与问题', 'Domain & questions')}</a>
+        <a href="/#methods">{t('方法与案例', 'Methods & cases')}</a>
+        <a href="/#atlas">{t('方法图鉴', 'Method atlas')}</a>
+        <a href="/#process">{t('流程与验证', 'Process & validation')}</a>
+        <a href="/#frontiers">{t('延伸阅读', 'Further reading')}</a>
+        <a href="/case" aria-current={page === 'case' ? 'page' : undefined}>{t('案例实验室', 'Case lab')}</a>
+        <a href="/model" aria-current={page === 'model' ? 'page' : undefined}>{t('模型图解', 'Model walkthrough')}</a>
       </nav>
       <a className="source-nav" href={glossary || page ? '/' : '/glossary'}>
-        {glossary || page ? '返回阅读指南 ↗' : '术语词典 Glossary ↗'}
+        {glossary || page ? t('返回阅读指南 ↗', 'Back to the guide ↗') : t('术语词典 Glossary ↗', 'Glossary ↗')}
       </a>
+      <LangToggle />
     </header>
   );
 }

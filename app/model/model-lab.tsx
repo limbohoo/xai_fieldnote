@@ -4,7 +4,8 @@ import {
   LIK, MODEL_ERROR, PRIOR, STATES, Z, checkEvent, classify, faceFeatures, fin, guess, run, zEvent,
   type ClipData, type EventRec, type FeatureKey, type Frame, type Pt, type Reaction, type Step,
 } from '../case/core';
-import { FEAT, FIDX, LCOL, fmt, mmss } from '../case/vocab';
+import { FIDX, LCOL, fmt, mmss, buildVocab } from '../case/vocab';
+const FEAT = buildVocab('zh').FEAT;
 import { cueKeys, cueName, driverTxt, featName, rp, stateName, stateShort, useT } from './i18n';
 import { contributions, robustness } from './nbmath';
 

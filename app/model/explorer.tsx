@@ -3,7 +3,8 @@ import { useEffect, useMemo, useRef, useState, type ReactNode } from 'react';
 import { FEATURES, PRIOR, checkEvent, fin, run, type ClipData, type EventRec, type FeatureKey } from '../case/core';
 import { COLAB_URL, LCOL, mmss } from '../case/vocab';
 import { DERIV, WHOLE } from './derivations';
-import { LangCtx, cueKeys, cueName, makeT, rp, useT, type Lang } from './i18n';
+import { cueKeys, cueName, rp, useT } from './i18n';
+import { useLang } from '../i18n';
 import { ViewBaseline, ViewCheck, ViewDetect, ViewFeatures, GuessLab, ViewKeypoints, ViewRules, ViewSmooth, ViewVote, worked } from './model-lab';
 import { DEFAULTS, STAGE_IDS, childrenOf, nodeById } from './nodes';
 import { createScene, type SceneApi } from './scene';
@@ -19,29 +20,18 @@ function Sources({ ids, title }: { ids: string[]; title: string }) {
 }
 type Tab = 'key' | 'explain' | 'derive' | 'numbers';
 
-function useLang(): [Lang, (l: Lang) => void] {
-  const [lang, setLang] = useState<Lang>('zh');
-  useEffect(() => {
-    try { const s = localStorage.getItem('catpose-model-lang'); if (s === 'en' || s === 'zh') { setLang(s); return; } } catch { /* storage may be blocked */ }
-    if (typeof navigator !== 'undefined' && navigator.language.toLowerCase().startsWith('en')) setLang('en');
-  }, []);
-  useEffect(() => { try { localStorage.setItem('catpose-model-lang', lang); } catch { /* ignore */ } document.documentElement.lang = lang === 'en' ? 'en' : 'zh-CN'; }, [lang]);
-  return [lang, setLang];
-}
-
 export function Explorer() {
-  const [lang, setLang] = useLang();
   const [clip, setClip] = useState<ClipData | null>(null), [events, setEvents] = useState<EventRec[]>([]), [err, setErr] = useState('');
   useEffect(() => { Promise.all([fetch('/case/frames.json').then((r) => r.json()), fetch('/case/events.json').then((r) => r.json())]).then(([c, e]) => { setClip(c); setEvents(e); }).catch((x) => setErr(String(x))); }, []);
-  const ctx = useMemo(() => ({ lang, t: makeT(lang) }), [lang]);
+  const { t } = useT();
   return (
-    <LangCtx.Provider value={ctx}>
-      {err ? <p className="ex-msg">{ctx.t('数据没有载入成功：', 'Data failed to load: ')}{err}</p> : !clip ? <p className="ex-msg">{ctx.t('正在载入……', 'Loading…')}</p> : <Inner clip={clip} events={events} setLang={setLang} />}
-    </LangCtx.Provider>
+    <>
+      {err ? <p className="ex-msg">{t('数据没有载入成功：', 'Data failed to load: ')}{err}</p> : !clip ? <p className="ex-msg">{t('正在载入……', 'Loading…')}</p> : <Inner clip={clip} events={events} />}
+    </>
   );
 }
 
-function Inner({ clip, events, setLang }: { clip: ClipData; events: EventRec[]; setLang: (l: Lang) => void }) {
+function Inner({ clip, events }: { clip: ClipData; events: EventRec[] }) {
   const { t, lang } = useT();
   const n = clip.frames.length, host = useRef<HTMLDivElement>(null), api = useRef<SceneApi | null>(null);
   const [fi, setFi] = useState(() => Math.min(n - 1, Math.round(((events[0]?.start_s ?? 10) + 0.2) * clip.fps)));
@@ -112,7 +102,6 @@ function Inner({ clip, events, setLang }: { clip: ClipData; events: EventRec[]; 
           <button onClick={() => api.current?.overview()}>{t('总览', 'Overview')}</button>
           <button onClick={() => setSheet('whole')}>{t('全模型', 'Whole model')}</button>
           <button onClick={() => setSheet('two-d')}>{t('2D 视图', '2D view')}</button>
-          <button onClick={() => setLang(lang === 'zh' ? 'en' : 'zh')} aria-label="Language">{lang === 'zh' ? 'EN' : '中文'}</button>
         </div>
         <div className="ex-time">
           <input type="range" min={0} max={n - 1} value={fi} onChange={(e) => setFi(+e.target.value)} aria-label={t('视频里的时刻', 'Moment in the video')} />

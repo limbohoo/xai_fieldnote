@@ -85,9 +85,9 @@ export function FieldGuide() {
         </section>
         <a className="case-banner" href="/case">
           <span className="eyebrow"><i /> 案例实验室 · CASE LAB</span>
-          <strong>一只猫的耳朵压低了，系统是怎么判断的？</strong>
+          <strong>互动演示：AI 如何从一段猫的视频，推测它的行为与情绪</strong>
           <span className="case-banner-copy">
-            用我们小组的项目做例子：拖动、点击，一步步看一个 AI 系统怎样找到猫、量特征、套规则，又怎样检验自己的解释。 →
+            用我们小组的项目做例子，共 8 步：找到猫、量出耳朵和身体的变化、套规则得到行为标签，再给出“可能是专注 / 好奇 / 放松 / 想玩 / 紧张”的占比，并检验这些解释靠不靠谱。可以拖动、点击自己试。 →
           </span>
         </a>
         <Chapter id="mapping" number="01" title="领域、问题与阅读坐标" summary="从系统依据、人的理解到真实情境，建立选择解释方法前的判断框架。">

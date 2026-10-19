@@ -64,6 +64,10 @@ function Inner({ clip, events, setLang }: { clip: ClipData; events: EventRec[]; 
   }, [clip, out, events, lang, base]);
   useEffect(() => { api.current?.update({ fi, kfi, feat, gl, gc, col, ps }); }, [fi, kfi, feat, gl, gc, col, ps, out, lang]);
   useEffect(() => { const a = api.current; if (!a) return; a.select(sel, false); if (detail) a.setView({ stage: sel, ...detail }); else a.setView(null, follow); }, [sel, detail]);
+  const seq = useMemo(() => childrenOf(STAGE_IDS[sel]).flatMap((n) => [n, ...childrenOf(n.id)]), [sel]);
+  const curId = detail ? (detail.l3 ?? detail.l2) : null, seqIdx = seq.findIndex((n) => n.id === curId);
+  const stepTo = (d: number) => { const n = seq[seqIdx + d]; if (n) setDetail(n.level === 3 ? { l2: n.parent, l3: n.id } : { l2: n.id, l3: null }); };
+  const stepRef = useRef(stepTo); stepRef.current = stepTo;
   const enter = () => setDetail({ l2: childrenOf(STAGE_IDS[sel])[0]?.id ?? null, l3: null });
   const up = () => setDetail((d) => (d && d.l3 ? { l2: d.l2, l3: null } : d && d.l2 ? { l2: null, l3: null } : null));
   useEffect(() => {
@@ -74,7 +78,7 @@ function Inner({ clip, events, setLang }: { clip: ClipData; events: EventRec[]; 
   useEffect(() => setPrevO(null), [fi]);
   const go = (d: number) => setSel((i) => Math.max(0, Math.min(stages.length - 1, i + d)));
   useEffect(() => {
-    const h = (e: KeyboardEvent) => { if ((e.target as HTMLElement)?.tagName === 'INPUT') return; if (e.key === 'ArrowRight' || e.key === 'ArrowDown') go(1); if (e.key === 'ArrowLeft' || e.key === 'ArrowUp') go(-1); if (e.key === 'Escape') { if (live.current.detail) setDetail((d) => (d && d.l3 ? { l2: d.l2, l3: null } : d && d.l2 ? { l2: null, l3: null } : null)); else setSheet(null); } };
+    const h = (e: KeyboardEvent) => { if ((e.target as HTMLElement)?.tagName === 'INPUT') return; const nav = (d: number) => (live.current.detail ? stepRef.current(d) : go(d)); if (e.key === 'ArrowRight' || e.key === 'ArrowDown') nav(1); if (e.key === 'ArrowLeft' || e.key === 'ArrowUp') nav(-1); if (e.key === 'Escape') { if (live.current.detail) setDetail((d) => (d && d.l3 ? { l2: d.l2, l3: null } : d && d.l2 ? { l2: null, l3: null } : null)); else setSheet(null); } };
     window.addEventListener('keydown', h); return () => window.removeEventListener('keydown', h);
   }, []);
 
@@ -126,6 +130,11 @@ function Inner({ clip, events, setLang }: { clip: ClipData; events: EventRec[]; 
               {p2 ? <><i>›</i><button onClick={() => setDetail({ l2: p2.id, l3: null })} aria-current={!detail.l3 ? 'true' : undefined}>{p2.title[lang]}</button></> : null}
               {detail.l3 && cur ? <><i>›</i><button aria-current="true">{cur.title[lang]}</button></> : null}
             </nav>
+            <div className="ex-stepnav">
+              <button onClick={() => stepTo(-1)} disabled={seqIdx <= 0}>{t('‹ 上一步', '‹ Previous')}</button>
+              <span>{seqIdx >= 0 ? t(`第 ${seqIdx + 1} / ${seq.length} 步`, `Step ${seqIdx + 1} / ${seq.length}`) : t(`共 ${seq.length} 步`, `${seq.length} steps`)}</span>
+              <button className="go" onClick={() => stepTo(1)} disabled={seqIdx >= seq.length - 1 && seqIdx >= 0}>{seqIdx < 0 ? t('从第一步开始 ›', 'Start at step 1 ›') : t('下一步 ›', 'Next ›')}</button>
+            </div>
             <small className="ex-level">{cur ? (cur.level === 2 ? t('第二级：这一层里的部件', 'LEVEL 2: A PART INSIDE THE STAGE') : t('第三级：最小的一步', 'LEVEL 3: THE SMALLEST STEP')) : t('这一层拆开后的全部部件', 'ALL PARTS OF THIS STAGE')}</small>
             <h2>{cur ? cur.title[lang] : S.name}</h2>
             {cur ? <>
@@ -188,7 +197,7 @@ function Inner({ clip, events, setLang }: { clip: ClipData; events: EventRec[]; 
           <button className="ex-2d" onClick={() => setSheet('two-d')}>{t('2D / 动手视图', '2D / hands-on view')}</button>
         </div> : null}
 
-        <button className="ex-dive" onClick={enter}>{t('拆开看这一层 ▸', 'Take this stage apart ▸')}<small>{t(`${childrenOf(STAGE_IDS[sel]).length} 个部件，每个都能再往下拆`, `${childrenOf(STAGE_IDS[sel]).length} parts, each can go deeper`)}</small></button>
+        <button className="ex-dive" onClick={enter}>{t('拆开看这一层 ▸', 'Take this stage apart ▸')}<small>{t(`一步一步走过 ${seq.length} 个部件`, `Walk through ${seq.length} parts, one step at a time`)}</small></button>
         {sel === stages.length - 1 ? <p className="ex-foot">{t(`整个系统：3 个网络，${HAND} 个手设数字，其余是公式。系统不读猫的情绪，把握不够就不说。完整推导见 `, `The whole system: 3 networks, ${HAND} hand-set numbers, everything else is formula. It does not read the cat's emotions, and stays silent when unsure. Full derivations in `)}<a href={COLAB_URL} target="_blank" rel="noreferrer">Colab ↗</a></p> : null}
         </>}
       </aside>

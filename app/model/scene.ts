@@ -235,7 +235,7 @@ export function createScene(el: HTMLElement, d: SceneData, onPick: (i: number) =
   let sel = 0; const goalPos = new THREE.Vector3(), goalTgt = new THREE.Vector3(); let flying = false;
   const fly = (pos: THREE.Vector3, tgt: THREE.Vector3) => { goalPos.copy(pos); goalTgt.copy(tgt); flying = true; };
   const fitDist = (w: number) => (w / 2) / (Math.tan(THREE.MathUtils.degToRad(20)) * Math.min(1.7, cam.aspect));
-  const focus = (i: number) => { const n = childrenOf(STAGE_IDS[i]).length, right = X0 + (n - 1) * DX + 5.4, cx = (right - 5.4) / 2; fly(new THREE.Vector3(cx + 8, i * GAP + 8, fitDist(right + 10) + 6), new THREE.Vector3(cx, i * GAP - 3.5, 0)); };
+  const focus = (i: number) => fly(new THREE.Vector3(9, i * GAP + 5, fitDist(11) + 6), new THREE.Vector3(0, i * GAP + 0.5, 0));
   cam.position.set(40, 10, 70); ctl.target.set(30, -3, 0);
   const api: SceneApi = {
     update: (s) => { last = s; stages.forEach((st) => st.upd(s)); refreshNear(); },

@@ -37,8 +37,8 @@ export const DERIV: Record<string, Deriv> = {
       { say: { zh: '对 H 求导。先写 softmax 的导数 ∂P_kl/∂H_ij = βP_kl(δ_kl,ij − P_ij)，代入期望：', en: 'Differentiate with respect to H. Start from the softmax derivative ∂P_kl/∂H_ij = βP_kl(δ_kl,ij − P_ij) and substitute into the expectation:' },
         tex: r`\frac{\partial\hat p}{\partial H_{ij}}=\sum_{k,l}x_{kl}\,\beta P_{kl}(\delta_{kl,ij}-P_{ij})=\beta P_{ij}\,\bigl(x_{ij}-\hat p\bigr)`,
         note: { zh: '读法：某一格变亮，p̂ 就朝这一格移动，移动量与它的权重 P_ij 和它离 p̂ 的距离成正比。', en: 'Reading: when a cell gets brighter, p̂ moves toward that cell, in proportion to its weight P_ij and its distance from p̂.' } },
-      { say: { zh: '因此坐标误差可以直接作为损失，一路回传到热力图。', en: 'So coordinate error can be used directly as a loss and back-propagated to the heatmap.' },
-        tex: r`\mathcal{L}=\lVert \hat p-p^{\text{true}}\rVert^{2},\qquad \frac{\partial\mathcal L}{\partial H_{ij}}=2\beta P_{ij}\,(x_{ij}-\hat p)\cdot(\hat p-p^{\text{true}})` },
+      { say: { zh: '训练用的损失（见 train_hm.py）：坐标的 L1 误差（以热力图格子为单位），加上一项约束：让整张热力图分布 P 接近以真实位置为中心的高斯目标 G，用 KL 散度衡量。坐标误差的梯度经过上面的 ∂p̂/∂H 回传到热力图。', en: 'The training loss (see train_hm.py): the L1 coordinate error in heatmap-cell units, plus a regulariser that keeps the whole heatmap distribution P close to a Gaussian target G centred on the true position, measured by KL divergence. The gradient of the coordinate error flows back to the heatmap through ∂p̂/∂H above.' },
+        tex: r`\mathcal{L}=\lVert \hat p-p^{\text{true}}\rVert_1+\mathrm{KL}\bigl(G\,\Vert\,P\bigr),\qquad \frac{\partial\lVert\hat p-p\rVert_1}{\partial H_{ij}}=\operatorname{sign}(\hat p-p)\cdot\beta P_{ij}(x_{ij}-\hat p)` },
     ],
     therefore: { zh: '∴ soft-argmax 既比格子更细，又能让网络直接朝“坐标更准”训练。', en: '∴ Soft-argmax is finer than the grid and lets the network train directly toward "more accurate coordinates".' },
     assume: { zh: '前提：热力图是单峰的。有两个相似的峰时，期望会落在两峰之间（上一页的滑块可以试）。脸 48 点 PCK@0.05 为 99.0%，身体 20 点 PCK@0.1 为 79.4%。', en: 'Assumes a single-peaked heatmap. With two similar peaks the expectation lands between them (try the slider in the 2D view). Face 48 points PCK@0.05 = 99.0%; body 20 points PCK@0.1 = 79.4%.' },
@@ -62,7 +62,7 @@ export const DERIV: Record<string, Deriv> = {
         tex: r`\text{lag}(v)=\frac{v}{2\pi\,(f_{\min}+\beta v)}\;\le\;\frac{1}{2\pi\beta}\quad\text{and}\quad \text{lag}(0)=0` },
     ],
     therefore: { zh: '∴ 静止时按 f_min 强平滑，运动时滞后有上界。', en: '∴ Strong smoothing at rest (set by f_min), bounded lag in motion.' },
-    assume: { zh: '前提：抖动是各帧独立的随机误差，真实动作是平滑变化的。f_min 和 β 是两个需要手调的旋钮。', en: 'Assumes jitter is independent random error per frame and real motion is smooth. f_min and β are two knobs that must be tuned by hand.' },
+    assume: { zh: '前提：抖动是各帧独立的随机误差，真实动作是平滑变化的。实际实现（smoothing.py）和上面的推导有两处不同：速度本身也经过一次低通（d_cutoff = 1.0），并且按猫的大小归一，所以速度门槛与画面大小无关；默认 f_min = 1.0，β = 0.05。三个数都是手调的旋钮。', en: 'Assumes jitter is independent random error per frame and real motion is smooth. The implementation (smoothing.py) differs from the derivation above in two ways: the speed is itself low-passed once (d_cutoff = 1.0) and normalised by the cat\'s size, so the speed threshold does not depend on frame size; defaults are f_min = 1.0, β = 0.05. All three numbers are hand-tuned knobs.' },
   },
   features: {
     goal: { zh: '把 68 个点压成 6 个数，并且这 6 个数不受猫离镜头远近、头在画面里转动的影响。', en: 'Compress 68 points into 6 numbers that do not depend on how far the cat is, or how the head is rotated in the image.' },
@@ -102,7 +102,7 @@ export const DERIV: Record<string, Deriv> = {
         tex: r`P(\lvert Z\rvert>1.5)\approx 0.134,\qquad P(\lvert Z\rvert>2)\approx 0.046` },
     ],
     therefore: { zh: '∴ z 的单位是“这只猫自己的正常抖动”，所以同一个门槛对所有猫都有同样的含义。', en: '∴ The unit of z is "this cat\'s own normal wobble", so one threshold means the same thing for every cat.' },
-    assume: { zh: '前提：开头那段确实是“平时”。如果那段里猫恰好很紧张，之后所有偏离都被算歪。用 60 / 90 / 150 / 300 帧记平时，结果差别很大，所以正式使用前应单独拍一段平静视频存成基线。', en: 'Assumes the opening segment really is "usual". If the cat happened to be tense there, every later deviation is miscalculated. Learning usual from 60 / 90 / 150 / 300 frames gives very different results, so record a calm clip beforehand and store it as the baseline.' },
+    assume: { zh: '前提：开头那段确实是“平时”。如果那段里猫恰好很紧张，之后所有偏离都被算歪。程序默认用前 300 帧（本页的示例视频用 150 帧）。用 60 / 90 / 150 / 300 帧记平时，结果差别很大，所以正式使用前应单独拍一段平静视频存成基线。', en: 'Assumes the opening segment really is "usual". If the cat happened to be tense there, every later deviation is miscalculated. The program defaults to the first 300 frames (this page\'s demo clip uses 150). Learning usual from 60 / 90 / 150 / 300 frames gives very different results, so record a calm clip beforehand and store it as the baseline.' },
   },
   rules: {
     source: {

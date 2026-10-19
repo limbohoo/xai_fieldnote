@@ -10,8 +10,8 @@ export const ORIGIN: Record<Lang, Record<Origin, [string, string]>> = {
   en: { pre: ['Off-the-shelf model', 'ev-ok'], net: ['Network we trained', 'ev-proto'], formula: ['Formula, nothing to learn', 'ev-ok'], hand: ['Hand-set numbers', 'ev-hand'] },
 };
 export const PARAMS: Record<Lang, Record<string, [string, string]>> = {
-  zh: { detect: ['现成模型', '没有在我们的数据上重训'], keypoints: ['2 个网络', '身体 20 点、脸 48 点，我们训练'], smooth: ['0', '只有 2 个调节旋钮'], features: ['0', '纯几何公式'], baseline: ['6', '测量误差下限（手设）'], rules: ['8', '门槛（手设）'], vote: ['2', '0.3 秒、60%（手设）'], guess: [String(NPROB), '概率（手设）'], check: ['0', '直接调用规则'] },
-  en: { detect: ['Pretrained', 'not retrained on our data'], keypoints: ['2 networks', 'body 20 pts, face 48 pts, trained by us'], smooth: ['0', 'two tuning knobs only'], features: ['0', 'pure geometry'], baseline: ['6', 'error floors (hand-set)'], rules: ['8', 'thresholds (hand-set)'], vote: ['2', '0.3 s and 60% (hand-set)'], guess: [String(NPROB), 'probabilities (hand-set)'], check: ['0', 'reuses the rules'] },
+  zh: { detect: ['现成模型', '没有在我们的数据上重训'], keypoints: ['2 个网络', '身体 20 点、脸 48 点，我们训练'], smooth: ['0', '3 个手调旋钮'], features: ['0', '纯几何公式'], baseline: ['6', '测量误差下限（手设）'], rules: ['8', '门槛（手设）'], vote: ['2', '0.3 秒、60%（手设）'], guess: [String(NPROB), '概率（手设）'], check: ['0', '直接调用规则'] },
+  en: { detect: ['Pretrained', 'not retrained on our data'], keypoints: ['2 networks', 'body 20 pts, face 48 pts, trained by us'], smooth: ['0', '3 hand-tuned knobs'], features: ['0', 'pure geometry'], baseline: ['6', 'error floors (hand-set)'], rules: ['8', 'thresholds (hand-set)'], vote: ['2', '0.3 s and 60% (hand-set)'], guess: [String(NPROB), 'probabilities (hand-set)'], check: ['0', 'reuses the rules'] },
 };
 
 const ZH: StageInfo[] = [
@@ -22,10 +22,10 @@ const ZH: StageInfo[] = [
   { id: 'keypoints', no: '02', name: '标点', en: 'KEYPOINTS', origin: 'net', inDim: '猫的裁剪图', outDim: '脸 48 × (x, y, 把握) + 身体 20 × (x, y, 把握)',
     formula: ['H = 网络(裁剪图)    // 每个点一张热力图，K × h × w', 'P(x,y) = softmax(β · H)', '点的位置 = ( Σ P·x , Σ P·y )    // soft-argmax'],
     text: '网络给每个点画一张“可能在哪里”的热力图，再取这张图的加权平均位置。加权平均可以落在格子之间，所以点的位置比格子更细；它还可以求导，网络因此能直接用点的位置训练。每个点另带一个把握值。',
-    params: '身体网络 MobileNetV3 + FPN（20 个点），脸网络同类做法（48 个点）。两个网络是我们训练的。' },
+    params: '身体网络 MobileNetV3-large + FPN（20 个点，先用 Animal Pose 五种动物预训练，再用猫微调），脸网络同样的结构（48 个点，用 CatFLW 的 2079 张猫脸）。两个网络是我们训练的。' },
   { id: 'smooth', no: '03', name: '防抖', en: 'SMOOTH', origin: 'formula', inDim: '68 个点 × 每帧', outDim: '同样 68 个点，抖动变小',
     formula: ['τ = 1 / (2π · f꜀)', 'f꜀ = f꜀ₘᵢₙ + β · |dx̂/dt|    // 动得越快，截止频率越高', 'α = 1 / (1 + τ / Δt)', 'x̂ₜ = α · xₜ + (1 − α) · x̂ₜ₋₁'],
-    text: 'One-Euro 滤波按速度调整平滑程度：猫不动时压住抖动，猫快速动时放开，不拖后腿。', params: '没有要学的参数，只有两个调节旋钮。' },
+    text: 'One-Euro 滤波按速度调整平滑程度：猫不动时压住抖动，猫快速动时放开，不拖后腿。', params: '没有要学的参数，只有三个调节旋钮（f_min = 1.0，β = 0.05，速度滤波 d_cutoff = 1.0）。' },
   { id: 'features', no: '04', name: '量特征', en: 'FEATURES', origin: 'formula', inDim: '68 个点', outDim: '6 个数',
     formula: ['x̂ = 左眼 → 右眼 的单位向量，d = 两眼间距', 'up = 垂直于 x̂ 且朝向远离下巴的单位向量', '耳朵高度 = mean_左右耳尖 ( (耳尖 − 两眼中点) · up ) / d', '眼睛睁开 = mean_左右眼 ( 眼睛上下距离 / 眼睛宽度 )'],
     text: '从点的位置算出 6 个数。数字都以两眼间距为单位，所以猫离镜头远近、头在画面里歪一点，都不改变数字。', params: '公式。6 个数里有 4 个被规则用到。' },
@@ -56,10 +56,10 @@ const EN: StageInfo[] = [
   { id: 'keypoints', no: '02', name: 'Place keypoints', en: 'KEYPOINTS', origin: 'net', inDim: 'Cropped image of the cat', outDim: 'Face 48 × (x, y, conf) + body 20 × (x, y, conf)',
     formula: ['H = network(crop)    // one heatmap per point, K × h × w', 'P(x,y) = softmax(β · H)', 'point = ( Σ P·x , Σ P·y )    // soft-argmax'],
     text: 'The network draws one heatmap per point showing where it might be, then takes the weighted average position of that map. The average can land between cells, so the position is finer than the grid. It is also differentiable, so the network trains directly on point positions. Each point also carries a confidence.',
-    params: 'Body network: MobileNetV3 + FPN (20 points). Face network: same approach (48 points). Both trained by us.' },
+    params: 'Body network: MobileNetV3-large + FPN (20 points; pretrained on five species from Animal Pose, then fine-tuned on cats). Face network: same structure (48 points; 2079 cat faces from CatFLW). Both trained by us.' },
   { id: 'smooth', no: '03', name: 'Smooth jitter', en: 'SMOOTH', origin: 'formula', inDim: '68 points per frame', outDim: 'Same 68 points, less jitter',
     formula: ['τ = 1 / (2π · f꜀)', 'f꜀ = f꜀ₘᵢₙ + β · |dx̂/dt|    // faster motion, higher cutoff', 'α = 1 / (1 + τ / Δt)', 'x̂ₜ = α · xₜ + (1 − α) · x̂ₜ₋₁'],
-    text: 'The One-Euro filter changes how much it smooths according to speed: when the cat is still it suppresses jitter, when the cat moves fast it lets the signal through and does not lag.', params: 'Nothing to learn, only two tuning knobs.' },
+    text: 'The One-Euro filter changes how much it smooths according to speed: when the cat is still it suppresses jitter, when the cat moves fast it lets the signal through and does not lag.', params: 'Nothing to learn, only three tuning knobs (f_min = 1.0, β = 0.05, speed filter d_cutoff = 1.0).' },
   { id: 'features', no: '04', name: 'Measure features', en: 'FEATURES', origin: 'formula', inDim: '68 points', outDim: '6 numbers',
     formula: ['x̂ = unit vector from left eye to right eye, d = eye distance', 'up = unit vector perpendicular to x̂, pointing away from the chin', 'ear height = mean over both ear tips ( (tip − eye midpoint) · up ) / d', 'eye opening = mean over both eyes ( eye height / eye width )'],
     text: 'Six numbers are computed from point positions. All are measured in units of the eye distance, so how far the cat is from the camera, or a slight head tilt, does not change them.', params: 'Formulas. 4 of the 6 numbers are used by the rules.' },

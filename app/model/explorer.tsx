@@ -9,8 +9,13 @@ import { DEFAULTS, STAGE_IDS, childrenOf, nodeById } from './nodes';
 import { createScene, type SceneApi } from './scene';
 import { HAND, ORIGIN, PARAMS, getStages, getSymbols } from './stages';
 import { Tex } from './tex';
+import { NODE_WHY, REFS, STAGE_REFS } from './refs';
 
 const COLORS = ['#6c9bff', '#4fd08c', '#ff7a7a', '#ffb84d'];
+function Sources({ ids, title }: { ids: string[]; title: string }) {
+  const { t, lang } = useT();
+  return <div className="ex-refs"><b>{title}</b><ol>{ids.map((id) => { const r = REFS[id]; return <li key={id}><span>{r.cite}{r.verify ? <em className="v">{t('　⚠️ 引用前请核对卷号、页码', '  ⚠️ verify volume and pages before citing')}</em> : null}</span>{r.url ? <a href={r.url} target="_blank" rel="noreferrer">{t('打开 ↗', 'Open ↗')}</a> : null}<small>{r.use[lang]}</small></li>; })}</ol></div>;
+}
 type Tab = 'explain' | 'derive' | 'numbers';
 
 function useLang(): [Lang, (l: Lang) => void] {
@@ -126,6 +131,7 @@ function Inner({ clip, events, setLang }: { clip: ClipData; events: EventRec[]; 
             {cur ? <>
               <p className="ex-plain">{cur.plain[lang]}</p>
               {cur.tex ? <div className="ex-tex"><Tex tex={cur.tex} /></div> : null}
+              {NODE_WHY[cur.id] ? <div className="ex-why"><b>{t('这些数为什么这么给', 'Why these numbers')}</b><p>{NODE_WHY[cur.id].why[lang]}</p><p className="lim">{NODE_WHY[cur.id].limit[lang]}</p><Sources ids={NODE_WHY[cur.id].refs} title={t('依据', 'Sources')} /></div> : (STAGE_REFS[cur.stage] ? <details className="ex-refd"><summary>{t('这一层的引用与来源', 'References for this stage')}</summary><Sources ids={STAGE_REFS[cur.stage]} title="" /></details> : null)}
               {cur.controls?.length ? <div className="ex-ctls">{cur.controls.map((c) => <label key={c.key}><span>{c.label[lang]}</span><input type="range" min={c.min} max={c.max} step={c.step} value={ps[c.key] ?? DEFAULTS[c.key]} onChange={(e) => setPs({ ...ps, [c.key]: +e.target.value })} /><em className="num">{(ps[c.key] ?? DEFAULTS[c.key]).toFixed(2)}</em></label>)}</div> : null}
               {kids.length ? <div className="ex-kids"><small>{t('再往下拆', 'GO ONE LEVEL DEEPER')}</small>{kids.map((k) => <button key={k.id} onClick={() => setDetail({ l2: cur.id, l3: k.id })}>{k.title[lang]} ›</button>)}</div> : null}
               {cur.level === 3 ? <button className="ex-2d" onClick={up}>{t('‹ 回到上一级', '‹ Back up one level')}</button> : null}
@@ -169,6 +175,7 @@ function Inner({ clip, events, setLang }: { clip: ClipData; events: EventRec[]; 
           <p className="ex-assume">{D.assume[lang]}</p>
           {D.source ? <div className="ex-source"><b>{D.source.title[lang]}</b><ul>{D.source.items.map((it, i) => <li key={i}>{it[lang]}</li>)}</ul></div> : null}
           <dl className="ex-sym">{symbols[S.id]?.map(([a, b]) => <div key={a}><dt>{a}</dt><dd>{b}</dd></div>)}</dl>
+          {STAGE_REFS[S.id] ? <Sources ids={STAGE_REFS[S.id]} title={t('引用与来源', 'References and sources')} /> : null}
         </div> : null}
 
         {tab === 'numbers' ? <div className="ex-nums">

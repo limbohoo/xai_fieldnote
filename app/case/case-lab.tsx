@@ -480,6 +480,10 @@ function OwnerStep({ L, onWatch }: { L: L; onWatch: (i: number) => void }) {
                   <p className="cl-phone-concl" style={{ color: g && g.show ? STATE_COL[g.top] : '#667083' }}>
                     {g && g.show ? `看起来像：${STATE_TEXT[g.top]}` : RPLAIN[e.reaction]}<span className="cl-num">①</span></p>
                   <p className="cl-phone-badge">{g && g.show ? `猜测 · 把握${g.band}` : '把握不够，不做猜测，只写看到的行为'}</p>
+                  {g && g.show ? <p className="cl-phone-h" style={{ marginTop: 10 }}>它此刻最可能的状态（系统猜测的占比）</p> : null}
+                  {g && g.show ? <div className="cl-bars cl-phone-bars" aria-label="系统对五种状态的猜测占比">{g.post.map((_, i) => i).sort((a, b) => g.post[b] - g.post[a]).map((i, n) => (
+                    <div className={'cl-bar' + (n === 0 ? ' top' : '')} key={i}><span>{STATE_TEXT[STATES[i]]}</span>
+                      <span className="track"><span className="fill" style={{ width: (g.post[i] * 100).toFixed(1) + '%', ...(n === 0 ? { background: STATE_COL[STATES[i]] } : {}) }} /></span><span className="num">{Math.round(g.post[i] * 100)}%</span></div>))}</div> : null}
                   {g && g.show ? <p className="cl-phone-p">也可能是：<b>{STATE_TEXT[g.second]}</b>{tell ? `。怎么分辨：${tell}` : ''}<span className="cl-num">②</span></p> : null}
                   {decisive.map((c) => { const alt = guess(e.reaction, e.interp!.cues.filter((x) => x !== c), e.interp!.face_visible)!; return <p className="cl-phone-p key" key={c}>关键的一步：{cueName(c)}。如果没有这一步，{!alt.show ? '把握就不够，不会给出猜测。' : alt.top !== g!.top ? `看起来更像“${STATE_TEXT[alt.top]}”。` : `把握会从“${g!.band}”变为“${alt.band}”。`}</p>; })}
                 </div>

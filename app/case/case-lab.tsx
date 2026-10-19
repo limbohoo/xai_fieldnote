@@ -7,6 +7,7 @@ import {
 } from './core';
 import { usePhotoAvailable, type Layers } from './viewer';
 import { MiniBar, Panel } from './panel';
+import { CatMap } from './catmap';
 
 import { COLAB_URL, CUES, DPLAIN, FEAT, FIDX, LCOL, RPLAIN, STATE_TEXT, TELL, VIDEO_ID, amount, driverText, fmt, mmss } from './vocab';
 
@@ -276,8 +277,8 @@ function Step5({ L }: { L: L }) {
       <Head no="05" en="WHAT HAPPENS NEXT" title="同一个动作可以有几种含义，所以看它接下来做什么" desc="耳朵压低，随后躲开更像紧张；随后去看个究竟，更像只是在专注听。所以系统不在这一刻下结论。" />
       <div className="cl-grid">
         <div className="cl-prose">
-          <p>系统先给五种可能的状态一个“起点”（比如耳朵压低，起点偏向紧张），再让“它接下来 5 秒做了什么”一条一条去调整。选一个真实事件，再勾选或取消“随后发生的事”，看猜测怎么变。</p>
-          <p><b>这些概率是我们按文献的方向自己定的，没有一条被标注数据检验过。</b>正因为它们决定了猜测，才要把“为什么”摆出来；把握不够时，系统<b>不给出情绪</b>。</p>
+          <p>系统先给五种可能的状态一个“起点”（比如耳朵压低，起点偏向紧张），再让“它接下来 5 秒做了什么”一条一条去调整。选一个真实事件，再勾选或取消“随后发生的事”，看推测怎么变。</p>
+          <p><b>这些概率是我们按文献的方向自己定的，没有一条被标注数据检验过。</b>正因为它们决定了推测，才要把“为什么”摆出来；把握不够时，系统<b>不给出情绪</b>。</p>
           <Evidence kind="hand" />
         </div>
         <div className="cl-widget">
@@ -294,19 +295,19 @@ function Step5({ L }: { L: L }) {
             <div className={'cl-bar' + (n === 0 ? ' top' : '')} key={i}><span>{STATE_TEXT[STATES[i]]}</span>
               <span className="track"><span className="fill" style={{ width: (g.post[i] * 100).toFixed(1) + '%' }} /></span><span className="num">{Math.round(g.post[i] * 100)}%</span></div>))}</div>
           {g.show ? <>
-            <p className="cl-verdict">看起来像：{STATE_TEXT[g.top]}<span className="cl-pill">猜测 · 把握{g.band}</span></p>
+            <p className="cl-verdict">看起来像：{STATE_TEXT[g.top]}<span className="cl-pill" style={{ color: STATE_COL[g.top] }}>推测 · 把握{g.band}</span></p>
             <p>也可能是：<b>{STATE_TEXT[g.second]}</b>{tell ? '。怎么分辨：' + tell : ''}</p>
           </> : <p className="cl-verdict">把握不够，<span style={{ color: '#a3abb8' }}>不给出情绪</span>，只写看到的行为。</p>}
-          {decisive.map((c) => { const alt = guess(reaction, cues.filter((x) => x !== c), face)!; return <p key={c}>关键的一步：{cueName(c)}。如果没有这一步，{!alt.show ? '把握就不够，不会给出猜测。' : alt.top !== g.top ? `看起来更像“${STATE_TEXT[alt.top]}”。` : `把握会从“${g.band}”变为“${alt.band}”。`}</p>; })}
+          {decisive.map((c) => { const alt = guess(reaction, cues.filter((x) => x !== c), face)!; return <p key={c}>关键的一步：{cueName(c)}。如果没有这一步，{!alt.show ? '把握就不够，不会给出推测。' : alt.top !== g.top ? `看起来更像“${STATE_TEXT[alt.top]}”。` : `把握会从“${g.band}”变为“${alt.band}”。`}</p>; })}
           {face < 0.3 && g.band !== '低' ? <p className="cl-note">脸大部分时间看不清，所以即使线索很强，把握也最多给“中”。</p> : null}
         </div>
       </div>
       <More title="展开：细节与验证 · Colab 理论版 §5.10–§5.12">
         <ul className="cl-list">
-          <li><b>怎么调整（朴素贝叶斯）：</b>每看到一条新线索，就按“在每种状态下，这条线索有多常出现”，把五种状态的分数重新算一遍。算式是 <span className="cl-formula inline">P(状态 | 标签, 线索) ∝ P(状态 | 标签) × 每条线索 P(线索 | 状态) 相乘</span>“朴素”是指假设各条线索互不影响，这是一种简化；好处是每一步都能打印出来，也就是卡片上的“为什么这么猜”。这种<b>先得到人能读懂的中间结果，再由它得出结论</b>的结构，和“概念瓶颈模型”是同一类 <Cite ids={[10]} />。</li>
-          <li><b>把握分三档：</b>设最高的概率为 p₁、第二高的为 p₂。p₁ ≥ 0.6 且比 p₂ 至少高 0.3，算“高”；p₁ ≥ 0.45 且至少高 0.15，算“中”；其余算“低”，不显示情绪。依据脸部的标签，在脸大部分时间（&gt; 70%）看不清时直接算“低”；任何猜测在脸看不清时最多给“中”。</li>
-          <li><b>逃跑不是扑玩：</b>早先的版本只看“动得快不快”，受惊逃跑会被猜成“想玩，高把握”。现在“扑玩”要求同时不是在离开；又快又在离开，另算“快速跑开”，指向紧张。猫蹲低时在画面里会变小，现在也不再被当成“离开”。</li>
-          <li><b>用标注来修正：</b>把我们手设的数字当作 10 条“虚拟标注”，真实标注一条条加进去：新概率 = (10 × 原来的概率 + 标注里的次数) ÷ (10 + 标注总数)（Dirichlet / Beta 伪计数）。3 条标注几乎改变不了结论，约 30 条之后，数据才开始占主导。要注意标注的人可能被系统的猜测带偏，所以要先看视频、写下自己的判断，再显示系统的猜测。</li>
+          <li><b>怎么调整（朴素贝叶斯）：</b>每看到一条新线索，就按“在每种状态下，这条线索有多常出现”，把五种状态的分数重新算一遍。算式是 <span className="cl-formula inline">P(状态 | 标签, 线索) ∝ P(状态 | 标签) × 每条线索 P(线索 | 状态) 相乘</span>“朴素”是指假设各条线索互不影响，这是一种简化；好处是每一步都能打印出来，也就是卡片上的“为什么这么推测”。这种<b>先得到人能读懂的中间结果，再由它得出结论</b>的结构，和“概念瓶颈模型”是同一类 <Cite ids={[10]} />。</li>
+          <li><b>把握分三档：</b>设最高的概率为 p₁、第二高的为 p₂。p₁ ≥ 0.6 且比 p₂ 至少高 0.3，算“高”；p₁ ≥ 0.45 且至少高 0.15，算“中”；其余算“低”，不显示情绪。依据脸部的标签，在脸大部分时间（&gt; 70%）看不清时直接算“低”；任何推测在脸看不清时最多给“中”。</li>
+          <li><b>逃跑不是扑玩：</b>早先的版本只看“动得快不快”，受惊逃跑会被推测成“想玩，高把握”。现在“扑玩”要求同时不是在离开；又快又在离开，另算“快速跑开”，指向紧张。猫蹲低时在画面里会变小，现在也不再被当成“离开”。</li>
+          <li><b>用标注来修正：</b>把我们手设的数字当作 10 条“虚拟标注”，真实标注一条条加进去：新概率 = (10 × 原来的概率 + 标注里的次数) ÷ (10 + 标注总数)（Dirichlet / Beta 伪计数）。3 条标注几乎改变不了结论，约 30 条之后，数据才开始占主导。要注意标注的人可能被系统的推测带偏，所以要先看视频、写下自己的判断，再显示系统的推测。</li>
           <li>解释说的是<b>系统为什么这样判断</b>，不是猫真正在想什么。“如果没有这一步，就……”这种对比的说法，更接近人们期待的解释 <Cite ids={[2]} />。</li>
         </ul>
       </More>
@@ -355,7 +356,7 @@ function Step6({ L }: { L: L }) {
           <hr />
           <p><b>这段视频的 {L.events.length} 个事件，自动检验：{passN} / {L.events.length} 通过。</b>旧版卡片（只列“和 2 秒前相比”变了什么）在 {missN} 个事件里没有写出主要依据。</p>
           <div className="cl-tbl"><table>
-            <thead><tr><th>#</th><th>标签</th><th>依据（主 / 补）</th><th>全部改回平时 →</th><th>没写的无影响</th><th>猜测能重现</th><th>结果</th></tr></thead>
+            <thead><tr><th>#</th><th>标签</th><th>依据（主 / 补）</th><th>全部改回平时 →</th><th>没写的无影响</th><th>推测能重现</th><th>结果</th></tr></thead>
             <tbody>{checks.map((c, i) => (
               <tr key={i} className={i === L.ev ? 'hit' : ''}><td>{i}</td><td>{RPLAIN[L.events[i].reaction]}</td>
                 <td>{c.cited.map((k) => name(k) + (c.roles[k] === 'main' ? '主' : '补')).join('，')}</td><td>{RPLAIN[c.allUsual]}</td>
@@ -367,7 +368,7 @@ function Step6({ L }: { L: L }) {
       <More title="展开：细节与验证 · Colab 理论版 §6.14、§6.5–§6.10">
         <ul className="cl-list">
           <li><b>课程要求的三层检验：</b>系统判断得对不对（第一层）、解释说的是不是真话（第二层）、用户有没有看懂并恰当地信任（第三层）<Cite ids={[20]} />。这一步做的是第二层。</li>
-          <li><b>五项检验：</b>能重现（用记录下来的数字重新跑一遍规则）；写出的就是原因（依据改回平时，标签变）；没有隐藏的原因（没写的改回平时，标签不变）；猜测能重现；另外逐条去掉后续线索，那些去掉后猜测或把握会变的，就写成“关键的一步”。前四项都通过，这个事件才算通过。</li>
+          <li><b>五项检验：</b>能重现（用记录下来的数字重新跑一遍规则）；写出的就是原因（依据改回平时，标签变）；没有隐藏的原因（没写的改回平时，标签不变）；推测能重现；另外逐条去掉后续线索，那些去掉后推测或把握会变的，就写成“关键的一步”。前四项都通过，这个事件才算通过。</li>
           <li><b>它抓出了什么：</b>旧版卡片列的是“和 2 秒前相比”的变化，而标签是按“和它平时比”的偏离决定的。实际出现过：标题写“耳朵压低”，依据里只有“身体静下来了”。现在卡片、画面上的红圈，都只写判断真正依据的特征。</li>
           <li><b>为什么能检验得这么精确：</b>因为这个系统从一开始就设计成“能被读懂”的：点 → 几项数字 → 一条条规则。对看不透的黑盒模型，同样的问题只能近似回答，那正是 SHAP、LIME 这类方法的用武之地；这里我们没有用到它们。</li>
           <li><b>它不能说明什么：</b>解释和规则一致，不代表规则对猫的判断是对的。判断对不对，要靠人工标注（第一层）；主人有没有看懂，要靠用户研究（第三层）。这两项我们都还没有做完。</li>
@@ -405,7 +406,7 @@ function fixedPrior(reaction: string, labels: Record<number, { verdict: 'right' 
 }
 
 function OwnerStep({ L, onWatch }: { L: L; onWatch: (i: number) => void }) {
-  const [view, setView] = useState<'home' | 'card'>('card');
+  const [view, setView] = useState<'home' | 'card'>('home');
   const [labels, setLabels] = useState<Record<number, { verdict: 'right' | 'wrong' | 'unsure'; actual?: State }>>({});
   const e = L.events[L.ev];
   const g = ownerGuess(e);
@@ -441,7 +442,7 @@ function OwnerStep({ L, onWatch }: { L: L; onWatch: (i: number) => void }) {
           </ol>
           <p>一张卡片按下面的顺序读（对应右边的圆圈数字）：</p>
           <ol className="cl-steps-list circled">
-            <li><b>先给结论，并写明这只是猜测</b>，附上把握程度。把握不够时，只写看到的行为，不给情绪，而且折叠起来。</li>
+            <li><b>先给结论，并写明这只是推测</b>，附上把握程度。把握不够时，只写看到的行为，不给情绪，而且折叠起来。</li>
             <li><b>另一种可能，以及怎么分辨。</b>让主人知道还有别的解释。</li>
             <li><b>为什么：</b>只写真正的依据，和“如果……就不会”。前面第 6 步检验过的，就是这一块。</li>
             <li><b>视频：</b>主人用自己对它的了解来判断，而不是只信系统。</li>
@@ -469,12 +470,12 @@ function OwnerStep({ L, onWatch }: { L: L; onWatch: (i: number) => void }) {
                 <p className="cl-phone-h">值得看的时刻</p>
                 {L.events.map((x, i) => { const xg = ownerGuess(x); const ok = !!xg && xg.show; return ok ? (
                   <button key={i} className="cl-phone-row" style={{ borderLeftColor: STATE_COL[xg!.top] }} onClick={() => { L.pickEvent(i); setView('card'); }}>
-                    <span className="t">{mmss(x.start_s)}</span><span className="g" style={{ color: STATE_COL[xg!.top] }}>看起来像：{STATE_TEXT[xg!.top]}</span><span className="b">猜测 · 把握{xg!.band}</span></button>) : null; })}
-                <p className="cl-phone-fold">另有 {L.events.length - nShown} 个时刻把握不够，没有给猜测，已折叠。</p>
+                    <span className="t">片段 {i} · {mmss(x.start_s)}</span><span className="g" style={{ color: STATE_COL[xg!.top] }}>看起来像：{STATE_TEXT[xg!.top]}</span><span className="b" style={{ color: STATE_COL[xg!.top] }}>推测 · 把握{xg!.band}</span></button>) : null; })}
+                <p className="cl-phone-fold">另有 {L.events.length - nShown} 个时刻把握不够，没有给推测，已折叠。</p>
               </div>
             ) : (
               <div className="cl-phone-body">
-                <p className="cl-phone-time">片段 {L.ev} · {mmss(e.start_s)} · {RPLAIN[e.reaction]}</p>
+                <p className="cl-phone-time">片段 {L.ev} · {mmss(e.start_s)}</p>
                 <dl className="cl-fields" aria-label="事件标签（字段名与 labels_template.csv 一致）">
                   <div><dt>event_id</dt><dd>{L.ev}</dd></div>
                   <div><dt>time</dt><dd>{mmss(e.start_s)}</dd></div>
@@ -482,17 +483,18 @@ function OwnerStep({ L, onWatch }: { L: L; onWatch: (i: number) => void }) {
                   <div><dt>system_guess<small>情绪标签</small></dt><dd style={g && g.show ? { color: STATE_COL[g.top] } : undefined}>{g && g.show ? STATE_TEXT[g.top] : '— 不给出'}</dd></div>
                   <div><dt>confidence<small>把握</small></dt><dd>{g && g.show ? g.band : '低'}</dd></div>
                 </dl>
+                <div className="cl-phone-card"><p className="cl-phone-h">系统在猫身上看到的</p><CatMap z={zEvent(e)} compact /></div>
                 <button className="cl-play" onClick={() => onWatch(L.ev)}>▶ 看这一段视频（上面的画面会跳到这里）<span className="cl-num">④</span></button>
                 <div className="cl-phone-card">
                   <p className="cl-phone-concl" style={{ color: g && g.show ? STATE_COL[g.top] : '#667083' }}>
                     {g && g.show ? `看起来像：${STATE_TEXT[g.top]}` : RPLAIN[e.reaction]}<span className="cl-num">①</span></p>
-                  <p className="cl-phone-badge">{g && g.show ? `猜测 · 把握${g.band}` : '把握不够，不做猜测，只写看到的行为'}</p>
-                  {g && g.show ? <p className="cl-phone-h" style={{ marginTop: 10 }}>它此刻最可能的状态（系统猜测的占比）</p> : null}
-                  {g && g.show ? <div className="cl-bars cl-phone-bars" aria-label="系统对五种状态的猜测占比">{g.post.map((_, i) => i).sort((a, b) => g.post[b] - g.post[a]).map((i, n) => (
+                  <p className={'cl-phone-badge' + (g && g.show ? '' : ' muted')} style={g && g.show ? { color: STATE_COL[g.top] } : undefined}>{g && g.show ? `推测 · 把握${g.band}` : '把握不够，不做推测'}</p>
+                  {g && g.show ? <p className="cl-phone-h" style={{ marginTop: 10 }}>它此刻最可能的状态（系统推测的占比）</p> : null}
+                  {g && g.show ? <div className="cl-bars cl-phone-bars" aria-label="系统对五种状态的推测占比">{g.post.map((_, i) => i).sort((a, b) => g.post[b] - g.post[a]).map((i, n) => (
                     <div className={'cl-bar' + (n === 0 ? ' top' : '')} key={i}><span>{STATE_TEXT[STATES[i]]}</span>
                       <span className="track"><span className="fill" style={{ width: (g.post[i] * 100).toFixed(1) + '%', ...(n === 0 ? { background: STATE_COL[STATES[i]] } : {}) }} /></span><span className="num">{Math.round(g.post[i] * 100)}%</span></div>))}</div> : null}
                   {g && g.show ? <p className="cl-phone-p">也可能是：<b>{STATE_TEXT[g.second]}</b>{tell ? `。怎么分辨：${tell}` : ''}<span className="cl-num">②</span></p> : null}
-                  {decisive.map((c) => { const alt = guess(e.reaction, e.interp!.cues.filter((x) => x !== c), e.interp!.face_visible)!; return <p className="cl-phone-p key" key={c}>关键的一步：{cueName(c)}。如果没有这一步，{!alt.show ? '把握就不够，不会给出猜测。' : alt.top !== g!.top ? `看起来更像“${STATE_TEXT[alt.top]}”。` : `把握会从“${g!.band}”变为“${alt.band}”。`}</p>; })}
+                  {decisive.map((c) => { const alt = guess(e.reaction, e.interp!.cues.filter((x) => x !== c), e.interp!.face_visible)!; return <p className="cl-phone-p key" key={c}>关键的一步：{cueName(c)}。如果没有这一步，{!alt.show ? '把握就不够，不会给出推测。' : alt.top !== g!.top ? `看起来更像“${STATE_TEXT[alt.top]}”。` : `把握会从“${g!.band}”变为“${alt.band}”。`}</p>; })}
                 </div>
                 <div className="cl-phone-card">
                   <p className="cl-phone-h">为什么标为「{RPLAIN[e.reaction]}」<span className="cl-num">③</span></p>
@@ -508,7 +510,7 @@ function OwnerStep({ L, onWatch }: { L: L; onWatch: (i: number) => void }) {
                   </div>) : null}
                 {(e.notes || []).map((n) => <p className="cl-phone-note" key={n}>⚠ {n}</p>)}
                 <div className="cl-phone-card fb">
-                  <p className="cl-phone-h">{g && g.show ? '这个猜测对吗？' : '你觉得它当时怎么了？'}<span className="cl-num">⑤</span></p>
+                  <p className="cl-phone-h">{g && g.show ? '这个推测对吗？' : '你觉得它当时怎么了？'}<span className="cl-num">⑤</span></p>
                   <div className="cl-fbrow">
                     {g && g.show ? (['right', 'wrong', 'unsure'] as const).map((v) => <button key={v} aria-pressed={label?.verdict === v} onClick={() => setLabel(v)}>{v === 'right' ? '对' : v === 'wrong' ? '不对' : '说不准'}</button>) : null}
                   </div>
@@ -527,7 +529,7 @@ function OwnerStep({ L, onWatch }: { L: L; onWatch: (i: number) => void }) {
           <div className="cl-bar" key={st}><span>{STATE_TEXT[st]}</span>
             <span className="track"><span className="fill" style={{ width: (fp.after[i] * 100).toFixed(1) + '%', background: '#9db3ee' }} /></span>
             <span className="num">{Math.round(fp.after[i] * 100)}%{fp.n ? <small className={d > 0.004 ? 'up' : d < -0.004 ? 'down' : ''}> {d > 0.004 ? '↑' : d < -0.004 ? '↓' : ''}</small> : null}</span></div>); })}</div>
-        <p className="cl-note">{fp.n ? `现在用了 ${fp.n} 条“${RPLAIN[e.reaction]}”的标注。` : '还没有标注，显示的是手设的起点。'}几条标注只能轻轻推动概率，约 30 条之后数据才开始占主导。注意：主人的回答也只是另一种判断，不是“真相”，所以要先看视频、写下自己的判断，再看系统的猜测。</p>
+        <p className="cl-note">{fp.n ? `现在用了 ${fp.n} 条“${RPLAIN[e.reaction]}”的标注。` : '还没有标注，显示的是手设的起点。'}几条标注只能轻轻推动概率，约 30 条之后数据才开始占主导。注意：主人的回答也只是另一种判断，不是“真相”，所以要先看视频、写下自己的判断，再看系统的推测。</p>
       </div>
       <More title="展开：细节与验证 · Colab 理论版 §6.11、§9.2–§9.4">
         <ul className="cl-list">
@@ -535,8 +537,8 @@ function OwnerStep({ L, onWatch }: { L: L; onWatch: (i: number) => void }) {
           <li><b>“之前发生了什么”只说先后，不说原因：</b>一次“声音之后猫警觉了”说明不了什么，因为声音可能本来就一直有。系统还会把每种线索和它平时出现的频率比较（叫“提升度”，接近 1 就是无关）。在这段视频里，声音突变的提升度是 1.0（全程有配乐），所以不能当作线索。</li>
           <li><b>措辞的规则：</b>说“比它平时”，不说“比一般的猫”；每一句话都能追到一个数字，文字由模板生成，不让语言模型自由发挥；把握程度写在明处，写出没看到的（尾巴、胡须、叫声）；单次事件说“在……之后”，不说“因为……”。</li>
           <li><b>把握不够就收起来：</b>最高概率不够高、或者依据脸部的标签而脸大部分时间看不清，就不给情绪，只写看到的行为，并折叠在“另有 N 个时刻”里。</li>
-          <li><b>多个摄像头：</b>2 秒内不同摄像头拍到的同一时刻会合并，看得更清楚的在前，另一个作为“换个角度看”；两个视角的猜测不一致时，不悄悄选一个，而是注明并把把握降一级。</li>
-          <li><b>还没有验证的：</b>主人是否真的看懂、会不会因此改变对猫的看法，需要一次用户研究（先让主人只看视频写下判断，再看系统的解释，记录是否改变、为什么；再故意放进 2–3 个错误的猜测，看能不能发现）。一位主人只能当形成性研究，不能当作“证明有效”。</li>
+          <li><b>多个摄像头：</b>2 秒内不同摄像头拍到的同一时刻会合并，看得更清楚的在前，另一个作为“换个角度看”；两个视角的推测不一致时，不悄悄选一个，而是注明并把把握降一级。</li>
+          <li><b>还没有验证的：</b>主人是否真的看懂、会不会因此改变对猫的看法，需要一次用户研究（先让主人只看视频写下判断，再看系统的解释，记录是否改变、为什么；再故意放进 2–3 个错误的推测，看能不能发现）。一位主人只能当形成性研究，不能当作“证明有效”。</li>
         </ul>
       </More>
     </section>
@@ -743,7 +745,7 @@ function Lab({ clip, events, children }: { clip: ClipData; events: EventRec[]; c
         usePhoto={usePhoto} onScrub={onScrub} barRef={miniRef} />
       {children}
       <nav className="cl-nav cl-nav-top" aria-label="步骤">
-        {[['s1', '1 找到猫'], ['s2', '2 量数字'], ['s3', '3 和自己比'], ['s4', '4 规则'], ['s5', '5 之后发生了什么'], ['s6', '6 解释是真的吗'], ['s7', '7 给主人的报告'], ['s8', '局限']].map(([id, n]) => <a key={id} href={'#' + id}>{n}</a>)}
+        {[['s1', '1 找到猫'], ['s2', '2 量数字'], ['s3', '3 和自己比'], ['s4', '4 规则'], ['s5', '5 之后发生了什么'], ['s6', '6 解释是真的吗'], ['s7', '7 给主人的报告'], ['s8', '8 手机 App'], ['s9', '局限']].map(([id, n]) => <a key={id} href={'#' + id}>{n}</a>)}
       </nav>
       <Step1M L={L} />
       <Step2M L={L} />
@@ -752,28 +754,160 @@ function Lab({ clip, events, children }: { clip: ClipData; events: EventRec[]; c
       <Step5M L={L} />
       <Step6M L={L} />
       <OwnerStepM L={L} onWatch={watchEvent} />
+      <AppStep L={L} onWatch={watchEvent} />
       <Limits />
     </>
+  );
+}
+
+
+/* ---------- step 8: the phone app ---------- */
+type Verdict = 'right' | 'wrong' | 'unsure';
+function AppStep({ L, onWatch }: { L: L; onWatch: (i: number) => void }) {
+  const [tab, setTab] = useState<'today' | 'moments' | 'usual'>('today');
+  const [filter, setFilter] = useState<'all' | 'guess' | 'behavior'>('all');
+  const [open, setOpen] = useState<number | null>(null);
+  const [fb, setFb] = useState<Record<number, Verdict>>({});
+  const rows = useMemo(() => L.events.map((e, i) => { const g = ownerGuess(e); return { i, e, g, ok: !!g && g.show }; }), [L.events]);
+  const shown = rows.filter((r) => r.ok);
+  const latest = shown[shown.length - 1];
+  const cnt: Record<string, number> = {}; let tot = 0;
+  L.out.forEach((o, i) => { if (o.calibrating) return; const k = L.clip.frames[i].box ? o.label : 'absent'; cnt[k] = (cnt[k] || 0) + 1; tot++; });
+  const budget = Object.entries(cnt).sort((a, b) => b[1] - a[1]);
+  const list = rows.filter((r) => filter === 'all' || (filter === 'guess' ? r.ok : !r.ok));
+  const cur = open === null ? null : rows[open];
+  const curChk = cur ? checkEvent(cur.e) : null;
+  const nFb = Object.keys(fb).length;
+  const go = (t: typeof tab) => { setTab(t); setOpen(null); };
+  const Badge = ({ r }: { r: (typeof rows)[number] }) => r.ok
+    ? <span className="cl-app-badge" style={{ color: STATE_COL[r.g!.top] }}>推测 · 把握{r.g!.band}</span>
+    : <span className="cl-app-badge muted">只看到行为</span>;
+
+  return (
+    <section className="cl-step" id="s8">
+      <Head no="08" en="THE PHONE APP" title="把报告做成手机 App：只放数据真能判断的东西" desc="前面的卡片是一张静态页面。真正的 App 要让主人来回翻、筛选、点开、回答。下面是按“系统到底算得出什么”来安排的界面，右边可以点。" />
+      <div className="cl-grid">
+        <div className="cl-prose">
+          <p>设计从一张账开始：系统能算出什么，界面里就放什么；算不出的，不放，也不假装。</p>
+          <table className="cl-table">
+            <thead><tr><th>系统算得出</th><th>在 App 里的位置</th></tr></thead>
+            <tbody>
+              <tr><td>每一段时间的行为（平静、活跃、警觉、耳朵后压、僵住）</td><td>「今天」里的时间条</td></tr>
+              <tr><td>某个时刻的情绪推测，带把握程度</td><td>「今天」顶部的<b>看起来像</b>，和「时刻」里每一行</td></tr>
+              <tr><td>耳朵、身体比它平时变了多少</td><td>点开时刻后的“为什么”</td></tr>
+              <tr><td>主人的回答（对 / 不对 / 说不准）</td><td>每个时刻底部的按钮，回头修正系统</td></tr>
+            </tbody>
+          </table>
+          <p><b>不放的东西：</b>尾巴、胡须、瞳孔、叫声，这个系统看不到，所以没有对应的界面，也不会出现在推测里。把握不够的时刻，只写看到的行为，不给情绪。</p>
+          <ol className="cl-steps-list">
+            <li><b>今天：</b>先回答“它现在像什么”，再给时间分布。</li>
+            <li><b>时刻：</b>能筛选“有推测 / 只看到行为”，点开才是完整卡片。</li>
+            <li><b>平常：</b>说明系统看什么、不看什么，和你教了它多少。</li>
+          </ol>
+          <Evidence kind="hand" note="界面是设计稿，还没有给主人用过" />
+        </div>
+        <div className="cl-widget">
+          <div className="cl-phone cl-app" aria-label="手机 App 原型">
+            <div className="cl-app-screen">
+              {tab === 'today' ? (
+                <div className="cl-phone-body">
+                  <p className="cl-phone-title">你不在的时候</p>
+                  {latest ? (
+                    <button className="cl-app-hero" style={{ borderColor: STATE_COL[latest.g!.top] }} onClick={() => { setTab('moments'); setOpen(latest.i); }}>
+                      <small>最近一次 · 片段 {latest.i} · {mmss(latest.e.start_s)}</small>
+                      <b style={{ color: STATE_COL[latest.g!.top] }}>看起来像：{STATE_TEXT[latest.g!.top]}</b>
+                      <Badge r={latest} />
+                    </button>
+                  ) : <p className="cl-phone-lead">这段时间没有把握足够高的推测，只记录了行为。</p>}
+                  <div className="cl-phone-card">
+                    <p className="cl-phone-h">它的时间都花在哪里</p>
+                    <div className="cl-budget">{budget.map(([k, n]) => <span key={k} style={{ flex: n, background: BUDGET_COL[k] }} />)}</div>
+                    <p className="cl-phone-legend">{budget.slice(0, 4).map(([k, n]) => <span key={k}><i style={{ background: BUDGET_COL[k] }} />{BUDGET_NAME[k]} <b>{Math.round((n / tot) * 100)}%</b></span>)}</p>
+                  </div>
+                  <p className="cl-phone-fold">共 {rows.length} 个时刻，其中 {shown.length} 个给出了推测。</p>
+                </div>
+              ) : null}
+              {tab === 'moments' && cur === null ? (
+                <div className="cl-phone-body">
+                  <p className="cl-phone-title">时刻</p>
+                  <div className="cl-seg" role="group" aria-label="筛选">
+                    {([['all', '全部'], ['guess', '有推测'], ['behavior', '只看到行为']] as const).map(([k, n]) => <button key={k} aria-pressed={filter === k} onClick={() => setFilter(k)}>{n}</button>)}
+                  </div>
+                  {list.map((r) => (
+                    <button key={r.i} className="cl-phone-row" style={r.ok ? { borderLeftColor: STATE_COL[r.g!.top] } : undefined} onClick={() => setOpen(r.i)}>
+                      <span className="t">片段 {r.i} · {mmss(r.e.start_s)}</span>
+                      <span className="g" style={{ color: r.ok ? STATE_COL[r.g!.top] : '#667083' }}>{r.ok ? `看起来像：${STATE_TEXT[r.g!.top]}` : RPLAIN[r.e.reaction]}</span>
+                      <Badge r={r} />
+                    </button>))}
+                  {list.length === 0 ? <p className="cl-phone-fold">这一类没有时刻。</p> : null}
+                </div>
+              ) : null}
+              {tab === 'moments' && cur && curChk ? (
+                <div className="cl-phone-body">
+                  <button className="cl-app-back" onClick={() => setOpen(null)}>‹ 时刻</button>
+                  <p className="cl-phone-time">片段 {cur.i} · {mmss(cur.e.start_s)}</p>
+                  <div className="cl-phone-card">
+                    <p className="cl-phone-concl" style={{ color: cur.ok ? STATE_COL[cur.g!.top] : '#667083' }}>{cur.ok ? `看起来像：${STATE_TEXT[cur.g!.top]}` : RPLAIN[cur.e.reaction]}</p>
+                    <Badge r={cur} />
+                    {cur.ok ? <p className="cl-phone-p">也可能是：<b>{STATE_TEXT[cur.g!.second]}</b></p> : <p className="cl-phone-p">把握不够，系统只写看到的行为，不给情绪。</p>}
+                  </div>
+                  <div className="cl-phone-card"><p className="cl-phone-h">系统在猫身上看到的</p><CatMap z={zEvent(cur.e)} compact /></div>
+                  <button className="cl-play" onClick={() => onWatch(cur.i)}>▶ 看这一段视频</button>
+                  <div className="cl-phone-card">
+                    <p className="cl-phone-h">为什么标为「{RPLAIN[cur.e.reaction]}」</p>
+                    {curChk.cited.slice(0, 2).map((k) => <p className="cl-phone-p" key={k}>{driverText({ feature: k, z: cur.e.z[k] ?? 0 })}</p>)}
+                  </div>
+                  <div className="cl-phone-card fb">
+                    <p className="cl-phone-h">{cur.ok ? '这个推测对吗？' : '你觉得它当时怎么了？'}</p>
+                    <div className="cl-fbrow">{(['right', 'wrong', 'unsure'] as const).map((v) => <button key={v} aria-pressed={fb[cur.i] === v} onClick={() => setFb({ ...fb, [cur.i]: v })}>{v === 'right' ? '对' : v === 'wrong' ? '不对' : '说不准'}</button>)}</div>
+                  </div>
+                </div>
+              ) : null}
+              {tab === 'usual' ? (
+                <div className="cl-phone-body">
+                  <p className="cl-phone-title">平常</p>
+                  <div className="cl-phone-card">
+                    <p className="cl-phone-h">系统在看</p>
+                    <p className="cl-phone-p">耳朵的高度和朝向、眼睛睁开的程度、身体动得多不多。每一项都和<b>它自己的平时</b>比。</p>
+                  </div>
+                  <div className="cl-phone-card">
+                    <p className="cl-phone-h">系统看不到</p>
+                    <p className="cl-phone-p">尾巴、胡须、瞳孔、叫声。所以推测不会提到它们。</p>
+                  </div>
+                  <div className="cl-phone-card">
+                    <p className="cl-phone-h">你教了它</p>
+                    <p className="cl-phone-p">{nFb ? `已回答 ${nFb} 个时刻。` : '还没有回答。在「时刻」里点开一个，告诉系统对不对。'}</p>
+                  </div>
+                </div>
+              ) : null}
+            </div>
+            <div className="cl-app-tabs" role="tablist" aria-label="App 底部导航">
+              {([['today', '今天'], ['moments', '时刻'], ['usual', '平常']] as const).map(([k, n]) => <button key={k} role="tab" aria-selected={tab === k} onClick={() => go(k)}>{n}</button>)}
+            </div>
+          </div>
+        </div>
+      </div>
+    </section>
   );
 }
 
 /* ---------- limits and critiques ---------- */
 function Limits() {
   const items: [string, string][] = [
-    ['证据太薄', '情绪猜测的概率是我们自己定的，没有一条被人工标注检验过；规则也只在一段约 35 秒的网络视频上跑过。这个项目能展示的是“没有验证时怎样负责任地做”：证据等级标在每一步，把握低就不说，主人能用视频自己核对。它不能展示“这个方法被证明有效”。'],
+    ['证据太薄', '情绪推测的概率是我们自己定的，没有一条被人工标注检验过；规则也只在一段约 35 秒的网络视频上跑过。这个项目能展示的是“没有验证时怎样负责任地做”：证据等级标在每一步，把握低就不说，主人能用视频自己核对。它不能展示“这个方法被证明有效”。'],
     ['评估只做到了前两层', '模型对不对（第一层）只有感知部分有验证集指标，行为判断没有标注；解释是否忠实（第二层）已经在部署系统上检验；主人是否看懂（第三层）还没有测。'],
     ['解释的对象偏窄', '本站的方法图鉴多面向表格和分类模型，这里解释的是关键点回归之上的规则。部署的系统属于“设计即可解释”的那一类，没有用 SHAP 或 LIME；第 1 步的遮挡分析只做了 1 张图、1 个点，只能算健全性检查。'],
     ['只在一个领域里演示过', '可迁移的是设计模式：替不会说话的对象向第三方解释时，（1）和它自己的平常比；（2）把可核对的依据放在结论旁；（3）把握不够就不下结论；（4）读者的纠正变成标签。这些模式在其他领域是否有效，需要另外的研究。'],
   ];
   return (
-    <section className="cl-step" id="s8">
-      <Head no="08" en="LIMITS" title="这个案例不能说明什么" desc="解释忠实于规则，不代表规则对这只猫的判断是对的。这只猫当时是被吓到的，不是在玩。" />
+    <section className="cl-step" id="s9">
+      <Head no="09" en="LIMITS" title="这个案例不能说明什么" desc="解释忠实于规则，不代表规则对这只猫的判断是对的。这只猫当时是被吓到的，不是在玩。" />
       <div className="cl-limits">
         {items.map(([t, b], i) => (<article key={t}><span className="num">{String(i + 1).padStart(2, '0')}</span><h3>{t}</h3><p>{b}</p></article>))}
       </div>
       <div className="editor-note">
         <span>数据说明 / DATA</span>
-        <p>案例使用 YouTube 上的一段视频（<a href={'https://www.youtube.com/watch?v=' + VIDEO_ID} target="_blank" rel="noreferrer">“My cat thinks she’s home alone with a ghost – Part 2”，Kiki The Dream Cat ↗</a>），仅供课程学习。本页<b>没有复制这段视频</b>。顶部的播放器是 YouTube 官方嵌入，页面自己发布的内容是从视频里算出的<b>关键点和数字</b>。系统<b>不读猫的情绪</b>，它给出带把握程度的猜测。完整的数学推导和可运行的代码，在我们的 <a href={COLAB_URL} target="_blank" rel="noreferrer">Colab 笔记 ↗</a>。</p>
+        <p>案例使用 YouTube 上的一段视频（<a href={'https://www.youtube.com/watch?v=' + VIDEO_ID} target="_blank" rel="noreferrer">“My cat thinks she’s home alone with a ghost – Part 2”，Kiki The Dream Cat ↗</a>），仅供课程学习。本页<b>没有复制这段视频</b>。顶部的播放器是 YouTube 官方嵌入，页面自己发布的内容是从视频里算出的<b>关键点和数字</b>。系统<b>不读猫的情绪</b>，它给出带把握程度的推测。完整的数学推导和可运行的代码，在我们的 <a href={COLAB_URL} target="_blank" rel="noreferrer">Colab 笔记 ↗</a>。</p>
       </div>
     </section>
   );

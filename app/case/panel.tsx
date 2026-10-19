@@ -3,6 +3,7 @@ import type { RefObject } from 'react';
 import { fin, type ClipData, type FeatureKey, type Frame, type Step } from './core';
 import { DPLAIN, FEAT, FIDX, LCOL, RPLAIN, amount, driverText, mmss } from './vocab';
 import { Viewer, type Layers } from './viewer';
+import { CatMap } from './catmap';
 
 /* The live demo panel: original video, live keypoints, and the measurements as gauges that move with every frame. */
 
@@ -98,6 +99,7 @@ export function Panel({ clip, out, fi, kpFrame, kpStep, layers, setLayers, minCo
             <span className="cl-p-label-k">现在的标签</span>
             <strong>{r.calibrating ? '正在记平时' : RPLAIN[r.label]}</strong>
           </div>
+          <div className="cl-p-cat"><CatMap z={r.calibrating ? {} : r.z} /></div>
           <p className="cl-p-basis">{r.drivers.length && !r.calibrating ? <b>依据　</b> : null}{basis}</p>
           <div className="cl-p-gauges">
             <Gauge k="ear_height" big z={r.calibrating ? NaN : r.z.ear_height} note={offReason('ear_height', f, r.calibrating)} />

@@ -139,27 +139,39 @@ function sVote(g: THREE.Group, d: SceneData): Upd {
 }
 
 function sGuess(g: THREE.Group, d: SceneData, reg: Reg): Upd {
-  const priorKeys = Object.keys(PRIOR), cw = 1.2;
+  const priorKeys = Object.keys(PRIOR), cw = 1.2, Z0 = 2.5, DZ = 1.3;
   const heat = (v: number) => new THREE.Color().setHSL(0.62, 0.8, 0.18 + 0.5 * v);
-  const bars: { m: THREE.Mesh; col: number; base: THREE.Color; cue?: string; prior?: string }[] = [];
-  const bar = (x: number, z: number, v: number, h: number, col: number, extra: { cue?: string; prior?: string }) => {
-    const base = heat(v), m = new THREE.Mesh(new THREE.BoxGeometry(0.95, 1, 0.55), std(base.getHex())); m.scale.y = Math.max(0.04, v * h); m.position.set(x, -1.5 + m.scale.y / 2, z); g.add(m); reg(m, col); bars.push({ m, col, base, ...extra });
+  // one row per table row; only the chosen label's row and the chosen cues' rows are shown.
+  // Read front to back: column heads, starting odds, each cue, then the share at the back.
+  const rows: { key: string; ms: THREE.Mesh[]; base: THREE.Color[]; label: THREE.Sprite }[] = [];
+  const row = (key: string, vals: number[], name: string) => {
+    const ms: THREE.Mesh[] = [], base: THREE.Color[] = [];
+    vals.forEach((v, c) => { const b = heat(v), m = new THREE.Mesh(new THREE.BoxGeometry(0.95, 1, 0.7), std(b.getHex())); m.scale.y = Math.max(0.04, v * 2); m.position.set((c - 2) * cw, -1.5 + m.scale.y / 2, 0); g.add(m); reg(m, c); ms.push(m); base.push(b); });
+    const l = makeLabel(name, '#c9d1e0', 0.36); l.sprite.center.set(1, 0.5); l.sprite.material.depthTest = false; l.sprite.renderOrder = 10; g.add(l.sprite);
+    rows.push({ key, ms, base, label: l.sprite });
   };
-  priorKeys.forEach((k, r) => { PRIOR[k].forEach((v, c) => bar((c - 2) * cw, 0.9 + r * 0.75, v, 2, c, { prior: k })); const l = makeLabel(rp(d.lang, k), '#9aa5b8', 0.3); l.sprite.position.set(-3.9, -1.3, 0.9 + r * 0.75); g.add(l.sprite); });
-  cueKeys.forEach((k, r) => { LIK[k].forEach((v, c) => bar((c - 2) * cw, 4.2 + r * 0.75, v, 2, c, { cue: k })); const l = makeLabel(cueName(d.lang, k), '#9aa5b8', 0.3); l.sprite.position.set(-4.2, -1.3, 4.2 + r * 0.75); g.add(l.sprite); });
-  const post = STATES.map((s, c) => { const m = new THREE.Mesh(new THREE.BoxGeometry(0.95, 1, 0.6), std('#6fe3c1', { emissive: '#6fe3c1', emissiveIntensity: 0.3 })); m.position.set((c - 2) * cw, 0, -1.6); g.add(m); reg(m, c); const l = makeLabel(stateShort(d.lang, s), '#e6ebf5', 0.34); l.sprite.position.set((c - 2) * cw, -2.1, -1.6); g.add(l.sprite); return m; });
-  const t2 = makeLabel(T(d, '线索似然 P(线索|状态)　每列是一种状态，点柱子选列', 'cue likelihood P(cue|state)   each column is a state, click a bar to pick it'), '#6c9bff', 0.34); t2.sprite.position.set(0, 2.3, 5.8); g.add(t2.sprite);
-  const t3 = makeLabel('', '#6fe3c1', 0.38); t3.sprite.position.set(0, 3.2, -1.6); g.add(t3.sprite);
-  const t4 = makeLabel('', '#9aa5b8', 0.34); t4.sprite.position.set(0, 2.3, 1.7); g.add(t4.sprite);
-  g.position.z = -3.5;
+  priorKeys.forEach((k) => row('p:' + k, PRIOR[k], rp(d.lang, k)));
+  cueKeys.forEach((k) => row('c:' + k, LIK[k], '× ' + cueName(d.lang, k)));
+  const post = STATES.map((_, c) => { const m = new THREE.Mesh(new THREE.BoxGeometry(0.95, 1, 0.7), std('#6fe3c1', { emissive: '#6fe3c1', emissiveIntensity: 0.3 })); m.position.set((c - 2) * cw, 0, 0); g.add(m); reg(m, c); return m; });
+  const pl = makeLabel(T(d, '= 占比', '= share'), '#6fe3c1', 0.36); pl.sprite.center.set(1, 0.5); pl.sprite.material.depthTest = false; pl.sprite.renderOrder = 10; g.add(pl.sprite);
+  // state names in front of the nearest row, so they read as column heads and nothing stands in front of them
+  STATES.forEach((s, c) => { const l = makeLabel(stateShort(d.lang, s), '#e6ebf5', 0.34); l.sprite.position.set((c - 2) * cw, -1.5, Z0 + 1.2); g.add(l.sprite); });
+  const t3 = makeLabel('', '#6fe3c1', 0.38); t3.sprite.position.set(0, -2.3, Z0 + 1.6); g.add(t3.sprite);
+  // tilt the board toward the camera: seen edge-on, the rows (and their names) would stack on top of each other
+  g.position.z = -3.5; g.rotation.x = 0.5;
   let last = '';
   return (s) => {
     const sum = PRIOR[s.gl].reduce((a, b) => a + b, 0), p0 = PRIOR[s.gl].map((v) => v / sum), prod = p0.map((p, i) => s.gc.reduce((a, c) => a * LIK[c][i], p)), Z = prod.reduce((a, b) => a + b, 0), pp = prod.map((v) => v / Z);
-    bars.forEach((b) => { const mt = b.m.material as THREE.MeshStandardMaterial, onCol = b.col === s.col, active = b.prior ? b.prior === s.gl : b.cue ? s.gc.includes(b.cue) : false;
-      mt.color.copy(b.base); mt.emissive.set(onCol ? '#ffffff' : active ? '#6c9bff' : '#000000'); mt.emissiveIntensity = onCol ? 0.45 : active ? 0.3 : 0; mt.opacity = 1; mt.transparent = false; if (!active && !onCol) { mt.transparent = true; mt.opacity = 0.55; } });
-    post.forEach((m, c) => { m.scale.y = Math.max(0.04, pp[c] * 3); m.position.y = -1.5 + m.scale.y / 2; (m.material as THREE.MeshStandardMaterial).emissive.set(c === s.col ? '#ffffff' : '#6fe3c1'); (m.material as THREE.MeshStandardMaterial).emissiveIntensity = c === s.col ? 0.6 : 0.25; });
+    const shown = ['p:' + s.gl, ...cueKeys.filter((k) => s.gc.includes(k)).map((k) => 'c:' + k)];
+    rows.forEach((r) => {
+      const at = shown.indexOf(r.key), z = Z0 - at * DZ;
+      r.label.visible = at >= 0; r.label.position.set(-3.6, -1.2, z);
+      r.ms.forEach((m, c) => { m.visible = at >= 0; m.position.z = z; const mt = m.material as THREE.MeshStandardMaterial; mt.color.copy(r.base[c]); mt.emissive.set(c === s.col ? '#ffffff' : '#000000'); mt.emissiveIntensity = c === s.col ? 0.45 : 0; });
+    });
+    const zp = Z0 - shown.length * DZ; pl.sprite.position.set(-3.6, -1.2, zp);
+    post.forEach((m, c) => { m.position.z = zp; m.scale.y = Math.max(0.04, pp[c] * 3); m.position.y = -1.5 + m.scale.y / 2; (m.material as THREE.MeshStandardMaterial).emissive.set(c === s.col ? '#ffffff' : '#6fe3c1'); (m.material as THREE.MeshStandardMaterial).emissiveIntensity = c === s.col ? 0.6 : 0.25; });
     const txt = stateShort(d.lang, STATES[s.col]) + ': ' + p0[s.col].toFixed(2) + s.gc.map((c) => ' × ' + LIK[c][s.col].toFixed(2)).join('') + ' = ' + prod[s.col].toFixed(3) + '  →  ' + pp[s.col].toFixed(2);
-    if (txt !== last) { t3.set(txt); t4.set(T(d, '标签：', 'label: ') + rp(d.lang, s.gl) + (s.gc.length ? T(d, '　线索：', '   cues: ') + s.gc.map((c) => cueName(d.lang, c)).join(T(d, '、', ', ')) : T(d, '　（还没选线索）', '   (no cue picked)'))); last = txt; }
+    if (txt !== last) { t3.set(txt); last = txt; }
   };
 }
 
@@ -190,83 +202,115 @@ export function createScene(el: HTMLElement, d: SceneData, onPick: (i: number) =
 
   const colBars: THREE.Mesh[] = [], reg: Reg = (m, c) => { m.userData.col = c; colBars.push(m); };
   const builders: ((g: THREE.Group, d: SceneData, reg: Reg) => Upd)[] = [sDetect, sKeypoints, sSmooth, sFeatures, sBaseline, sSpace, sVote, sGuess, sCheck];
+  /* Folding stack: only the selected stage is open; the others fold into thin plates on one spine, so nothing hangs over anything else. */
+  const CW = 13, CHH = 10.5, CD = 12, PLATE = 0.5, FOLD = 3;
   const stages = builders.map((b, i) => {
-    const g = new THREE.Group(); g.position.y = i * GAP; scene.add(g);
+    const g = new THREE.Group(); scene.add(g);
     const content = new THREE.Group(); g.add(content);
     const upd = b(content, d, reg);
-    const t = makeLabel(String(i + 1).padStart(2, '0') + '  ' + NAMES[d.lang][i], '#e6ebf5', 0.8, 5); t.sprite.position.set(0, 4.2, 0); g.add(t.sprite);
-    const hit = new THREE.Mesh(new THREE.BoxGeometry(10, 8, 10), new THREE.MeshBasicMaterial({ transparent: true, opacity: 0, depthWrite: false })); hit.userData.i = i; g.add(hit);
+    const name = String(i + 1).padStart(2, '0') + '  ' + NAMES[d.lang][i];
+    const t = makeLabel(name, '#e6ebf5', 0.8, 5); t.sprite.position.set(0, 4.2, 0); g.add(t.sprite);
+    // the folded plate's name sits to its left, like a row in a table of contents
+    const side = makeLabel(name, '#aab4c8', 0.55); side.sprite.center.set(1, 0.5); side.sprite.material.depthTest = false; side.sprite.renderOrder = 10; side.sprite.position.set(-CW / 2 - 0.8, 0, 0); g.add(side.sprite);
+    const hit = new THREE.Mesh(new THREE.BoxGeometry(CW, 8, 10), new THREE.MeshBasicMaterial({ transparent: true, opacity: 0, depthWrite: false })); hit.userData.i = i; g.add(hit);
     // what kind of component this is, shown as a casing: dark and opaque for a black box, clear for a glass box
-    const X = XAI[STAGE_IDS[i]], K = KIND[X.kind], cw = 13, chh = 10.5, cd = 12;
-    const shell = new THREE.Mesh(new THREE.BoxGeometry(cw, chh, cd), new THREE.MeshBasicMaterial({ color: X.box === 'black' ? '#07080c' : K.color, transparent: true, opacity: X.box === 'black' ? 0.62 : 0.035, depthWrite: false, side: THREE.DoubleSide }));
-    shell.position.set(0, 0.2, 0); shell.renderOrder = 2; g.add(shell);
-    const edges = new THREE.LineSegments(new THREE.EdgesGeometry(shell.geometry), new THREE.LineBasicMaterial({ color: K.color, transparent: true, opacity: 0.85 })); edges.position.copy(shell.position); g.add(edges);
-    const plate = makeLabel(K.short[d.lang] + (X.box === 'black' ? (d.lang === 'en' ? ' · black box' : ' · 黑箱') : (d.lang === 'en' ? ' · glass box' : ' · 白箱')), K.color, 0.55);
-    plate.sprite.position.set(0, chh / 2 + 1.3, 0); g.add(plate.sprite);
-    // decision gates: an amber frame on the stream below the next stage
+    const X = XAI[STAGE_IDS[i]], K = KIND[X.kind], black = X.box === 'black';
+    const shell = new THREE.Mesh(new THREE.BoxGeometry(CW, CHH, CD), new THREE.MeshBasicMaterial({ color: black ? '#07080c' : K.color, transparent: true, opacity: black ? 0.62 : 0.035, depthWrite: false, side: THREE.DoubleSide }));
+    shell.renderOrder = 2; g.add(shell);
+    const edges = new THREE.LineSegments(new THREE.EdgesGeometry(shell.geometry), new THREE.LineBasicMaterial({ color: K.color, transparent: true, opacity: 0.85 })); g.add(edges);
+    const plate = makeLabel(K.short[d.lang] + (black ? (d.lang === 'en' ? ' · black box' : ' · 黑箱') : (d.lang === 'en' ? ' · glass box' : ' · 白箱')), K.color, 0.55);
+    plate.sprite.position.set(0, CHH / 2 + 1.3, 0); g.add(plate.sprite);
+    // decision gates: an amber frame on the stream above the stage; shown while the stage is open
+    const gates = new THREE.Group(); g.add(gates);
     X.gates.slice(0, 2).forEach((gt, k) => {
-      const gy = GAP / 2 + k * 2.6, gg = new THREE.Group(); gg.position.set(0, gy, 0); g.add(gg);
+      const gg = new THREE.Group(); gg.position.set(0, GAP / 2 + k * 2.6, 0); gates.add(gg);
       const mat = new THREE.MeshStandardMaterial({ color: '#ffb84d', emissive: '#ffb84d', emissiveIntensity: 0.35 });
       [-1.4, 1.4].forEach((px) => { const p = new THREE.Mesh(new THREE.BoxGeometry(0.16, 1.6, 0.16), mat); p.position.set(px, 0, 0); gg.add(p); });
       const top = new THREE.Mesh(new THREE.BoxGeometry(3, 0.16, 0.16), mat); top.position.set(0, 0.8, 0); gg.add(top);
       const dia = new THREE.Mesh(new THREE.OctahedronGeometry(0.32), mat); dia.position.set(0, 1.25, 0); gg.add(dia);
       const lb = makeLabel('◆ ' + gt.rule[d.lang], '#ffcf8a', 0.36); lb.sprite.center.set(0, 0.5); lb.sprite.position.set(1.8, 0.2, 0); gg.add(lb.sprite);
     });
-
-    return { g, upd, title: t.sprite, hit };
+    // room the stage needs below and above its centre, open and folded
+    const hiOpen = X.gates.length ? GAP / 2 + (Math.min(2, X.gates.length) - 1) * 2.6 + 3 : CHH / 2 + 2.6;
+    return { g, upd, content, title: t.sprite, side: side.sprite, hit, shell, edges, plate: plate.sprite, gates, black, hiOpen, y: 0, ty: 0, f: 0, tf: 0 };
   });
-  // data stream between stages
-  const NP = 10, streams = stages.slice(0, -1).map((_, i) => { const geo = new THREE.BufferGeometry(); geo.setAttribute('position', new THREE.Float32BufferAttribute(new Float32Array(NP * 3), 3)); const p = new THREE.Points(geo, new THREE.PointsMaterial({ color: '#6c9bff', size: 0.2, transparent: true, opacity: 0.9 })); p.frustumCulled = false; scene.add(p);
-    scene.add(new THREE.Line(new THREE.BufferGeometry().setFromPoints([new THREE.Vector3(0, i * GAP + 4.2, 0), new THREE.Vector3(0, (i + 1) * GAP - 4.2, 0)]), new THREE.LineBasicMaterial({ color: '#1d2a4d' }))); return geo; });
+  type St = (typeof stages)[number];
+  const lo = (st: St, open: boolean) => (open ? CHH / 2 + 1.5 : FOLD / 2), hi = (st: St, open: boolean) => (open ? st.hiOpen : FOLD / 2);
+  const layout = (open: number) => { let y = 0; stages.forEach((st, i) => { if (i) y += hi(stages[i - 1], i - 1 === open) + lo(st, i === open); st.ty = y; st.tf = i === open ? 1 : 0; }); };
+  const lerp = (a: number, b: number, k: number) => a + (b - a) * k;
+  const apply = (st: St) => {
+    const f = st.f; st.g.position.y = st.y;
+    st.content.visible = f > 0.02; st.content.scale.setScalar(Math.max(1e-3, f));
+    // a folded stage is a thin plate; the open stage has no casing, its content stands free like the parts on the right
+    [st.shell, st.edges].forEach((m) => { m.scale.set(1, PLATE / CHH, 0.6); m.visible = f < 0.98; });
+    (st.shell.material as THREE.MeshBasicMaterial).opacity = (st.black ? 0.62 : 0.2) * (1 - f);
+    (st.edges.material as THREE.LineBasicMaterial).opacity = 0.85 * (1 - f);
+    st.title.material.opacity = f; st.title.visible = f > 0.02;
+    st.side.material.opacity = 1 - f; st.side.visible = f < 0.98;
+    st.plate.material.opacity = f; st.plate.visible = f > 0.02;
+    st.gates.visible = f > 0.9;
+    st.hit.scale.y = lerp(0.3, 1, f);
+  };
+  // one spine through every stage, and data dots between neighbours
+  const spineGeo = new THREE.BufferGeometry().setFromPoints([new THREE.Vector3(), new THREE.Vector3()]); scene.add(new THREE.Line(spineGeo, new THREE.LineBasicMaterial({ color: '#1d2a4d' })));
+  const NP = 10, streams = stages.slice(0, -1).map(() => { const geo = new THREE.BufferGeometry(); geo.setAttribute('position', new THREE.Float32BufferAttribute(new Float32Array(NP * 3), 3)); const p = new THREE.Points(geo, new THREE.PointsMaterial({ color: '#6c9bff', size: 0.2, transparent: true, opacity: 0.9 })); p.frustumCulled = false; scene.add(p); return geo; });
+  const edgeTop = (st: St) => lerp(PLATE / 2, CHH / 2 + 0.2, st.f), edgeBot = (st: St) => lerp(PLATE / 2, CHH / 2 - 0.2, st.f);
 
-    /* the whole structure at once: one row per stage, its parts (level 2) to the right, their smallest steps (level 3) below */
+  /* level 2 (parts) to the right of the open stage, their level-3 steps below; only the open stage's parts are shown */
   const DX = 11.5, X0 = 16, DY = -9.5;
-  interface Obj { node: Node; g: THREE.Group; content: THREE.Group; hit: THREE.Mesh; title: ReturnType<typeof makeLabel>; sig: string; pos: THREE.Vector3; stage: number }
+  interface Obj { node: Node; g: THREE.Group; content: THREE.Group; hit: THREE.Mesh; title: ReturnType<typeof makeLabel>; sig: string; x: number; off: number; stage: number }
   const objs: Obj[] = [];
-  let view: View | null = null, last: SceneState | null = null;
+  let view: View | null = null, last: SceneState | null = null, sel = 0;
   const modeOf = (id: string): Mode => { const cur = view?.l3 ?? view?.l2; return !cur || id === cur ? 'on' : 'path'; };
   const refresh = (o: Obj) => {
     if (!last) return; const m = modeOf(o.node.id), v = o.node.vis({ d, s: last, lang: d.lang, ps: last.ps }), sig = m + JSON.stringify(v);
     if (sig === o.sig) return; o.sig = sig; disposeObj(o.content); o.content.clear(); o.content.add(buildVis3D(v, m));
   };
-  const tmp = new THREE.Vector3();
-  const refreshNear = () => objs.forEach((o) => { o.g.getWorldPosition(tmp); if (!o.sig || tmp.distanceTo(cam.position) < 75) refresh(o); });
-  const line = (a: THREE.Vector3, b: THREE.Vector3, c = '#2a3550') => scene.add(new THREE.Line(new THREE.BufferGeometry().setFromPoints([a, b]), new THREE.LineBasicMaterial({ color: c })));
-  STAGE_IDS.forEach((sid, i) => {
+  const refreshNear = () => objs.forEach((o) => { if (o.stage === sel) refresh(o); });
+  const parts = STAGE_IDS.map((sid, i) => {
+    const pg = new THREE.Group(); pg.visible = false; scene.add(pg);
+    const line = (a: THREE.Vector3, b: THREE.Vector3) => pg.add(new THREE.Line(new THREE.BufferGeometry().setFromPoints([a, b]), new THREE.LineBasicMaterial({ color: '#3a4764' })));
     const l2 = childrenOf(sid);
     l2.forEach((n, k) => {
-      const x = X0 + k * DX, y = i * GAP, mk = (node: Node, yy: number) => {
-        const og = new THREE.Group(); og.position.set(x, yy, 0); scene.add(og); const content = new THREE.Group(); og.add(content);
+      const x = X0 + k * DX, mk = (node: Node, off: number) => {
+        const og = new THREE.Group(); og.position.set(x, off, 0); pg.add(og); const content = new THREE.Group(); og.add(content);
         const title = makeLabel(node.title[d.lang], '#e6ebf5', 0.62); title.sprite.position.set(0, 4.3, 0); og.add(title.sprite);
         const hit = new THREE.Mesh(new THREE.BoxGeometry(10.4, 7.6, 7), new THREE.MeshBasicMaterial({ transparent: true, opacity: 0, depthWrite: false })); hit.userData.node = node.id; og.add(hit);
-        const o: Obj = { node, g: og, content, hit, title, sig: '', pos: og.position.clone(), stage: i }; objs.push(o); return o;
+        objs.push({ node, g: og, content, hit, title, sig: '', x, off, stage: i });
       };
-      mk(n, y);
-      line(new THREE.Vector3(k === 0 ? 6 : x - DX + 5.4, y, 0), new THREE.Vector3(x - 5.4, y, 0), '#3a4764');
-      childrenOf(n.id).forEach((c3, j) => { mk(c3, y + DY * (j + 1)); line(new THREE.Vector3(x, y - 4, 0), new THREE.Vector3(x, y + DY * (j + 1) + 4.8, 0), '#3a4764'); });
+      mk(n, 0);
+      line(new THREE.Vector3(k === 0 ? CW / 2 : x - DX + 5.4, 0, 0), new THREE.Vector3(x - 5.4, 0, 0));
+      childrenOf(n.id).forEach((c3, j) => { mk(c3, DY * (j + 1)); line(new THREE.Vector3(x, -4, 0), new THREE.Vector3(x, DY * (j + 1) + 4.8, 0)); });
     });
+    if (l2.length) { const h = makeLabel(d.lang === 'en' ? 'PARTS OF THIS STAGE  →   (SMALLEST STEPS BELOW)' : '这一层的部件 →（最小的步骤在下方）', '#6c9bff', 0.9); h.sprite.position.set(X0 + ((l2.length - 1) * DX) / 2, 8, 0); pg.add(h.sprite); }
+    return pg;
   });
-  (Object.keys(KIND) as (keyof typeof KIND)[]).forEach((k, j) => { const l = makeLabel('■ ' + KIND[k].name[d.lang], KIND[k].color, 0.7); l.sprite.center.set(0, 0.5); l.sprite.position.set(-36, 9 * GAP + 2 - j * 1.4, 0); scene.add(l.sprite); });
-  { const l = makeLabel(d.lang === 'en' ? '◆ amber frame = a judgement is made here' : '◆ 琥珀色闸门 = 这里下判断', '#ffcf8a', 0.7); l.sprite.center.set(0, 0.5); l.sprite.position.set(-36, 9 * GAP + 2 - 6 * 1.4, 0); scene.add(l.sprite); }
+  const legend = new THREE.Group(); scene.add(legend);
+  (Object.keys(KIND) as (keyof typeof KIND)[]).forEach((k, j) => { const l = makeLabel('■ ' + KIND[k].name[d.lang], KIND[k].color, 0.7); l.sprite.center.set(0, 0.5); l.sprite.position.set(X0 - 5, -j * 1.4, 0); legend.add(l.sprite); });
+  { const l = makeLabel(d.lang === 'en' ? '◆ amber frame = a judgement is made here' : '◆ 琥珀色闸门 = 这里下判断', '#ffcf8a', 0.7); l.sprite.center.set(0, 0.5); l.sprite.position.set(X0 - 5, -6 * 1.4, 0); legend.add(l.sprite); }
   const maxParts = Math.max(...STAGE_IDS.map((sid) => childrenOf(sid).length));
-  const header = (txt: string, x: number) => { const h = makeLabel(txt, '#6c9bff', 1.1); h.sprite.position.set(x, 9 * GAP - 4, 0); scene.add(h.sprite); };
-  header(d.lang === 'en' ? 'LEVEL 1: THE NINE STAGES' : '第一级：九层', 0); header(d.lang === 'en' ? 'LEVEL 2: PARTS OF EACH STAGE  →   (LEVEL 3 BELOW)' : '第二级：每层的部件 →（第三级在下方）', X0 + ((maxParts - 1) * DX) / 2);
 
-  let sel = 0; const goalPos = new THREE.Vector3(), goalTgt = new THREE.Vector3(); let flying = false;
+  const goalPos = new THREE.Vector3(), goalTgt = new THREE.Vector3(); let flying = false, placed = false;
   const fly = (pos: THREE.Vector3, tgt: THREE.Vector3) => { goalPos.copy(pos); goalTgt.copy(tgt); flying = true; };
   const fitDist = (w: number) => (w / 2) / (Math.tan(THREE.MathUtils.degToRad(20)) * Math.min(1.7, cam.aspect));
-  const focus = (i: number) => fly(new THREE.Vector3(9, i * GAP + 5, fitDist(11) + 6), new THREE.Vector3(0, i * GAP + 0.5, 0));
+  const focus = (i: number) => { const y = stages[i].ty; fly(new THREE.Vector3(10, y + 6, fitDist(15) + 8), new THREE.Vector3(0, y + 0.5, 0)); };
   cam.position.set(40, 10, 70); ctl.target.set(30, -3, 0);
+  layout(0);
   const api: SceneApi = {
     update: (s) => { last = s; stages.forEach((st) => st.upd(s)); refreshNear(); },
     setView(v, flyNull = true) {
       view = v; refreshNear();
       if (!v) { if (flyNull) focus(sel); return; }
       const id = v.l3 ?? v.l2, ob = objs.find((x) => x.node.id === id);
-      if (ob) fly(new THREE.Vector3(ob.pos.x + 5.5, ob.pos.y + 6.2, fitDist(11.5) + 2), new THREE.Vector3(ob.pos.x, ob.pos.y - 0.3, 0)); else focus(v.stage);
+      if (ob) { const y = stages[ob.stage].ty + ob.off; fly(new THREE.Vector3(ob.x + 5.5, y + 6.2, fitDist(11.5) + 2), new THREE.Vector3(ob.x, y - 0.3, 0)); } else focus(v.stage);
     },
-    select(i, f) { sel = i; stages.forEach((st, k) => { st.title.material.opacity = k === i ? 1 : 0.45; }); if (f) focus(i); },
-    overview: () => fly(new THREE.Vector3(60, 4 * GAP + 40, 330), new THREE.Vector3(X0 + ((maxParts - 1) * DX) / 2 - 10, 4 * GAP - 4, 0)),
+    select(i, f) {
+      sel = i; layout(i); parts.forEach((pg, k) => { pg.visible = k === i; });
+      // the first placement snaps; later ones fold and unfold
+      if (!placed) { placed = true; stages.forEach((st) => { st.y = st.ty; st.f = st.tf; apply(st); }); }
+      refreshNear(); if (f) focus(i);
+    },
+    overview: () => { const top = stages[stages.length - 1].ty; fly(new THREE.Vector3(12, top / 2 + 12, fitDist(X0 + maxParts * DX) + 12), new THREE.Vector3(12, top / 2 - 2, 0)); },
     dispose() { cancelAnimationFrame(raf); ro.disconnect(); ctl.dispose(); scene.traverse((o) => { const m = o as THREE.Mesh; m.geometry?.dispose?.(); const mt = m.material as THREE.Material | THREE.Material[] | undefined; (Array.isArray(mt) ? mt : mt ? [mt] : []).forEach((x) => { (x as THREE.SpriteMaterial).map?.dispose(); x.dispose(); }); }); renderer.dispose(); disposeObj3dCaches(); renderer.domElement.remove(); },
   };
 
@@ -276,7 +320,7 @@ export function createScene(el: HTMLElement, d: SceneData, onPick: (i: number) =
   cv.addEventListener('pointerup', (e) => {
     if (!down || Math.hypot(e.clientX - down[0], e.clientY - down[1]) > 4) return;
     const r = cv.getBoundingClientRect(); mouse.set(((e.clientX - r.left) / r.width) * 2 - 1, -((e.clientY - r.top) / r.height) * 2 + 1); ray.setFromCamera(mouse, cam);
-    const sh = ray.intersectObjects(objs.map((x) => x.hit), false)[0], st0 = ray.intersectObjects(stages.map((x) => x.hit), false)[0];
+    const sh = ray.intersectObjects(objs.filter((x) => x.stage === sel).map((x) => x.hit), false)[0], st0 = ray.intersectObjects(stages.map((x) => x.hit), false)[0];
     if (sh && (!st0 || sh.distance < st0.distance)) { onNode(sh.object.userData.node as string); return; }
     const bar = ray.intersectObjects(colBars, false)[0];
     if (bar && sel === 7 && !(sh && sh.distance < bar.distance)) { onCol(bar.object.userData.col as number); return; }
@@ -286,7 +330,12 @@ export function createScene(el: HTMLElement, d: SceneData, onPick: (i: number) =
   const loop = () => {
     raf = requestAnimationFrame(loop); const t = clock.getElapsedTime(), dt = Math.min(0.25, t - prevT); prevT = t;
     if (flying) { const k = 1 - Math.exp(-dt * 5); cam.position.lerp(goalPos, k); ctl.target.lerp(goalTgt, k); if (cam.position.distanceTo(goalPos) < 0.05) flying = false; }
-    streams.forEach((geo, i) => { const p = geo.getAttribute('position') as THREE.BufferAttribute; for (let k = 0; k < NP; k++) { const u = (t * 0.25 + k / NP) % 1; p.setXYZ(k, 0, i * GAP + 4.2 + u * (GAP - 8.4), 0); } p.needsUpdate = true; });
+    const kf = 1 - Math.exp(-dt * 6);
+    stages.forEach((st) => { if (Math.abs(st.ty - st.y) > 1e-3 || Math.abs(st.tf - st.f) > 1e-3) { st.y = lerp(st.y, st.ty, kf); st.f = lerp(st.f, st.tf, kf); apply(st); } });
+    parts.forEach((pg, i) => { pg.position.y = stages[i].y; });
+    const top = stages[stages.length - 1]; legend.position.y = Math.max(top.y + edgeTop(top) + 10, stages[sel].y + 22);
+    const sp = spineGeo.getAttribute('position') as THREE.BufferAttribute; sp.setXYZ(0, 0, stages[0].y, 0); sp.setXYZ(1, 0, top.y, 0); sp.needsUpdate = true;
+    streams.forEach((geo, i) => { const a = stages[i].y + edgeTop(stages[i]), b = stages[i + 1].y - edgeBot(stages[i + 1]), p = geo.getAttribute('position') as THREE.BufferAttribute; for (let k = 0; k < NP; k++) { const u = (t * 0.25 + k / NP) % 1; p.setXYZ(k, 0, a + u * Math.max(0, b - a), 0); } p.needsUpdate = true; });
     if (t - lastRef > 0.4) { lastRef = t; refreshNear(); }
     ctl.update(); renderer.render(scene, cam);
   };

@@ -43,7 +43,7 @@ const ZH: StageInfo[] = [
   { id: 'guess', no: '08', name: '推测状态', en: 'GUESS', origin: 'hand', inDim: '标签 + 随后的线索（最多 7 条）+ 脸可见比例', outDim: '5 个概率 + 把握档（高 / 中 / 低）',
     lead: '一句话：先按刚看到的动作猜一个大概，再看猫接下来做了什么来改猜，不够确定就不说。',
     formula: ['新的比 = 原来的比 × 线索的倍数', '倍数 = P(线索 | A) ÷ P(线索 | B)', 'P(状态 | 标签, 线索) ∝ P(状态 | 标签) · Π P(线索ᵢ | 状态)', '把握 高: p₁ ≥ 0.6 且 p₁ − p₂ ≥ 0.3；中: p₁ ≥ 0.45 且 p₁ − p₂ ≥ 0.15；其余为低'],
-    text: '改猜只用一个乘法：两种心情的比，乘上这条线索的倍数（这条线索在两种心情下出现的比例之比）。多一条线索就再乘一次；五种心情一起算时每种都乘，最后换成占比。这个方法叫朴素贝叶斯。只用出现过的线索，没出现的不算证据；输出是模型内部的概率，不是猜对的概率。',
+    text: '每条线索把每种心情的可能性乘上一个比例，五种一起算完再换成占比，这就是朴素贝叶斯。只乘出现过的线索；算出的概率没有用标注校准过。',
     params: `${NPROB} 个概率全部是手设，没有一个被标注检验过。` },
   { id: 'check', no: '09', name: '检验解释', en: 'FAITHFULNESS', origin: 'formula', inDim: '一个事件的 z 和它的依据', outDim: '4 项检验，全部通过才算忠实',
     formula: ['能重现:  用记录的 z 重新跑规则，标签不变', '写出的就是原因:  把依据改回平时（z = 0），标签变', '没有隐藏原因:  把没写的改回平时，标签不变', '推测能重现'],
@@ -78,7 +78,7 @@ const EN: StageInfo[] = [
   { id: 'guess', no: '08', name: 'Guess the state', en: 'GUESS', origin: 'hand', inDim: 'Label + later cues (up to 7) + share of face visible', outDim: '5 probabilities + confidence band (high / medium / low)',
     lead: 'In one line: make a rough guess from the action just seen, update it by what the cat does next, and say nothing when unsure.',
     formula: ['new ratio = old ratio × the cue\'s factor', 'factor = P(cue | A) ÷ P(cue | B)', 'P(state | label, cues) ∝ P(state | label) · Π P(cueᵢ | state)', 'Confidence high: p₁ ≥ 0.6 and p₁ − p₂ ≥ 0.3; medium: p₁ ≥ 0.45 and p₁ − p₂ ≥ 0.15; otherwise low'],
-    text: 'The update is one multiplication: the ratio between two moods times the cue\'s factor (how often the cue appears in one mood divided by the other). Each further cue multiplies again; with all five moods every one is multiplied and the results are turned into shares. The method is called naive Bayes. Only cues that occurred count; absent ones are not evidence. The output is the model\'s internal probability, not the probability of being right.',
+    text: 'Each cue multiplies every mood by a share; after all five are done they are turned into proportions. That is naive Bayes. Only cues that occurred are multiplied, and the probabilities have not been calibrated against annotation.',
     params: `All ${NPROB} probabilities are hand-set. None has been checked against annotation.` },
   { id: 'check', no: '09', name: 'Check the explanation', en: 'FAITHFULNESS', origin: 'formula', inDim: 'One event: its z scores and its evidence', outDim: '4 checks, all must pass to be faithful',
     formula: ['Reproducible:  rerun the rules on the recorded z, label unchanged', 'Cause is cited:  set cited features back to usual (z = 0), label changes', 'No hidden cause:  set uncited features back to usual, label unchanged', 'Guess reproducible'],
@@ -111,22 +111,18 @@ export const getSymbols = (l: Lang) => (l === 'en' ? SE : SZ);
 /* how a stage is used inside the running system, in order; shown on the Explain tab */
 const UZ: Record<string, string[]> = {
   guess: [
-    '什么时候算：只有第 06、07 步给出“耳朵压低 / 突然不动 / 注意到了什么 / 动起来了”这 4 个标签之一时才开始一次推测。其余标签（比如“没有明显变化”）不推测，因为起始概率表里没有它们的行。',
-    '收集线索：事件发生后，记下猫随后做了什么（躲开、跑开、靠近、扑玩、平静下来、保持不动），以及之前小车是不是刚动过。只记“出现了”的线索，同时记下这段时间里脸能看清的比例。',
-    '算概率：按这个标签取 5 种状态的起始概率，每条出现的线索乘一次它那一行的比例，再除以总和。输出 5 个加起来为 1 的数。',
-    '决定说不说：最高的 p₁ 要够高、并和第二名 p₂ 拉开，才有“高 / 中”把握；否则是“低”，系统不写情绪，只写看到的行为。来自脸的标签（前三个）在脸可见不到 30% 时直接记为“低”；把握“高”但脸可见不到 30% 时降为“中”。',
-    '交给主人：主人手机上的卡片写“看起来像 ×× ，把握 高 / 中”，如果有一条线索拿掉后结论就会变，卡片会把它标成“关键的一步”。',
-    '事后复查：第 09 步用记下的标签、线索和脸可见比例重算一遍，最可能的状态和把握都必须和当时一致。',
+    '只有标签是耳朵压低、突然不动、注意到了、动起来了这 4 种之一时才推测。',
+    '记下事件后猫做了什么（躲开、跑开、靠近、扑玩、平静、不动），以及脸能看清的比例。',
+    '按上面的乘法算出 5 个概率；把握“低”就只写行为，不写情绪。',
+    '主人手机上的卡片写“看起来像 ××，把握 高 / 中”，第 09 步再重算一遍核对。',
   ],
 };
 const UE: Record<string, string[]> = {
   guess: [
-    'When it runs: only when steps 06–07 produce one of 4 labels, "ears back / froze / noticed something / moving". Other labels (such as "no clear change") get no guess, because the starting-odds table has no row for them.',
-    'Collect cues: after the event, record what the cat did next (moved away, ran off, approached, pounced, calmed down, stayed still) and whether the robot had just moved. Only cues that occurred are recorded, together with the share of that time the face was visible.',
-    'Compute: take the 5 starting probabilities for this label, multiply once by each occurring cue\'s row, divide by the total. The output is 5 numbers that add to 1.',
-    'Decide whether to speak: the top p₁ must be high enough and clear of the runner-up p₂ to give "high / medium"; otherwise it is "low", and the system writes only the behaviour, no emotion. For the face-based labels (the first three) the band is "low" outright if the face was visible under 30% of the time; a "high" band with the face visible under 30% drops to "medium".',
-    'Hand to the owner: the card on the owner\'s phone says "looks like ×× , confidence high / medium" and, if removing one cue would change the conclusion, marks that cue as the "key step".',
-    'Check afterwards: step 09 recomputes from the recorded label, cues and face share; the top state and the band must match what was shown.',
+    'A guess runs only when the label is one of 4: ears back, froze, noticed, moving.',
+    'Record what the cat did after the event (moved away, ran off, approached, pounced, calmed, stayed still) and how much of the face was visible.',
+    'Compute the 5 probabilities with the multiplication above; with a "low" band only the behaviour is written, no emotion.',
+    'The owner\'s phone card says "looks like ××, confidence high / medium", and step 09 recomputes it to check.',
   ],
 };
 export const getUse = (l: Lang) => (l === 'en' ? UE : UZ);

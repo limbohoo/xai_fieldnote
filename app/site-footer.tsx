@@ -18,7 +18,7 @@ export function SiteFooter() {
           <p>{t('内容与网站：Limbo。', 'Content and site: Limbo.')}</p>
           <p>
             {t('学习案例来自 TU/e 课程项目 AI Interactive Robot for Cats，小组成员 Kaitian Guo、Ningbo Hu、Anlu Xie、Amanda Liang、Haiyue Chen。代码：', 'The worked example comes from the TU/e course project AI Interactive Robot for Cats, by Kaitian Guo, Ningbo Hu, Anlu Xie, Amanda Liang and Haiyue Chen. Code: ')}
-            <a href="https://github.com/limbohoo/catpose-robot">catpose-robot</a>
+            <a href="https://github.com/limbohoo/cat-robot-xai">cat-robot-xai</a>
             {t('。', '.')}
           </p>
           <p>{t('编写与核对借助了 Claude Code。', 'Written and checked with the help of Claude Code.')}</p>

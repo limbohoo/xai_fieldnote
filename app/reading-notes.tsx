@@ -192,7 +192,7 @@ export function MarginNote({
           placeholder={t('一个例子、一个疑问，或一个尚未成形的想法……', 'An example, a question, or an idea not yet formed…')}
           className="note-input"
         />
-        <output className="note-status">{t(STATUS_TEXT[ctx.status][0], STATUS_TEXT[ctx.status][1])}</output>
+        {ctx.status !== 'local' && <output className="note-status">{t(STATUS_TEXT[ctx.status][0], STATUS_TEXT[ctx.status][1])}</output>}
       </details>
     </aside>
   );

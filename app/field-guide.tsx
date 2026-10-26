@@ -4,6 +4,7 @@ import { sources } from './sources';
 import { LearningContent } from './learning-content';
 import { Chapter } from './chapter';
 import { SiteHeader } from './site-header';
+import { SiteFooter } from './site-footer';
 import { ChapterHashOpener } from './chapter-hash';
 import { useT } from './i18n';
 function Cite({ ids }: { ids: number[] }) {
@@ -59,7 +60,6 @@ export function FieldGuide() {
             <span className="eyebrow">
               <i /> A FIELD GUIDE FOR DESIGNERS & RESEARCHERS
             </span>
-            <span className="edition">{t('学习手册 / 01', 'Field guide / 01')}</span>
           </div>
           <h1>
             {t('让智能，', 'Make intelligence')}
@@ -68,28 +68,20 @@ export function FieldGuide() {
           </h1>
           <div className="hero-bottom">
             <p>
-              {t('可解释人工智能', 'Explainable AI')} <strong>Explainable AI</strong>
+              {t('可解释人工智能', '')} <strong>Explainable AI</strong>
               <br />
-              {t('从模型依据到人的判断，从一次解释到一段协作。', 'From the model\'s basis to a person\'s judgement, from one explanation to a working partnership.')}
-              <br />
-              {t('面向工业产品设计与人机交互的学习指南。', 'A learning guide for industrial product design and human–computer interaction.')}
+              {t('给第一次接触这个领域的工业设计与人机交互学习者：五章按顺序读，再用一个真实项目把方法串起来。', 'For industrial-design and HCI learners new to the field: read the five chapters in order, then follow one real project that ties the methods together.')}
             </p>
             <a className="primary-link" href="#mapping">
-              {t('展开学习地图', 'Open the learning map')} <span>↘</span>
+              {t('从 01 开始读', 'Start with 01')} <span>↘</span>
             </a>
-          </div>
-          <div className="hero-footer">
-            <span>{t('5 个阅读章节', '5 reading chapters')}</span>
-            <span>{t(`${sources.length} 项文献与资料`, `${sources.length} sources`)}</span>
-            <span>{t('论文细读 · 十步参考 · 随读札记', 'Close reading · ten-step reference · notes')}</span>
-            <span className="right">{t('阅读版 / 2026.10', 'Reading edition / 2026.10')}</span>
           </div>
         </section>
         <a className="case-banner" href="/case">
-          <span className="eyebrow"><i /> {t('案例实验室 · CASE LAB', 'Case lab · CASE LAB')}</span>
+          <span className="eyebrow"><i /> {t('学习案例 · 读完五章后再看', 'Worked example · after the five chapters')}</span>
           <strong>{t('互动演示：AI 如何从一段猫的视频，推测它的行为与情绪', 'Interactive demo: how an AI, from a cat video, infers behaviour and mood')}</strong>
           <span className="case-banner-copy">
-            {t('用我们小组的项目做例子，共 8 步：找到猫、量出耳朵和身体的变化、套规则得到行为标签，再给出“可能是专注 / 好奇 / 放松 / 想玩 / 紧张”的占比，并检验这些解释靠不靠谱。可以拖动、点击自己试。 →', 'Using our group project as the example, in 8 steps: find the cat, measure ear and body change, apply rules to get a behaviour label, give shares for “attentive / curious / relaxed / playful / tense”, and test whether the explanations hold. Drag and click to try it yourself. →')}
+            {t('我们小组的项目，8 步：找到猫，量耳朵和身体的变化，用规则得到行为标签，推测可能的状态，再检验解释是不是真正的依据。每一步都能动手改。还有一页 3D 模型图解。 →', 'Our group project in 8 steps: find the cat, measure ear and body change, get a behaviour label from rules, guess a possible state, and check that the explanation states the real evidence. Every step is hands-on. A 3D model walkthrough goes with it. →')}
           </span>
         </a>
         <Chapter id="mapping" number="01" title={t('领域、问题与阅读坐标', 'Domain, questions and reading coordinates')} summary={t('从系统依据、人的理解到真实情境，建立选择解释方法前的判断框架。', 'From the system\'s basis, to people\'s understanding, to real situations: the judgement frame to set before choosing an explanation method.')}>
@@ -105,7 +97,7 @@ export function FieldGuide() {
                 letter: 'A',
                 kicker: t('系统 / SYSTEM', 'System / SYSTEM'),
                 title: t('解释的依据是什么？', 'What is the explanation based on?'),
-                body: t('AI 到底是靠什么拍板的？我们要摸清它肚子里有哪些数据和规则，确保它的解释不是在“胡说八道”，而是真正反映了它的思考过程。', 'What does the AI actually decide on? We need to find out which data and rules are inside, so its explanation is not nonsense but really reflects how it reasons.'),
+                body: t('模型依据哪些数据和规则做出判断？解释要如实反映模型实际的计算。', 'Which data and rules does the model use to decide? An explanation has to reflect what the model actually computed.'),
                 terms: 'Transparency · Faithfulness',
                 ids: [1, 5],
               },
@@ -113,7 +105,7 @@ export function FieldGuide() {
                 letter: 'B',
                 kicker: t('人 / HUMAN', 'People / HUMAN'),
                 title: t('谁需要理解什么？', 'Who needs to understand what?'),
-                body: t('程序员想用它找 Bug，普通用户想看它靠不靠谱。面对同一个 AI，不同的人想听到的“大白话”是完全不一样的。', 'A programmer wants to find bugs with it; an ordinary user wants to know whether to trust it. For the same AI, different people need very different plain-language answers.'),
+                body: t('开发者用解释找错误，使用者用它决定信不信。同一个模型，不同的人需要不同的解释。', 'Developers use explanations to find errors; users use them to decide whether to trust the output. The same model needs different explanations for different people.'),
                 terms: 'Mental model · Explanation needs',
                 ids: [2, 3],
               },
@@ -121,7 +113,7 @@ export function FieldGuide() {
                 letter: 'C',
                 kicker: t('情境 / CONTEXT', 'Context / CONTEXT'),
                 title: t('理解之后，能做什么？', 'Once understood, what can be done?'),
-                body: t('听懂了解释，然后呢？是为了让人能在 AI 犯傻时去纠正它，或者在关键时刻踩刹车。解释好不好用，最终得看人机配合能不能把事办成。', 'Having understood, then what? So people can correct the AI when it goes wrong, or brake at a critical moment. Whether an explanation is useful is finally judged by whether the human–machine pair gets the job done.'),
+                body: t('理解之后，人要能纠正错误、在关键时刻接管。解释是否有用，看人和系统一起能不能完成任务。', 'After understanding, people need to be able to correct errors and take over at critical moments. An explanation is useful if people and the system complete the task together.'),
                 terms: 'Agency · Appropriate reliance',
                 ids: [10, 11, 14],
               },
@@ -138,13 +130,6 @@ export function FieldGuide() {
               </article>
             ))}
           </div>
-          <div className="editor-note">
-            <span>{t('阅读立场 / READING LENS', 'Reading lens / READING LENS')}</span>
-            <p>
-              {t('可以把 XAI 想成一位“翻译官”：AI 在黑盒里用复杂的数学矩阵做决定，而 XAI 负责把这些数字，翻译成人类能听懂的逻辑和原因。先顺着案例看看这位翻译官能帮上什么忙，再回到具体方法，慢慢建立你的判断。', 'Think of XAI as an interpreter: the AI decides inside a black box with complex matrices, and XAI turns those numbers into logic and reasons people can follow. Follow the case first to see what the interpreter can do, then return to the methods and build your own judgement.')}
-              <Cite ids={[1, 5]} />
-            </p>
-          </div>
           <div className="glossary-bridge">
             <span>{t('从基础开始', 'Start from the basics')}</span>
             <a href="/glossary#ai">{t('人工智能 AI ↗', 'Artificial intelligence AI ↗')}</a>
@@ -156,10 +141,7 @@ export function FieldGuide() {
         </Chapter>
         <LearningContent />
       </main>
-      <footer className="footer">
-        <span>XAI FIELDNOTES</span>
-        <span>{t('理解 · 判断 · 行动', 'Understand · judge · act')}</span>
-      </footer>
+      <SiteFooter />
     </>
   );
 }

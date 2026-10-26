@@ -146,7 +146,6 @@ export function LearningContent() {
             ))}
           </div>
           <p className="caption">
-            {t('综合阅读坐标，依据领域综述与解释方法评估框架整理。', 'Compiled from the field surveys and explanation-evaluation frameworks as a reading coordinate system.')}
             <Cite ids={[1, 4, 11]} />
           </p>
         </details>
@@ -165,8 +164,8 @@ export function LearningContent() {
           </p>
           <p>
             {t(
-              '在 Liao 等人（2020）的论文中，他们将用户对 AI 的疑问归纳为多个典型类别。原论文常以医疗或贷款预测为例，为了更直观，我们这里用大家每天都在用的“智能导航软件”作为贯穿示例，看看如何把用户的自然提问，转化为界面上的设计线索：',
-              'In Liao et al. (2020) the users’ questions about AI are grouped into several typical categories. The original paper often uses medical or loan examples; for something more familiar, we use a navigation app that everyone uses daily as the running example, to see how a natural question can become a design cue on the screen:',
+              '原论文多用医疗或贷款的例子。这里换成导航软件，看用户的提问怎样变成界面上的设计线索：',
+              'The paper mostly uses medical or loan examples. Here we use a navigation app to show how a user’s question becomes a design cue on the screen:',
             )}
             <Cite ids={[3]} />
           </p>
@@ -241,7 +240,7 @@ export function LearningContent() {
         <div className="comparison">
           <h3>{t('TreeInterpreter、TreeSHAP、LIME：都能给贡献，思路却不同。', 'TreeInterpreter, TreeSHAP and LIME all give contributions, but they think differently.')}</h3>
           <p>
-            {t('在机器人抓取论文里碰到这三个名字时，可以先用下面这张表建立直觉，再比较它们产生的结果。', 'When these three names come up in a robot-grasping paper, use the table below to build intuition first, then compare what each one produces.')}
+            {t('这张表比较三种方法怎样形成解释，读结果时各要留意什么。', 'This table compares how the three methods form an explanation and what to watch when reading the result.')}
           </p>
           <Table>
             <TableCaption>
@@ -288,9 +287,6 @@ export function LearningContent() {
         <div id="cases" className="subchapter">
           <span className="eyebrow">READING THE PAPERS</span>
           <h3>{t('把方法放回论文，看研究者具体做了什么。', 'Put the methods back in the papers, and see what the researchers actually did.')}</h3>
-          <p>
-            {t('下面接着读实验、图表和设计启发。论文发现与可继续发展的设计想法分别标注。', 'Next, the experiments, figures and design lessons. Findings from the papers and design ideas that can be developed further are labelled separately.')}
-          </p>
         </div>
         <div className="case-grid rich-cases">
           <article className="case-card">
@@ -359,16 +355,16 @@ export function LearningContent() {
             </div>
             <p>
               {t(
-                '论文的核心发现：这两个目标天然冲突。最短路径最可预测，却往往最难从中途读出意图。要让机器人更容易被理解，就得让它走一条"有点夸张"的路线——牺牲效率，换取可读性。实验让参与者看动作视频，分别记录"多早猜到"和"猜得对不对"，两个指标对应两个概念。',
-                'The paper’s core finding: these two goals conflict by nature. The shortest path is the most predictable, yet often the hardest to read intention from midway. To make a robot easier to understand, it has to take a somewhat exaggerated route, trading efficiency for legibility. Participants watched motion videos, and the study recorded “how early they guessed” and “whether the guess was right”, which map onto the two concepts.',
+                '论文的核心发现：这两个目标常常冲突。最短路径最可预测，却往往最难从中途读出意图。要让意图更早被读出，机器人可以走一条略带夸张的路线，用一点效率换可读性。实验让参与者看动作视频，分别记录“多早猜到”和“猜得对不对”，两个指标对应两个概念。',
+                'The paper’s core finding: these two goals often conflict. The shortest path is the most predictable, yet often the hardest to read intention from midway. To make the intention readable earlier, the robot can take a slightly exaggerated route, trading some efficiency for legibility. Participants watched motion videos, and the study recorded “how early they guessed” and “whether the guess was right”, which map onto the two concepts.',
               )}
               <Cite ids={[12]} />
             </p>
             <p className="reading-location">
-              {t('原文怎么读：先看概念定义，再看图 6（多早猜出目标）→ 图 7（预期路径差异）。实用问题：你设计的产品动作，是让人"知道目标后觉得合理"，还是"不知道目标也能猜出来"？', 'How to read the source: first the concept definitions, then Figure 6 (how early the goal was guessed) → Figure 7 (differences from the expected path). A practical question: for an action in your product, should people find it reasonable once they know the goal, or be able to guess the goal before they know it?')}
+              {t('原文怎么读：先看概念定义，再看图 6（多早猜出目标）→ 图 7（预期路径差异）。实用问题：你设计的产品动作，是让人“知道目标后觉得合理”，还是“不知道目标也能猜出来”？', 'How to read the source: first the concept definitions, then Figure 6 (how early the goal was guessed) → Figure 7 (differences from the expected path). A practical question: for an action in your product, should people find it reasonable once they know the goal, or be able to guess the goal before they know it?')}
             </p>
             <MarginNote name="expression">
-              {t('你正在设计的物件里，有没有哪一段动作天然会"透露"接下来要做什么？把那段动作稍微夸大，可读性往往就上来了。', 'In the object you are designing, is there a movement that naturally reveals what comes next? Exaggerating that movement a little often makes it far more legible.')}
+              {t('你正在设计的物件里，有没有哪一段动作会“透露”接下来要做什么？把那段动作稍微夸大，意图往往更容易读出来。', 'In the object you are designing, is there a movement that naturally reveals what comes next? Exaggerating that movement a little often makes it far more legible.')}
             </MarginNote>
           </article>
           <article className="case-card">
@@ -382,28 +378,28 @@ export function LearningContent() {
             </p>
             <p>
               {t(
-                '以前的 AI 像个黑盒：扔进去一张鸟的照片，它直接告诉你结果。如果它认错了，你毫无办法。Koh 等人提出了一种新方法，在中间加了一层“人类能看懂的特征”：AI 会先识别“翅膀是白色的吗？”“嘴是黄色的吗？”，然后再根据这些特征去推断物种。',
-                'Earlier AI was a black box: put in a photo of a bird and it simply gave the answer. If it was wrong, you had no way to respond. Koh et al. proposed adding a layer of “human-understandable concepts” in the middle: the AI first asks “is the wing white?” and “is the beak yellow?”, and then infers the species from those concepts.',
+                '端到端的图像分类器直接从照片给出物种，认错了也无从下手。Koh 等人在中间加了一层人能看懂的概念：模型先判断“翅膀是白色的吗？”“嘴是黄色的吗？”，再根据这些概念推断物种。',
+                'An end-to-end image classifier goes straight from the photo to the species, and when it is wrong there is nothing to adjust. Koh et al. add a layer of human-readable concepts in the middle: the model first judges “is the wing white?” and “is the beak yellow?”, then infers the species from those concepts.',
               )}
               <Cite ids={[10]} />
             </p>
             <div className="method-flow">
               {t('图像 Image → 提取中间特征（如翅膀颜色、有无骨刺） → 最终预测', 'Image → extract intermediate concepts (e.g. wing colour, presence of a bone spur) → final prediction')}
               <br />
-              {t('👩‍⚕️ 人类发现特征错了 ↗ 手动纠正特征，AI 重新推断', '👩‍⚕️ a person spots a wrong concept ↗ corrects it by hand, and the AI infers again')}
+              {t('人发现某个概念错了 → 手动改正 → 模型重新推断', 'A person spots a wrong concept → corrects it by hand → the model infers again')}
             </div>
             <p>
               {t(
-                '这就是“干预（Intervention）”。比如看膝关节 X 光片时，AI 错误地判断病情很严重，医生发现是因为 AI 误把阴影看成了“骨刺”。医生就可以在中间层“插手”，把“骨刺”这一项改为“无”。AI 收到这个修正后，就会立刻调整最终的病情预测。这让 AI 从死板的机器，变成了可以和专家“商量”的助手。',
-                'This is “intervention”. Say an AI reads a knee X-ray as severe, and the doctor finds it mistook a shadow for a “bone spur”. The doctor can step in at the middle layer and change the “bone spur” item to “absent”. Once the AI receives this correction, it adjusts its final prediction at once. The AI becomes an assistant that can be “consulted” by experts rather than a rigid machine.',
+                '这就是“干预（Intervention）”。比如看膝关节 X 光片时，AI 错误地判断病情很严重，医生发现是因为 AI 误把阴影看成了“骨刺”。医生就可以在中间层“插手”，把“骨刺”这一项改为“无”。模型据此重新给出病情预测。',
+                'This is “intervention”. Say an AI reads a knee X-ray as severe, and the doctor finds it mistook a shadow for a “bone spur”. The doctor can step in at the middle layer and change the “bone spur” item to “absent”. The model then predicts the severity again from the corrected concepts.',
               )}
               <Cite ids={[10]} />
             </p>
             <p className="case-design">
               <b>{t('设计延伸。', 'Design extension.')}</b>
               {t(
-                '这个思路非常适合做人机协作界面。不要只给用户一个冷冰冰的最终结果，而是展示它推理的“中间步骤”。允许用户像批改作业一样，修改其中错掉的小步骤，从而纠正大结果。',
-                'This idea suits human–AI collaboration interfaces well. Do not give users only a cold final result; show the “intermediate steps” of the reasoning. Let users correct the wrong small steps, as if marking homework, and so correct the overall result.',
+                '人机协作界面可以展示推理的中间步骤，让用户改正其中错的一步，从而改变最终结果。',
+                'A human–AI interface can show the intermediate steps and let users correct a wrong step, which changes the final result.',
               )}
             </p>
             <MarginNote name="agency">
@@ -457,49 +453,6 @@ export function LearningContent() {
           </article>
         </div>
 
-        <div className="secondary-cases">
-          <article>
-            <span className="eyebrow">05 / FROM MY READING LIST</span>
-            <h3>{t('抓取失败：为什么要比较三种解释器？', 'Grasp failures: why compare three explainers?')}</h3>
-            <p>
-              {t(
-                'Alvanpour 等的研究把 LIME、TreeSHAP 和 TreeInterpreter 放在机器人抓取失败预测中比较。可检索摘要涉及三指机器人模拟抓取数据，包含关节位置、速度和力矩等信号，以及特征排序与计算开销的比较。这个问题很适合接在方法章后面读：同一个预测任务，不同解释器会突出哪些输入？',
-                'Alvanpour et al. compare LIME, TreeSHAP and TreeInterpreter on predicting grasp failures for robots. The retrievable abstract refers to simulated grasping data from a three-finger robot, with signals such as joint positions, velocities and torques, and a comparison of feature rankings and computational cost. This suits reading after the methods chapter: for the same prediction task, which inputs does each explainer highlight?',
-              )}
-              <Cite ids={[13]} />
-            </p>
-            <p>
-              {t(
-                '阅读时可以做一张小记录：输入是什么、预测模型是什么、解释算法是什么、比较指标是什么。这样就不会把“随机森林”与“TreeInterpreter”写在同一层分类里。此处为阅读建议。',
-                'While reading, keep a short note: what the input is, what the prediction model is, what the explanation algorithm is, and what the comparison metric is. That way you will not put “random forest” and “TreeInterpreter” on the same level of the taxonomy. This is a reading suggestion.',
-              )}
-            </p>
-            <p className="source-access">
-              {t('资料深度：摘要与书目信息；全文访问受限，因此这里不编写胜出方法、具体分数或实验结论。', 'Depth of source: abstract and bibliographic information only. Full text is not accessible, so this page does not state a winning method, specific scores or experimental conclusions.')}
-            </p>
-          </article>
-          <article>
-            <span className="eyebrow">06 / EDUCATION & TRAINING</span>
-            <h3>{t('解释也可能是一段教学。', 'An explanation can also be a lesson.')}</h3>
-            <p>
-              {t(
-                'Fiok 等把 XAI 放到教育与培训语境中讨论，是我原始书单中的另一个入口。对 HCI 研究者，可以带着两个学习目标读它：使用者是在学“这个 AI 如何判断”，还是在借反馈学习领域知识？两者会带来不同的交互与评估需求。',
-                'Fiok et al. discuss XAI in education and training, another entry on my original reading list. For HCI researchers, read it with two learning goals in mind: is the user learning “how this AI judges”, or learning domain knowledge through feedback? The two lead to different interaction and evaluation needs.',
-              )}
-              <Cite ids={[17]} />
-            </p>
-            <p className="case-design">
-              <b>{t('自拟情境。', 'A scenario of my own.')}</b>
-              {t(
-                '智能工具提示握持姿态有误，可能只说“角度偏大”，也可能显示当前姿态与参考姿态，再让学习者尝试调整。这里可以研究反馈是否帮助下一次独立操作，而不仅是当前一步完成。',
-                'A smart tool says a grip is wrong. It may only say “the angle is too large”, or it may show the current posture next to a reference posture and let the learner try to adjust. Here one can study whether the feedback helps the next independent attempt, not only the current step.',
-              )}
-            </p>
-            <p className="source-access">
-              {t('资料深度：摘要与书目信息；上面的教学情境是设计推演，不作为该综述的实验案例。', 'Depth of source: abstract and bibliographic information only. The teaching scenario above is a design speculation, not an experimental case from the survey.')}
-            </p>
-          </article>
-        </div>
       </Chapter>
 
       <MethodAtlas />
@@ -509,13 +462,13 @@ export function LearningContent() {
           no="04"
           en="A REFERENCE FRAMEWORK"
           title={t('从场景到验证的十步参考。', 'A ten-step reference from context to validation.')}
-          desc={t('这套顺序很适合把零散的术语串起来：从场景与人出发，经过模型、方法和表达，最后回到技术与用户验证。下面保留我最初笔记中的十个锚点，并补上每步可以留下的产出。', 'This sequence links scattered terms: start from the context and the people, go through model, method and expression, and finish with technical and user validation. Below are the ten anchors from my first notes, with the outputs each step can leave behind.')}
+          desc={t('从场景与人出发，经过模型、方法和表达，最后做技术与用户验证。每一步写明可以留下的产出。', 'Start from the context and the people, go through model, method and expression, and finish with technical and user validation. Each step names the output it leaves.')}
         />
         <div className="workflow-origin">
           <div>
             <strong>{t('我的原始笔记 / Original learning notes', 'My original learning notes / Original learning notes')}</strong>
             <p>
-              {t('十步名称与顺序来自我最初整理的两页笔记；展开解释由本页结合文献补充。它是一套可反复回访的综合参考，实践中可以跳转与迭代。', 'The ten step names and their order come from two pages of notes I first made; the expanded explanations were added here with reference to the literature. It is a synthesis to revisit repeatedly, and in practice you can jump around and iterate.')}
+              {t('十步的名称和顺序来自我的两页笔记，解释是结合文献补的。实际使用时可以跳步和回头。', 'The names and order of the ten steps come from two pages of my notes; the explanations were added from the literature. In practice you can skip steps and go back.')}
             </p>
           </div>
           <a href="/xai-learning-workflow-reference.pdf" target="_blank" rel="noreferrer" className="outline-button">
@@ -546,28 +499,14 @@ export function LearningContent() {
             <h3>{t('SHAP + LLM：先有解释材料，再组织成语言。', 'SHAP + LLM: first the explanation material, then language to organise it.')}</h3>
             <p>
               {t(
-                '我的原笔记记录了 Hsu 等的文字解释示例：模型预测 → SHAP 全局图 → 提取特征重要性及特征值与 SHAP 值的相关关系 → 整理表格 → 交给 ChatGPT API 生成约 100 词的解释。这条链保留下来，作为认识“解释数据”和“解释表达”两层工作的一种参考。具体操作来自我的原笔记；本页核对了论文书目信息，未重新验证全文中的每个操作细节。',
-                'My original notes record a text-explanation example from Hsu et al.: model prediction → SHAP global plot → extract feature importances and the relation between feature values and SHAP values → tabulate → give to the ChatGPT API to write an explanation of about 100 words. This chain is kept as a reference for the two layers of work, “explanation data” and “explanation expression”. The specific steps come from my original notes; this page checked the bibliographic details of the paper and did not re-verify every step in the full text.',
+                '我的原笔记记录了 Hsu 等的文字解释示例：模型预测 → SHAP 全局图 → 提取特征重要性及特征值与 SHAP 值的相关关系 → 整理表格 → 交给 ChatGPT API 生成约 100 词的解释。这条链把工作分成“解释数据”和“解释表达”两层。操作步骤来自我的笔记，没有对照全文逐步核验。',
+                'My original notes record a text-explanation example from Hsu et al.: model prediction → SHAP global plot → extract feature importances and the relation between feature values and SHAP values → tabulate → give to the ChatGPT API to write an explanation of about 100 words. The chain splits the work into two layers, “explanation data” and “explanation expression”. The steps come from my notes and were not checked step by step against the full text.',
               )}
               <Cite ids={[24]} />
             </p>
             <div className="method-flow">
               {t('预测模型 → 解释器 → 结构化证据 → LLM 语言层 → 用户阅读与追问', 'Prediction model → explainer → structured evidence → LLM language layer → the user reads and asks follow-ups')}
             </div>
-            <p>
-              {t(
-                '对照车辆侧碰案例再读，会更容易理解组合的用途：原始工程数据通过模型与归因变得可分析，语言界面让人可以围绕这些材料提问。',
-                'Read it alongside the vehicle side-impact case and the purpose of the combination becomes clearer: raw engineering data becomes analysable through a model and attributions, and the language interface lets people ask questions about that material.',
-              )}
-              <Cite ids={[25]} />
-            </p>
-            <p className="case-design">
-              <b>{t('原型建议。', 'Prototype suggestion.')}</b>
-              {t(
-                '让每段说明能展开对应输入、贡献和参考值；生成失败时，仍能查看原始解释材料。这样便于设计评审时核对，也方便使用者进一步追问。',
-                'Let each passage of explanation expand to its inputs, contributions and reference values; when generation fails, the original explanation material is still viewable. This makes review easier and lets users ask further questions.',
-              )}
-            </p>
           </article>
           <article className="reading-prose">
             <span className="eyebrow">{t('把第 9、10 步分开看', 'Looking at steps 9 and 10 separately')}</span>
@@ -609,18 +548,6 @@ export function LearningContent() {
                 </dd>
               </div>
             </dl>
-            <details className="reading-detail">
-              <summary>
-                {t('我笔记里的排序指标，怎样读？', 'How to read the ranking metrics in my notes?')} <span>＋</span>
-              </summary>
-              <p>
-                {t(
-                  'Kendall’s Tau 关注排序次序的对应，RBO 关注排序列表的重合并可更重视前部；运行时间关注解释开销。我的原笔记把它们放在抓取方法比较旁边。它们适合回答“方法给出的顺序相近吗、算得快吗”，而理解测验能继续回答“人读懂了吗”。这里是对我笔记中指标用途的释义，具体公式与实验设定请回到原论文。',
-                  'Kendall’s Tau looks at whether the order of rankings agrees; RBO looks at how much two ranked lists overlap and can weight the top more heavily; run time looks at explanation cost. My original notes put them beside the grasp-method comparison. They help answer “are the methods’ orders similar, and are they fast?”, while a comprehension test can go on to answer “did people understand?”. This is my paraphrase of what the metrics are for; for formulas and experimental settings, go back to the original paper.',
-                )}
-                <Cite ids={[13]} />
-              </p>
-            </details>
           </article>
         </div>
         <MarginNote name="evaluation">
@@ -631,13 +558,6 @@ export function LearningContent() {
           <div>
             <span className="eyebrow">{t('走进真实使用 / IN THE WILD', 'Into real use / IN THE WILD')}</span>
             <h3>{t('解释进入生活后，还会遇到这些设计条件。', 'Once explanations enter everyday life, these design conditions follow.')}</h3>
-            <p>
-              {t(
-                '下面将用户需求、Fact Sheets、NIST 原则与具身综述转成场景设计提示；例子是本页的综合推演，便于做原型时逐项对照。',
-                'Below, user needs, Fact Sheets, NIST principles and the embodied-interaction survey are turned into scenario design prompts. The examples are this page’s own synthesis, so you can check them item by item when prototyping.',
-              )}
-              <Cite ids={[3, 4, 5, 11]} />
-            </p>
           </div>
           <div className="situated-grid">
             {situated.map(([h, p]) => (

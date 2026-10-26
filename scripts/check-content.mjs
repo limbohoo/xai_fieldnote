@@ -142,8 +142,7 @@ for (const path of [
   ))
     assert.equal(m[2], m[1], 'Heading number differs from chapter ' + m[1]);
 }
-assert.equal(chapterCount, 5, 'Hero advertises five reading chapters');
-assert(read('app/field-guide.tsx').includes('5 个阅读章节'));
+assert.equal(chapterCount, 5, 'The learning path has five chapters');
 assert(
   read('app/field-guide.tsx').includes('<ChapterHashOpener />'),
   'Collapsed chapters must open when an in-page link targets them',

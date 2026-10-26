@@ -10,7 +10,6 @@ import {
   TableCell,
   TableCaption,
 } from '@/components/ui/table';
-import { ReadingNotes, MarginNote, NotesExport } from './reading-notes';
 import { sources } from './sources';
 import { MethodAtlas } from './method-atlas';
 import { Chapter } from './chapter';
@@ -104,7 +103,7 @@ export function LearningContent() {
   ];
 
   return (
-    <ReadingNotes>
+    <>
       <div className="reading-intro">
         <div className="reading-prose">
           <span className="eyebrow">{t('从一个熟悉的时刻开始', 'Start from a familiar moment')}</span>
@@ -124,9 +123,6 @@ export function LearningContent() {
             <Cite ids={[1]} />
           </p>
         </div>
-        <MarginNote name="scene">
-          {t('想到一个你亲身遇过、却没看懂的智能产品行为了吗？把那个时刻留下来，后面的方法会更容易对上具体用途。', 'Can you recall a smart product behaving in a way you did not understand? Keep that moment: the methods later will be easier to match to a real use.')}
-        </MarginNote>
       </div>
 
       <div className="taxonomy-block">
@@ -189,9 +185,6 @@ export function LearningContent() {
           </div>
         </dl>
       </article>
-      <MarginNote name="question">
-        {t('如果你的产品只能先回答一个问题，用户最常问的会是哪一句？用用户的话写，暂时不用“透明性”“可解释性”这些研究术语。', 'If your product could answer only one question first, which sentence would users ask most often? Write it in the users’ words, without research terms such as “transparency” or “explainability” for now.')}
-      </MarginNote>
 
       <Chapter id="methods" number="02" title={t('解释方法与论文案例', 'Explanation methods and paper cases')} summary={t('比较模型、路径、归因与局部代理，并回到论文看它们如何支持判断。', 'Compare models, paths, attribution and local surrogates, and return to the papers to see how each supports judgement.')}>
         <Head
@@ -273,9 +266,6 @@ export function LearningContent() {
             </TableBody>
           </Table>
         </div>
-        <MarginNote name="evidence">
-          {t('试着拿一个输出值问：“它相对什么发生变化？”找到基准以后，再看贡献条形图通常会清楚很多。你还会想同时查看哪一个原始输入？', 'Take one output value and ask: “relative to what did it change?” Once you have the baseline, the contribution chart usually becomes much clearer. Which original input would you also want to look at?')}
-        </MarginNote>
         <div className="glossary-bridge">
           <span>{t('遇到陌生词？', 'Meet an unfamiliar term?')}</span>
           <a href="/glossary#feature">{t('特征 Feature ↗', 'Feature ↗')}</a>
@@ -363,9 +353,6 @@ export function LearningContent() {
             <p className="reading-location">
               {t('原文怎么读：先看概念定义，再看图 6（多早猜出目标）→ 图 7（预期路径差异）。实用问题：你设计的产品动作，是让人“知道目标后觉得合理”，还是“不知道目标也能猜出来”？', 'How to read the source: first the concept definitions, then Figure 6 (how early the goal was guessed) → Figure 7 (differences from the expected path). A practical question: for an action in your product, should people find it reasonable once they know the goal, or be able to guess the goal before they know it?')}
             </p>
-            <MarginNote name="expression">
-              {t('你正在设计的物件里，有没有哪一段动作会“透露”接下来要做什么？把那段动作稍微夸大，意图往往更容易读出来。', 'In the object you are designing, is there a movement that naturally reveals what comes next? Exaggerating that movement a little often makes it far more legible.')}
-            </MarginNote>
           </article>
           <article className="case-card">
             <div className="case-meta">
@@ -402,9 +389,6 @@ export function LearningContent() {
                 'A human–AI interface can show the intermediate steps and let users correct a wrong step, which changes the final result.',
               )}
             </p>
-            <MarginNote name="agency">
-              {t('你的使用者有什么知识，是模型可能缺少的？如果给他们一个可以修正的中间层，最自然的概念会是什么？', 'What knowledge do your users have that the model may lack? If you gave them an intermediate layer they could correct, what would be the most natural concept?')}
-            </MarginNote>
           </article>
           <article className="case-card">
             <div className="case-meta">
@@ -464,17 +448,10 @@ export function LearningContent() {
           title={t('从场景到验证的十步参考。', 'A ten-step reference from context to validation.')}
           desc={t('从场景与人出发，经过模型、方法和表达，最后做技术与用户验证。每一步写明可以留下的产出。', 'Start from the context and the people, go through model, method and expression, and finish with technical and user validation. Each step names the output it leaves.')}
         />
-        <div className="workflow-origin">
-          <div>
-            <strong>{t('我的原始笔记 / Original learning notes', 'My original learning notes / Original learning notes')}</strong>
-            <p>
-              {t('十步的名称和顺序来自我的两页笔记，解释是结合文献补的。实际使用时可以跳步和回头。', 'The names and order of the ten steps come from two pages of my notes; the explanations were added from the literature. In practice you can skip steps and go back.')}
-            </p>
-          </div>
-          <a href="/xai-learning-workflow-reference.pdf" target="_blank" rel="noreferrer" className="outline-button">
-            {t('打开原始两页 PDF ↗', 'Open the original two-page PDF ↗')}
-          </a>
-        </div>
+        <p className="workflow-sources">
+          {t('十步的顺序综合了这些文献：用户问题来自 Liao 等（2020），解释对象与评估维度来自 Sokol 与 Flach（2020）和 Ali 等（2023），验证分层来自 Doshi-Velez 与 Kim（2017）和 Rong 等（2024）。每一步的具体依据见步骤下的编号。', 'The order of the ten steps draws on these sources: user questions from Liao et al. (2020); explanation targets and evaluation dimensions from Sokol and Flach (2020) and Ali et al. (2023); the layers of validation from Doshi-Velez and Kim (2017) and Rong et al. (2024). The numbers under each step give its specific sources.')}
+          <Cite ids={[3, 4, 1, 20, 14]} />
+        </p>
         <div className="process-grid ten-steps">
           {STEPS.map((st, i) => (
             <article className="process-step" key={i} style={{ borderTop: `4px solid ${STEP_COLORS[st.tag]}` }}>
@@ -550,9 +527,6 @@ export function LearningContent() {
             </dl>
           </article>
         </div>
-        <MarginNote name="evaluation">
-          {t('回想狼与哈士奇的实验：研究者把“有没有发现雪”变成了可记录的结果。你的研究里，有没有一个同样具体的“读懂了”的表现？先记下行为，再决定用什么量表。', 'Recall the wolf-and-husky study: the researchers turned “did they notice the snow?” into a recordable result. In your study, is there an equally concrete sign of “understood”? Record the behaviour first, then decide which scale to use.')}
-        </MarginNote>
 
         <article className="situated-reading">
           <div>
@@ -613,7 +587,6 @@ export function LearningContent() {
           ))}
         </div>
 
-        <NotesExport />
         <div id="sources" className="subchapter sources-section">
           <span className="eyebrow">THE READING SHELF</span>
           <h3>{t('所有入口，都可以回到来源。', 'Every entry point leads back to its source.')}</h3>
@@ -644,12 +617,9 @@ export function LearningContent() {
           </ol>
         </details>
         <p className="caption">
-          {t('资料整理：2026.09.07 · 最近修订：2026.10.13。论文内容均以转述呈现；教学算例、阅读建议与设计延伸已在相应位置说明。原始学习笔记：', 'Sources compiled 2026.09.07 · last revised 2026.10.13. Paper content is paraphrased; teaching examples, reading suggestions and design extensions are marked where they appear. Original learning notes: ')}
-          <a href="/xai-learning-workflow-reference.pdf" target="_blank" rel="noreferrer">
-            {t('《XAI 可解释性研究和设计流程 · 参考版》↗', 'XAI Explainability Research and Design Workflow · Reference edition ↗')}
-          </a>
+          {t('资料整理：2026.09.07 · 最近修订：2026.10.26。论文内容均以转述呈现；教学算例与设计延伸已在相应位置说明。', 'Sources compiled 2026.09.07 · last revised 2026.10.26. Paper content is paraphrased; teaching examples and design extensions are marked where they appear.')}
         </p>
       </Chapter>
-    </ReadingNotes>
+    </>
   );
 }

@@ -2112,3 +2112,4 @@ summary > span:last-child {
   .site-footer-bottom { flex-direction: column; padding: 14px 24px 24px; }
 }
 @media print { .site-footer, .nav-burger, .nav-mobile { display: none; } }
+.workflow-sources { padding: 18px 24px; background: #f5f7fb; margin: 0 0 30px; font-size: 14px; line-height: 1.75; color: #3c4658; }

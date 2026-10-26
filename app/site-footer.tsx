@@ -27,7 +27,7 @@ export function SiteFooter() {
           <h2>{t('版权与来源', 'Copyright and sources')}</h2>
           <p>{t('论文、图表和产品资料的版权归原作者。本站以转述呈现，编号链接到原始来源；引用的论文原图和官方示例图只用于学习说明。', 'Papers, figures and product material belong to their authors. This site paraphrases them and links each number to the original; reproduced paper figures and official examples are used for teaching only.')}</p>
           <p>{t('案例视频是 YouTube 官方嵌入，版权归 Kiki The Dream Cat；本站只发布从视频算出的关键点和数字。', 'The case video is an official YouTube embed, owned by Kiki The Dream Cat; this site publishes only keypoints and numbers computed from it.')}</p>
-          <p>{t('随读札记只保存在你的浏览器里。本站用 Vercel Web Analytics 统计访问量，不收集札记内容。', 'Reading notes stay in your browser. The site counts visits with Vercel Web Analytics and never collects your notes.')}</p>
+          <p>{t('本站用 Vercel Web Analytics 统计访问量，不收集个人信息。', 'The site counts visits with Vercel Web Analytics and collects no personal information.')}</p>
         </div>
       </div>
       <div className="site-footer-bottom">

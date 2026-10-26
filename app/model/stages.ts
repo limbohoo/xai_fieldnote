@@ -17,8 +17,8 @@ export const PARAMS: Record<Lang, Record<string, [string, string]>> = {
 const ZH: StageInfo[] = [
   { id: 'detect', no: '01', name: '找猫', en: 'DETECT', origin: 'pre', inDim: '一帧画面 H × W × 3', outDim: '一个框 (x, y, w, h) + 把握',
     formula: ['框 = YOLOv8(画面)', '只保留类别为 cat 的框，取把握最高的一个'],
-    text: '现成的找物体模型在整帧里框出猫。后面所有步骤只看框里的内容，框外的背景不参与。没有框的帧，后面的步骤都不做，标签记为“看不清”。',
-    params: '使用现成的 YOLOv8，没有在我们的数据上重新训练。' },
+    text: '现成的找物体模型在整帧里框出猫。后面所有步骤只看框里的内容，框外的背景不参与。没有框的帧，后面的步骤都不做，标签记为“看不清”。画面里有两只猫时，程序按毛色区分：每只猫有一个颜色签名（框中间的亮度和饱和度直方图），每次只跟其中一只，分不清的那一帧就丢掉。',
+    params: '使用现成的 YOLOv8，没有在我们的数据上重新训练。颜色签名用两类 k-means 从测试录像里学出（364 个猫框），只能区分毛色明显不同的猫。' },
   { id: 'keypoints', no: '02', name: '标点', en: 'KEYPOINTS', origin: 'net', inDim: '猫的裁剪图', outDim: '脸 48 × (x, y, 把握) + 身体 20 × (x, y, 把握)',
     formula: ['H = 网络(裁剪图)    // 每个点一张热力图，K × h × w', 'P(x,y) = softmax(β · H)', '点的位置 = ( Σ P·x , Σ P·y )    // soft-argmax'],
     text: '网络给每个点画一张“可能在哪里”的热力图，再取这张图的加权平均位置。加权平均可以落在格子之间，所以点的位置比格子更细；它还可以求导，网络因此能直接用点的位置训练。每个点另带一个把握值。',
@@ -52,8 +52,8 @@ const ZH: StageInfo[] = [
 const EN: StageInfo[] = [
   { id: 'detect', no: '01', name: 'Find the cat', en: 'DETECT', origin: 'pre', inDim: 'One frame, H × W × 3', outDim: 'One box (x, y, w, h) + confidence',
     formula: ['box = YOLOv8(frame)', 'keep boxes of class "cat", take the most confident'],
-    text: 'An off-the-shelf object detector boxes the cat in the full frame. Every later step looks only inside the box. If there is no box, the later steps are skipped and the label is "cannot see".',
-    params: 'Off-the-shelf YOLOv8, not retrained on our data.' },
+    text: 'An off-the-shelf object detector boxes the cat in the full frame. Every later step looks only inside the box. If there is no box, the later steps are skipped and the label is "cannot see". With two cats in view, the program tells them apart by coat colour: each cat has a colour signature (brightness and saturation histograms of the box centre), each run follows one cat, and frames where the two cannot be told apart are dropped.',
+    params: 'Off-the-shelf YOLOv8, not retrained on our data. The colour signatures come from two-cluster k-means on the test recording (364 cat boxes) and only separate cats with clearly different coats.' },
   { id: 'keypoints', no: '02', name: 'Place keypoints', en: 'KEYPOINTS', origin: 'net', inDim: 'Cropped image of the cat', outDim: 'Face 48 × (x, y, conf) + body 20 × (x, y, conf)',
     formula: ['H = network(crop)    // one heatmap per point, K × h × w', 'P(x,y) = softmax(β · H)', 'point = ( Σ P·x , Σ P·y )    // soft-argmax'],
     text: 'The network draws one heatmap per point showing where it might be, then takes the weighted average position of that map. The average can land between cells, so the position is finer than the grid. It is also differentiable, so the network trains directly on point positions. Each point also carries a confidence.',

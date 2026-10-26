@@ -1,6 +1,7 @@
 'use client';
 /* oxlint-disable next/no-html-link-for-pages */
 import { SiteHeader } from '../site-header';
+import { SiteFooter } from '../site-footer';
 import { allTerms, glossaryGroups, glossarySources, termById } from '../glossary-data';
 import { GROUP_INTRO_EN, TERM_EN } from '../glossary-en';
 import { useT } from '../i18n';
@@ -151,11 +152,7 @@ export function GlossaryView() {
           </p>
         </section>
       </main>
-      <footer className="footer">
-        <a href="/">XAI FIELDNOTES</a>
-        <span>{t('定义 · 联系 · 回到情境', 'Definitions · contact · back to context')}</span>
-        <a href="#glossary-top">{t('回到顶部 ↑', 'Back to top ↑')}</a>
-      </footer>
+      <SiteFooter />
     </>
   );
 }

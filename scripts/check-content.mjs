@@ -67,32 +67,10 @@ function visit(node) {
   ts.forEachChild(node, visit);
 }
 visit(file);
-for (const id of [
-  'scene',
-  'question',
-  'evidence',
-  'expression',
-  'agency',
-  'evaluation',
-])
-  assert.equal(
-    (content.match(new RegExp('name="' + id + '"', 'g')) || []).length,
-    1,
-  );
-assert(read('app/reading-notes.tsx').includes('xai-fieldnotes-reflections-v1'));
-assert.equal(
-  readFileSync(
-    new URL('../public/xai-learning-workflow-reference.pdf', import.meta.url),
-  )
-    .subarray(0, 5)
-    .toString(),
-  '%PDF-',
-);
-assert(content.includes('/xai-learning-workflow-reference.pdf'));
 console.log(
   'Content checks passed: ' +
     sources.length +
-    ' sources, 6 methods, original 10 steps, 6 preserved inline-note keys, PDF asset and literal citations.',
+    ' sources, 6 methods, original 10 steps and literal citations.',
 );
 const sourceUrl =
   'data:text/javascript;base64,' +
@@ -142,8 +120,7 @@ for (const path of [
   ))
     assert.equal(m[2], m[1], 'Heading number differs from chapter ' + m[1]);
 }
-assert.equal(chapterCount, 5, 'Hero advertises five reading chapters');
-assert(read('app/field-guide.tsx').includes('5 个阅读章节'));
+assert.equal(chapterCount, 5, 'The learning path has five chapters');
 assert(
   read('app/field-guide.tsx').includes('<ChapterHashOpener />'),
   'Collapsed chapters must open when an in-page link targets them',

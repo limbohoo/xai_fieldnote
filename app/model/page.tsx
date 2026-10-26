@@ -1,6 +1,7 @@
 /* oxlint-disable next/no-html-link-for-pages */
 import type { Metadata } from 'next';
 import { SiteHeader } from '../site-header';
+import { SiteFooter } from '../site-footer';
 import { Explorer } from './explorer';
 import '../case/case.css';
 import './model.css';
@@ -15,6 +16,7 @@ export default function ModelPage() {
     <>
       <SiteHeader page="model" />
       <Explorer />
+      <SiteFooter />
     </>
   );
 }

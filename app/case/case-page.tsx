@@ -1,6 +1,7 @@
 'use client';
 /* oxlint-disable next/no-html-link-for-pages */
 import { SiteHeader } from '../site-header';
+import { SiteFooter } from '../site-footer';
 import { useT } from '../i18n';
 import { CaseLab } from './case-lab';
 
@@ -15,8 +16,8 @@ export function CasePage() {
           <header className="cl-hero">
             <p className="cl-lead">
               {t(
-                '这是我们小组做的一个系统：它看一段猫的视频，判断猫的耳朵和身体有没有变化，并说出为什么。这一页把它的每一步拆开，让你自己拖一拖、改一改。做法借鉴 Transformer Explainer：全程只用一个例子（一段真实的 36 秒视频），从大概到细节一层层展开。页面里的计算和程序里的是同一套，我们逐帧核对过。',
-                'This is a system our group built: it watches a cat video, judges whether the cat’s ears and body change, and says why. This page takes each step apart so you can drag and change things yourself. The approach borrows from Transformer Explainer: the whole page uses one example (a real 36-second video), unfolding from the broad picture down to the detail. The calculations on the page are the same as in the program, and we checked them frame by frame.',
+                '这是我们小组做的一个系统：它看一段猫的视频，判断猫的耳朵和身体有没有变化，并说出为什么。这一页把它的每一步拆开，让你自己拖一拖、改一改。全程只用一段真实的 36 秒视频，从大概到细节一层层展开。页面里的规则是程序的逐行移植，1066 帧里有 1065 帧与程序的标签一致。',
+                'This is a system our group built: it watches a cat video, judges whether the cat’s ears and body change, and says why. This page takes each step apart so you can drag and change things yourself. The whole page uses one real 36-second video, unfolding from the broad picture down to the detail. The rules on the page are a line-by-line port of the program; 1065 of 1066 frames match the program’s labels.',
               )}
             </p>
             <p className="cl-note">
@@ -30,7 +31,7 @@ export function CasePage() {
             </ul>
             <div className="cl-legend" aria-label={t('证据等级', 'Evidence levels')}>
               <span className="cl-ev ev-ok">{t('已验证', 'Verified')}</span><small>{t('在固定的测试集或真实视频上检查过', 'checked on a fixed test set or real video')}</small>
-              <span className="cl-ev ev-proto">{t('真实视频原型', 'Real-video prototype')}</span><small>{t('只在一段视频上跑过，没有人工标注', 'run on one video only, with no human annotation')}</small>
+              <span className="cl-ev ev-proto">{t('真实视频原型', 'Real-video prototype')}</span><small>{t('在真实视频上跑过，没有人工标注', 'run on real video, with no human annotation')}</small>
               <span className="cl-ev ev-hand">{t('手设假设', 'Hand-set hypothesis')}</span><small>{t('是我们自己定的数字，还没有数据检验', 'numbers we chose ourselves, not yet tested against data')}</small>
             </div>
             <p className="cl-note">
@@ -39,10 +40,7 @@ export function CasePage() {
           </header>
         </CaseLab>
       </main>
-      <footer className="footer">
-        <span>XAI FIELDNOTES · {t('案例实验室', 'Case lab')}</span>
-        <span>{t('理解 · 判断 · 行动', 'Understand · judge · act')}</span>
-      </footer>
+      <SiteFooter />
     </>
   );
 }

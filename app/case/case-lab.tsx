@@ -464,7 +464,7 @@ function OwnerStep({ L, onWatch }: { L: L; onWatch: (i: number) => void }) {
 
   return (
     <section className="cl-step" id="s7">
-      <Head no="07" en="THE OWNER'S REPORT" title={V.t('最后：把这一切变成主人看得懂的报告', 'Finally: turn all this into a report the owner can read')} desc={V.t('前面六步是系统内部的活。主人看到的，是一份一分钟内能读完、又能自己核对的报告。', 'The first six steps are the system’s internal work. What the owner sees is a report that takes under a minute to read and that they can check for themselves.')} />
+      <Head no="07" en="THE OWNER'S REPORT" title={V.t('最后：把这一切变成主人看得懂的报告', 'Finally: turn all this into a report the owner can read')} desc={V.t('前面六步是系统内部的活。主人看到的，是一份简短、又能自己核对的报告。', 'The first six steps are the system’s internal work. What the owner sees is a short report they can check for themselves.')} />
       <div className="cl-grid">
         <div className="cl-prose">
           <p>{V.t('报告分三层，每一层只回答主人的下一个问题：', 'The report has three layers, each answering the owner’s next question only:')}</p>
@@ -932,14 +932,14 @@ function AppStep({ L, onWatch }: { L: L; onWatch: (i: number) => void }) {
 function Limits() {
   const V = useVocab();
   const items: [string, string][] = [
-    [V.t('证据太薄', 'Thin evidence'), V.t('情绪推测的概率是我们自己定的，没有一条被人工标注检验过；规则也只在一段约 35 秒的网络视频上跑过。这个项目能展示的是“没有验证时怎样负责任地做”：证据等级标在每一步，把握低就不说，主人能用视频自己核对。它不能展示“这个方法被证明有效”。', 'The probabilities for emotion guesses are our own; none has been checked against human annotation, and the rules have only run on one web video of about 35 s. What this project can show is how to act responsibly while unverified: the evidence level is marked on every step, low confidence is not spoken, and owners can check against the video. It cannot show that the method has been proven to work.')],
+    [V.t('证据太薄', 'Thin evidence'), V.t('情绪推测的概率是我们自己定的，没有一条被人工标注检验过；规则的门槛只依据这段约 35 秒的网络视频调整过，之后在小组 37.9 分钟、两只猫的测试录像上运行，同样没有人工标注。这个项目能展示的是“没有验证时怎样负责任地做”：证据等级标在每一步，把握低就不说，主人能用视频自己核对。它不能展示“这个方法被证明有效”。', 'The probabilities for emotion guesses are our own; none has been checked against human annotation, the rule thresholds were tuned on this web video of about 35 s alone, and the rules were later run on our group’s 37.9-minute test recording of two cats, again without human annotation. What this project can show is how to act responsibly while unverified: the evidence level is marked on every step, low confidence is not spoken, and owners can check against the video. It cannot show that the method has been proven to work.')],
     [V.t('评估只做到了前两层', 'Evaluation covers only the first two layers', ), V.t('模型对不对（第一层）只有感知部分有验证集指标，行为判断没有标注；解释是否忠实（第二层）已经在部署系统上检验；主人是否看懂（第三层）还没有测。', 'Whether the model is right (layer 1) has validation metrics only for the perception part; the behaviour judgements have no annotations. Whether the explanation is faithful (layer 2) has been checked on the deployed system; whether owners understand it (layer 3) has not been tested.')],
     [V.t('解释的对象偏窄', 'The scope of explanation is narrow'), V.t('本站的方法图鉴多面向表格和分类模型，这里解释的是关键点回归之上的规则。部署的系统属于“设计即可解释”的那一类，没有用 SHAP 或 LIME；第 1 步的遮挡分析只做了 1 张图、1 个点，只能算健全性检查。', 'The method atlas on this site mostly addresses tabular and classification models; here we explain rules built on keypoint regression. The deployed system is of the “interpretable by design” kind and uses neither SHAP nor LIME; the occlusion analysis in step 1 covers one image and one point, so it is only a sanity check.')],
     [V.t('只在一个领域里演示过', 'Demonstrated in one domain only'), V.t('可迁移的是设计模式：替不会说话的对象向第三方解释时，（1）和它自己的平常比；（2）把可核对的依据放在结论旁；（3）把握不够就不下结论；（4）读者的纠正变成标签。这些模式在其他领域是否有效，需要另外的研究。', 'What can transfer is a design pattern: when explaining a non-speaking subject to a third party, (1) compare it with its own usual; (2) put checkable evidence next to the conclusion; (3) draw no conclusion when confidence is low; (4) turn readers’ corrections into labels. Whether these patterns work in other domains needs separate research.')],
   ];
   return (
     <section className="cl-step" id="s9">
-      <Head no="09" en="LIMITS" title={V.t('这个案例不能说明什么', 'What this case cannot show')} desc={V.t('解释忠实于规则，不代表规则对这只猫的判断是对的。这只猫当时是被吓到的，不是在玩。', 'An explanation that is faithful to the rules does not mean the rules are right about this cat. At that moment the cat was startled, not playing.')} />
+      <Head no="09" en="LIMITS" title={V.t('这个案例不能说明什么', 'What this case cannot show')} desc={V.t('解释忠实于规则，不代表规则对这只猫的判断是对的。我们看视频时觉得猫更像被吓到了，系统却在片段 6 给出“想玩，把握高”。', 'An explanation that is faithful to the rules does not mean the rules are right about this cat. Watching the video, we read the cat as startled, yet the system called clip 6 “playful, high confidence”.')} />
       <div className="cl-limits">
         {items.map(([t, b], i) => (<article key={t}><span className="num">{String(i + 1).padStart(2, '0')}</span><h3>{t}</h3><p>{b}</p></article>))}
       </div>

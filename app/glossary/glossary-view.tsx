@@ -15,8 +15,7 @@ function GlossaryTerm({ term }: { term: Term }) {
   const note = term.note ? TERM_EN[term.id]?.note ?? term.note : undefined;
   const mechanism = TERM_EN[term.id]?.mechanism ?? term.mechanism;
   const goodFor = TERM_EN[term.id]?.goodFor ?? term.goodFor;
-  const expandedChinese = term.mechanism ? term.note ?? term.definition : term.definition;
-  const expandedEnglish = term.mechanism ? note ?? definition : definition;
+  const showDefinition = !term.mechanism || term.definition !== term.mechanism;
 
   useEffect(() => {
     const syncWithHash = () => setOpen(window.location.hash.slice(1) === term.id);
@@ -52,8 +51,8 @@ function GlossaryTerm({ term }: { term: Term }) {
         </div>
       )}
       <dd id={detailsId} hidden={!open}>
-        <p>{t(expandedChinese, expandedEnglish)}</p>
-        {term.note && !term.mechanism && <p className="term-note">{t(term.note, note ?? term.note)}</p>}
+        {showDefinition && <p>{t(term.definition, definition)}</p>}
+        {term.note && <p className="term-note">{t(term.note, note ?? term.note)}</p>}
         <div className="term-links">
           <a href={glossarySources[term.source].url} target="_blank" rel="noreferrer" title={glossarySources[term.source].title}>
             {t('定义参考 ↗', 'Definition source ↗')}

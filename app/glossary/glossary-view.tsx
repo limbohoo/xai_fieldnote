@@ -35,12 +35,9 @@ function GlossaryTerm({ term }: { term: Term }) {
             aria-controls={detailsId}
             onClick={() => setOpen((value) => !value)}
           >
-            <span>{t(term.zh, term.en)}</span>
+            <span className="term-name">{t(term.zh, term.en)}</span>
             <span className="term-toggle" aria-hidden="true">{open ? '−' : '+'}</span>
           </button>
-          <a className="term-anchor" href={'#' + term.id} aria-label={t('链接到', 'Link to ') + t(term.zh, term.en)}>
-            #
-          </a>
         </div>
         <span className="term-english">{t(term.en, term.zh)}</span>
       </dt>
@@ -142,9 +139,12 @@ export function GlossaryView() {
               <section className="glossary-group" id={'topic-' + group.id} key={group.id}>
                 <header>
                   <span className="eyebrow">
-                    {String(i + 1).padStart(2, '0')} / {group.en}
+                    {String(i + 1).padStart(2, '0')} / {t(`${group.terms.length} 条`, `${group.terms.length} entries`)}
                   </span>
-                  <h2>{t(group.zh, group.en)}</h2>
+                  <h2>
+                    {t(group.zh, group.en)}
+                    <span className="group-alt">{t(group.en, group.zh)}</span>
+                  </h2>
                   <p>{t(group.intro, GROUP_INTRO_EN[i] ?? group.intro)}</p>
                 </header>
                 <dl className="term-grid">

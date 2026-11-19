@@ -2167,3 +2167,85 @@ summary > span:last-child {
 }
 @media print { .site-footer, .nav-burger, .nav-mobile { display: none; } }
 .workflow-sources { padding: 18px 24px; background: #f5f7fb; margin: 0 0 30px; font-size: 14px; line-height: 1.75; color: #3c4658; }
+
+/* Glossary layout v2: one column, clear hierarchy: term, summary, detail. */
+.glossary-sidebar { min-width: 0; }
+.glossary-sidebar nav > a {
+  display: grid;
+  grid-template-columns: 24px minmax(0, 1fr) auto;
+  gap: 10px;
+  align-items: baseline;
+}
+.glossary-sidebar em { margin-left: 0; }
+.glossary-group { padding-bottom: 68px; }
+.glossary-group > header {
+  padding: 4px 0 18px;
+  border-bottom: 1px solid #141923;
+  margin-bottom: 4px;
+}
+.glossary-group h2 {
+  font-size: 32px;
+  font-weight: 550;
+  margin: 8px 0 8px;
+  display: flex;
+  flex-wrap: wrap;
+  align-items: baseline;
+  gap: 4px 14px;
+}
+.group-alt {
+  font-size: 14px;
+  font-weight: 400;
+  letter-spacing: 0;
+  color: #667083;
+}
+.glossary-group > header p { max-width: 62ch; color: #4c586a; }
+.term-grid { display: block; }
+.term-entry {
+  display: grid;
+  grid-template-columns: minmax(190px, 0.8fr) minmax(0, 1.6fr);
+  column-gap: 40px;
+  align-items: start;
+  padding: 18px 0;
+}
+.term-entry dt { grid-column: 1; grid-row: 1; margin: 0; font-size: 18px; line-height: 1.4; }
+.term-entry .term-collapsed-copy { grid-column: 2; grid-row: 1; margin: 0; }
+.term-entry .term-collapsed-copy p { font-size: 15px; line-height: 1.65; }
+.term-mechanism { color: #141923; }
+.term-good-for { margin-top: 3px; font-size: 14px; color: #667083; }
+.term-english { font-size: 13px; color: #667083; margin-top: 2px; }
+.term-entry dd { grid-column: 2; grid-row: 2; margin-top: 14px; }
+.term-entry dd > p { font-size: 15px; line-height: 1.8; }
+.term-trigger { justify-content: flex-start; }
+.term-toggle { margin-left: auto; padding-left: 12px; }
+.term-name { min-width: 0; }
+@media (max-width: 1100px) {
+  .term-entry { grid-template-columns: minmax(150px, 0.8fr) minmax(0, 1.5fr); column-gap: 24px; }
+}
+@media (max-width: 760px) {
+  .term-entry { grid-template-columns: 1fr; row-gap: 8px; }
+  .term-entry dt, .term-entry .term-collapsed-copy, .term-entry dd { grid-column: 1; }
+  .term-entry .term-collapsed-copy { grid-row: 2; }
+  .term-entry dd { grid-row: 3; margin-top: 6px; }
+  .glossary-group h2 { font-size: 26px; }
+}
+@media print { .term-entry { grid-template-columns: 1fr 2fr; } }
+.glossary-layout { grid-template-columns: 262px minmax(0, 1fr); gap: 48px; }
+.glossary-sidebar nav > a { grid-template-columns: 26px minmax(0, 1fr) auto; gap: 12px; }
+.glossary-sidebar nav > a > span:nth-child(2) { white-space: normal; }
+.term-entry { grid-template-columns: minmax(280px, 1fr) minmax(0, 1.5fr); padding: 16px 0; }
+.term-entry dt { padding-right: 8px; }
+.term-english { overflow-wrap: normal; }
+@media (max-width: 1100px) {
+  .glossary-layout { grid-template-columns: 210px minmax(0, 1fr); gap: 28px; }
+  .term-entry { grid-template-columns: minmax(200px, 1fr) minmax(0, 1.4fr); }
+}
+@media (max-width: 760px) {
+  .glossary-layout { grid-template-columns: 1fr; gap: 30px; }
+  .term-entry { grid-template-columns: 1fr; }
+}
+.term-entry:not(:has(.term-collapsed-copy)) dt { grid-column: 1 / -1; display: flex; flex-wrap: wrap; align-items: baseline; gap: 2px 16px; }
+.term-entry:not(:has(.term-collapsed-copy)) dt .term-permalink { flex: 1 1 100%; }
+.term-entry:not(:has(.term-collapsed-copy)) dd { grid-column: 1 / -1; }
+main.glossary-page .glossary-layout { grid-template-columns: 270px minmax(0, 1fr); gap: 48px; }
+@media (max-width: 1100px) { main.glossary-page .glossary-layout { grid-template-columns: 210px minmax(0, 1fr); gap: 28px; } }
+@media (max-width: 760px) { main.glossary-page .glossary-layout { grid-template-columns: 1fr; gap: 30px; } }

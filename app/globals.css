@@ -278,10 +278,43 @@
   justify-content: space-between;
   gap: 8px;
 }
-.term-permalink > span {
+.term-trigger {
+  display: flex;
+  flex: 1;
+  align-items: baseline;
+  justify-content: space-between;
+  gap: 12px;
+  min-width: 0;
+  padding: 0;
+  border: 0;
+  background: transparent;
+  color: inherit;
+  font: inherit;
+  text-align: left;
+  cursor: pointer;
+}
+.term-trigger:hover {
+  color: var(--blue);
+}
+.term-trigger:focus-visible {
+  outline: 2px solid var(--blue);
+  outline-offset: 5px;
+}
+.term-toggle {
+  flex: 0 0 auto;
+  color: var(--blue);
+  font-size: 20px;
+  font-weight: 400;
+  line-height: 1;
+}
+.term-anchor {
+  flex: 0 0 auto;
   font-size: 14px;
   color: #a3b0c4;
   font-weight: 400;
+}
+.term-anchor:hover {
+  color: var(--blue);
 }
 .term-english {
   display: block;
@@ -294,6 +327,27 @@
 }
 .term-entry dd {
   margin: 0;
+}
+.term-collapsed-copy {
+  margin-top: 12px;
+}
+.term-collapsed-copy p {
+  font-size: 14px;
+  line-height: 1.75;
+}
+.term-mechanism {
+  color: #4c586a;
+}
+.term-good-for {
+  margin-top: 4px;
+  color: #6a7890;
+}
+.term-good-for strong {
+  color: var(--blue);
+  font-weight: 500;
+}
+.term-entry dd[hidden] {
+  display: none;
 }
 .term-entry dd > p {
   font-size: 16px;

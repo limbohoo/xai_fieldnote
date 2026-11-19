@@ -1,16 +1,77 @@
 'use client';
 /* oxlint-disable next/no-html-link-for-pages */
+import { useEffect, useState } from 'react';
 import { SiteHeader } from '../site-header';
 import { SiteFooter } from '../site-footer';
-import { allTerms, glossaryGroups, glossarySources, termById } from '../glossary-data';
+import { allTerms, glossaryGroups, glossarySources, termById, type Term } from '../glossary-data';
 import { GROUP_INTRO_EN, TERM_EN } from '../glossary-en';
 import { useT } from '../i18n';
+
+function GlossaryTerm({ term }: { term: Term }) {
+  const t = useT();
+  const [open, setOpen] = useState(false);
+  const detailsId = `${term.id}-details`;
+  const definition = TERM_EN[term.id]?.def ?? term.definition;
+  const note = term.note ? TERM_EN[term.id]?.note ?? term.note : undefined;
+  const mechanism = TERM_EN[term.id]?.mechanism ?? term.mechanism;
+  const goodFor = TERM_EN[term.id]?.goodFor ?? term.goodFor;
+  const expandedChinese = term.mechanism ? term.note ?? term.definition : term.definition;
+  const expandedEnglish = term.mechanism ? note ?? definition : definition;
+
+  useEffect(() => {
+    const syncWithHash = () => setOpen(window.location.hash.slice(1) === term.id);
+    syncWithHash();
+    window.addEventListener('hashchange', syncWithHash);
+    return () => window.removeEventListener('hashchange', syncWithHash);
+  }, [term.id]);
+
+  return (
+    <div className="term-entry" id={term.id}>
+      <dt>
+        <div className="term-permalink">
+          <button
+            type="button"
+            className="term-trigger"
+            aria-expanded={open}
+            aria-controls={detailsId}
+            onClick={() => setOpen((value) => !value)}
+          >
+            <span>{t(term.zh, term.en)}</span>
+            <span className="term-toggle" aria-hidden="true">{open ? '−' : '+'}</span>
+          </button>
+          <a className="term-anchor" href={'#' + term.id} aria-label={t('链接到', 'Link to ') + t(term.zh, term.en)}>
+            #
+          </a>
+        </div>
+        <span className="term-english">{t(term.en, term.zh)}</span>
+      </dt>
+      {mechanism && (
+        <div className="term-collapsed-copy">
+          <p className="term-mechanism">{t(term.mechanism ?? term.definition, mechanism)}</p>
+          {goodFor && <p className="term-good-for"><strong>{t('适用于：', 'Good for:')}</strong> {t(term.goodFor ?? '', goodFor)}</p>}
+        </div>
+      )}
+      <dd id={detailsId} hidden={!open}>
+        <p>{t(expandedChinese, expandedEnglish)}</p>
+        {term.note && !term.mechanism && <p className="term-note">{t(term.note, note ?? term.note)}</p>}
+        <div className="term-links">
+          <a href={glossarySources[term.source].url} target="_blank" rel="noreferrer" title={glossarySources[term.source].title}>
+            {t('定义参考 ↗', 'Definition source ↗')}
+          </a>
+          {term.related.map((id) => (
+            <a href={'#' + id} key={id}>
+              {t(termById[id].zh, termById[id].en)} →
+            </a>
+          ))}
+        </div>
+      </dd>
+    </div>
+  );
+}
 
 export function GlossaryView() {
   const t = useT();
   const usedSources = [...new Set(allTerms.map((term) => term.source))];
-  const def = (id: string, zh: string) => TERM_EN[id]?.def ?? zh;
-  const note = (id: string, zh?: string) => (zh ? TERM_EN[id]?.note ?? zh : undefined);
   return (
     <>
       <a className="skip" href="#glossary-entries">
@@ -89,29 +150,7 @@ export function GlossaryView() {
                 </header>
                 <dl className="term-grid">
                   {group.terms.map((term) => (
-                    <div className="term-entry" id={term.id} key={term.id}>
-                      <dt>
-                        <a className="term-permalink" href={'#' + term.id} aria-label={t('链接到', 'Link to ') + t(term.zh, term.en)}>
-                          {t(term.zh, term.en)}
-                          <span aria-hidden="true">#</span>
-                        </a>
-                        <span className="term-english">{t(term.en, term.zh)}</span>
-                      </dt>
-                      <dd>
-                        <p>{t(term.definition, def(term.id, term.definition))}</p>
-                        {term.note && <p className="term-note">{t(term.note, note(term.id, term.note) ?? term.note)}</p>}
-                        <div className="term-links">
-                          <a href={glossarySources[term.source].url} target="_blank" rel="noreferrer" title={glossarySources[term.source].title}>
-                            {t('定义参考 ↗', 'Definition source ↗')}
-                          </a>
-                          {term.related.map((id) => (
-                            <a href={'#' + id} key={id}>
-                              {t(termById[id].zh, termById[id].en)} →
-                            </a>
-                          ))}
-                        </div>
-                      </dd>
-                    </div>
+                    <GlossaryTerm term={term} key={term.id} />
                   ))}
                 </dl>
               </section>

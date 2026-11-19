@@ -13,6 +13,10 @@ function GlossaryTerm({ term }: { term: Term }) {
   const detailsId = `${term.id}-details`;
   const definition = TERM_EN[term.id]?.def ?? term.definition;
   const note = term.note ? TERM_EN[term.id]?.note ?? term.note : undefined;
+  const mechanism = TERM_EN[term.id]?.mechanism ?? term.mechanism;
+  const goodFor = TERM_EN[term.id]?.goodFor ?? term.goodFor;
+  const expandedChinese = term.mechanism ? term.note ?? term.definition : term.definition;
+  const expandedEnglish = term.mechanism ? note ?? definition : definition;
 
   useEffect(() => {
     const syncWithHash = () => setOpen(window.location.hash.slice(1) === term.id);
@@ -41,8 +45,14 @@ function GlossaryTerm({ term }: { term: Term }) {
         </div>
         <span className="term-english">{t(term.en, term.zh)}</span>
       </dt>
+      {mechanism && (
+        <div className="term-collapsed-copy">
+          <p className="term-mechanism">{t(term.mechanism ?? term.definition, mechanism)}</p>
+          {goodFor && <p className="term-good-for"><strong>{t('适用于：', 'Good for:')}</strong> {t(term.goodFor ?? '', goodFor)}</p>}
+        </div>
+      )}
       <dd id={detailsId} hidden={!open}>
-        <p>{t(term.definition, definition)}</p>
+        <p>{t(expandedChinese, expandedEnglish)}</p>
         {term.note && <p className="term-note">{t(term.note, note ?? term.note)}</p>}
         <div className="term-links">
           <a href={glossarySources[term.source].url} target="_blank" rel="noreferrer" title={glossarySources[term.source].title}>

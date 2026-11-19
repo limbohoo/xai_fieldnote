@@ -39,6 +39,14 @@ export const glossarySources: Record<string, GlossarySource> = {
     title: 'Google · Neural networks',
     url: 'https://developers.google.com/machine-learning/crash-course/neural-networks',
   },
+  cnn: {
+    title: 'Google · Convolutional neural networks',
+    url: 'https://developers.google.com/machine-learning/crash-course/convolutional-neural-networks',
+  },
+  rnn: {
+    title: 'TensorFlow · Working with RNNs',
+    url: 'https://www.tensorflow.org/guide/keras/working_with_rnns',
+  },
   embedding: {
     title: 'Google · Embeddings',
     url: 'https://developers.google.com/machine-learning/crash-course/embeddings',
@@ -265,6 +273,8 @@ export type Term = {
   source: string;
   related: string[];
   note?: string;
+  mechanism?: string;
+  goodFor?: string;
 };
 const t = (
   id: string,
@@ -274,7 +284,9 @@ const t = (
   source: string,
   related: string[] = [],
   note?: string,
-): Term => ({ id, zh, en, definition, source, related, note });
+  mechanism?: string,
+  goodFor?: string,
+): Term => ({ id, zh, en, definition, source, related, note, mechanism, goodFor });
 export const glossaryGroups = [
   {
     id: 'foundations',
@@ -861,12 +873,45 @@ export const glossaryGroups = [
         ['boosting', 'treeshap'],
       ),
       t(
+        'mlp',
+        '多层感知机',
+        'Multilayer Perceptron · MLP',
+        '多层感知机：每个单元都与下一层的每个单元相连。',
+        'neural',
+        ['cnn', 'rnn-lstm', 'transformer', 'neural-network', 'feature'],
+        '自拟例：把 6 个传感器特征送入两层全连接网络，输出设备“正常／故障”的分类结果。',
+        '多层感知机：每个单元都与下一层的每个单元相连。',
+        '表格数据、少量传感器特征。',
+      ),
+      t(
+        'cnn',
+        '卷积神经网络',
+        'Convolutional Neural Network · CNN',
+        '小滤波器在输入上滑动，检测边缘、纹理等局部模式。',
+        'cnn',
+        ['mlp', 'rnn-lstm', 'transformer', 'neural-network', 'tensor'],
+        '自拟例：先从猫脸图像中检测耳朵边缘与纹理，再把逐层组合的模式用于姿态分类。',
+        '小滤波器在输入上滑动，检测边缘、纹理等局部模式。',
+        '图像、视频、频谱图。',
+      ),
+      t(
+        'rnn-lstm',
+        '循环神经网络',
+        'Recurrent Neural Network / Long Short-Term Memory · RNN/LSTM',
+        '按时间步逐个读取序列，并把记忆向前传递。',
+        'rnn',
+        ['mlp', 'cnn', 'transformer', 'neural-network', 'token'],
+        '自拟例：逐秒读取传感器流，把前几秒的振动记忆带到当前时刻，判断设备是否正在异常。',
+        '按时间步逐个读取序列，并把记忆向前传递。',
+        '时间序列、传感器流；较早的语音和文本模型。',
+      ),
+      t(
         'neural-network',
         '神经网络',
         'Neural network',
         '由相互连接的计算层组成，通过参数与非线性变换学习输入输出关系的模型。',
         'neural',
-        ['deep-learning', 'activation'],
+        ['mlp', 'cnn', 'rnn-lstm', 'transformer', 'deep-learning', 'activation'],
       ),
       t(
         'activation',
@@ -947,9 +992,12 @@ export const glossaryGroups = [
         'transformer',
         'Transformer 架构',
         'Transformer',
-        '以注意力机制组织序列信息的一种神经网络架构，是许多语言模型的基础。',
+        '每个元素通过注意力查看其他所有元素。',
         'transformer',
-        ['attention', 'encoder-decoder'],
+        ['mlp', 'cnn', 'rnn-lstm', 'attention', 'token', 'foundation-model'],
+        '自拟例：在一句话中，当前词可以直接参考其他词的位置，再据此更新自己的表示。',
+        '每个元素通过注意力查看其他所有元素。',
+        '文本、图像、音频；几乎所有基础模型。',
       ),
       t(
         'attention',

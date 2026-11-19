@@ -328,6 +328,24 @@
 .term-entry dd {
   margin: 0;
 }
+.term-collapsed-copy {
+  margin-top: 12px;
+}
+.term-collapsed-copy p {
+  font-size: 14px;
+  line-height: 1.75;
+}
+.term-mechanism {
+  color: #4c586a;
+}
+.term-good-for {
+  margin-top: 4px;
+  color: #6a7890;
+}
+.term-good-for strong {
+  color: var(--blue);
+  font-weight: 500;
+}
 .term-entry dd[hidden] {
   display: none;
 }

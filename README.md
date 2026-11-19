@@ -10,7 +10,7 @@ A Chinese/English learning guide to explainable AI for industrial-design and HCI
 - A ten-step workflow from context to validation; the sources it draws on are named on the page.
 - Five collapsible chapters: field and questions; methods and paper cases; visual method atlas; ten-step workflow and evaluation; further reading (frontiers, reading route and bibliography). In-page links open the chapter that holds their target.
 - Four frontier entry points, a four-round reading route and the linked sources.
-- `/glossary`: 163 bilingual definitions in nine topic groups, including a bottom-up foundations layer, expandable entries, related-term links, an A–Z anchor index and individual source links. Its source dictionary is separate from the main-guide bibliography.
+- `/glossary`: 166 bilingual definitions in nine topic groups, including a bottom-up foundations layer, expandable entries, related-term links, an A–Z anchor index and individual source links. Its source dictionary is separate from the main-guide bibliography.
 
 Source metadata lives in `app/sources.ts`. Inline source numbers open original papers or publisher/research pages. Relationship diagrams and teaching examples are original summaries, not paper figures or measurements. The detailed Hsu workflow is attributed to the author's own notes; its bibliography was verified, but the full text was not reverified.
 

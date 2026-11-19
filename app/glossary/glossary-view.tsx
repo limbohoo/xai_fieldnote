@@ -1,6 +1,6 @@
 'use client';
 /* oxlint-disable next/no-html-link-for-pages */
-import { useEffect, useState } from 'react';
+import { useEffect, useMemo, useState } from 'react';
 import { SiteHeader } from '../site-header';
 import { SiteFooter } from '../site-footer';
 import { allTerms, glossaryGroups, glossarySources, termById, type Term } from '../glossary-data';
@@ -25,7 +25,7 @@ function GlossaryTerm({ term }: { term: Term }) {
   }, [term.id]);
 
   return (
-    <div className="term-entry" id={term.id}>
+    <div className="term-entry" id={term.id} data-open={open}>
       <dt>
         <div className="term-permalink">
           <button
@@ -36,7 +36,7 @@ function GlossaryTerm({ term }: { term: Term }) {
             onClick={() => setOpen((value) => !value)}
           >
             <span className="term-name">{t(term.zh, term.en)}</span>
-            <span className="term-toggle" aria-hidden="true">{open ? '−' : '+'}</span>
+            <span className="term-toggle" aria-hidden="true" />
           </button>
         </div>
         <span className="term-english">{t(term.en, term.zh)}</span>
@@ -47,27 +47,113 @@ function GlossaryTerm({ term }: { term: Term }) {
           {goodFor && <p className="term-good-for"><strong>{t('适用于：', 'Good for:')}</strong> {t(term.goodFor ?? '', goodFor)}</p>}
         </div>
       )}
-      <dd id={detailsId} hidden={!open}>
-        {showDefinition && <p>{t(term.definition, definition)}</p>}
-        {term.note && <p className="term-note">{t(term.note, note ?? term.note)}</p>}
-        <div className="term-links">
-          <a href={glossarySources[term.source].url} target="_blank" rel="noreferrer" title={glossarySources[term.source].title}>
-            {t('定义参考 ↗', 'Definition source ↗')}
-          </a>
-          {term.related.map((id) => (
-            <a href={'#' + id} key={id}>
-              {t(termById[id].zh, termById[id].en)} →
+      <dd id={detailsId} className="term-detail" data-open={open} inert={!open} aria-hidden={!open}>
+        <div className="term-detail-inner">
+          {showDefinition && <p className="term-definition">{t(term.definition, definition)}</p>}
+          {term.note && <p className="term-note">{t(term.note, note ?? term.note)}</p>}
+          <div className="term-links">
+            <a className="term-source" href={glossarySources[term.source].url} target="_blank" rel="noreferrer" title={glossarySources[term.source].title}>
+              {t('定义来源 ↗', 'Source ↗')}
             </a>
-          ))}
+            {term.related.length > 0 && <span className="term-links-label">{t('相关', 'Related')}</span>}
+            {term.related.map((id) => (
+              <a href={'#' + id} key={id}>
+                {t(termById[id].zh, termById[id].en)}
+              </a>
+            ))}
+          </div>
         </div>
       </dd>
     </div>
   );
 }
 
+function AzIndex() {
+  const t = useT();
+  const [query, setQuery] = useState('');
+  const [letter, setLetter] = useState<string | null>(null);
+  const sorted = useMemo(() => [...allTerms].sort((a, b) => a.en.localeCompare(b.en, 'en')), []);
+  const letters = useMemo(() => {
+    const m = new Map<string, Term[]>();
+    for (const term of sorted) {
+      const c = term.en.trim()[0].toUpperCase();
+      const k = /[A-Z]/.test(c) ? c : '#';
+      m.set(k, [...(m.get(k) ?? []), term]);
+    }
+    return m;
+  }, [sorted]);
+  const q = query.trim().toLowerCase();
+  const results = q
+    ? sorted.filter((term) => (term.en + ' ' + term.zh).toLowerCase().includes(q))
+    : letter
+      ? letters.get(letter) ?? []
+      : [];
+  const open = Boolean(q || letter);
+  return (
+    <div className="az-index" data-open={open}>
+      <div className="az-bar">
+        <input
+          type="search"
+          className="az-search"
+          placeholder={t('查找词条，中文或英文', 'Find a term, in English or Chinese')}
+          aria-label={t('查找词条', 'Find a term')}
+          value={query}
+          onChange={(e) => { setQuery(e.target.value); setLetter(null); }}
+        />
+        <nav className="az-letters" aria-label={t('按首字母', 'By first letter')}>
+          {'ABCDEFGHIJKLMNOPQRSTUVWXYZ'.split('').map((c) => (
+            <button
+              type="button"
+              key={c}
+              disabled={!letters.has(c)}
+              aria-pressed={letter === c}
+              onClick={() => { setQuery(''); setLetter(letter === c ? null : c); }}
+            >
+              {c}
+            </button>
+          ))}
+        </nav>
+      </div>
+      <div className="az-panel" inert={!open} aria-hidden={!open}>
+        <div className="az-panel-inner">
+          {results.length === 0 && q && <p className="az-empty">{t('没有找到，换个说法试试。', 'Nothing found. Try another word.')}</p>}
+          <ul className="az-results">
+            {results.map((term) => (
+              <li key={term.id}>
+                <a href={'#' + term.id} onClick={() => { setQuery(''); setLetter(null); }}>
+                  <span>{t(term.zh, term.en)}</span>
+                  <small>{t(term.en, term.zh)}</small>
+                </a>
+              </li>
+            ))}
+          </ul>
+        </div>
+      </div>
+    </div>
+  );
+}
+
+function useActiveTopic() {
+  const [active, setActive] = useState<string | null>(null);
+  useEffect(() => {
+    const sections = [...document.querySelectorAll<HTMLElement>('.glossary-group')];
+    const io = new IntersectionObserver(
+      (entries) => {
+        const visible = entries.filter((e) => e.isIntersecting).sort((a, b) => a.boundingClientRect.top - b.boundingClientRect.top);
+        if (visible[0]) setActive(visible[0].target.id);
+      },
+      { rootMargin: '-120px 0px -60% 0px' },
+    );
+    sections.forEach((el) => io.observe(el));
+    return () => io.disconnect();
+  }, []);
+  return active;
+}
+
 export function GlossaryView() {
   const t = useT();
   const usedSources = [...new Set(allTerms.map((term) => term.source))];
+  const active = useActiveTopic();
   return (
     <>
       <a className="skip" href="#glossary-entries">
@@ -76,57 +162,29 @@ export function GlossaryView() {
       <SiteHeader glossary />
       <main className="glossary-page" id="glossary-top">
         <header className="glossary-heading">
-          <div>
-            <span className="eyebrow">THE READING COMPANION</span>
-            <h1>
-              {t('术语词典', 'Glossary')} <span>Glossary</span>
-            </h1>
-            <p>
-              {t('从最基础的 AI，到论文里反复出现的词。', 'From the most basic AI terms to the words that keep recurring in papers.')}
-              <br />
-              {t('按主题顺着读，或沿相关词条继续查；不用先懂技术才能开始。', 'Read by topic, or follow related entries; you do not need technical knowledge to begin.')}
-            </p>
-          </div>
-          <div className="glossary-count">
-            <b>{allTerms.length}</b>
-            <span>{t(`中英词条 / ${glossaryGroups.length} 个主题`, `bilingual entries / ${glossaryGroups.length} topics`)}</span>
-          </div>
-        </header>
-        <div className="glossary-context">
-          <p>
-            {t(
-              '定义采用入门释义，并链接对应论文或官方资料；不同研究语境下的用法会单独说明。例子与应用提示为本页自拟。',
-              'Definitions are introductory and link to the corresponding papers or official sources; uses in particular research contexts are noted separately. Examples and application notes are written for this page.',
-            )}
+          <span className="eyebrow">THE READING COMPANION</span>
+          <h1>
+            {t('术语词典', 'Glossary')} <span>{t('Glossary', '术语词典')}</span>
+          </h1>
+          <p className="glossary-lede">
+            {t('从最基础的 AI，到论文里反复出现的词。按主题顺着读，或沿相关词条继续查。', 'From the most basic AI terms to the words that keep recurring in papers. Read by topic, or follow related entries.')}
           </p>
-          <a href="/#methods">{t('带着术语回看方法与案例 ↗', 'Return to the methods and cases with these terms ↗')}</a>
-        </div>
-        <details className="alphabet-index">
-          <summary>
-            {t('按英文名称查找', 'Find by English name')} <span>{t('A—Z 索引 ＋', 'A–Z index ＋')}</span>
-          </summary>
-          <div>
-            {[...allTerms]
-              .sort((a, b) => a.en.localeCompare(b.en, 'en'))
-              .map((term) => (
-                <a key={term.id} href={'#' + term.id}>
-                  {term.en}
-                  <small>{t(term.zh, term.en)}</small>
-                </a>
-              ))}
-          </div>
-        </details>
+          <p className="glossary-note">
+            {t('定义为入门释义，链接到原始论文或官方资料；例子为本页自拟。', 'Definitions are introductory and link to the original papers or official sources; examples are written for this page.')}{' '}
+            <a href="/#methods">{t('回看方法与案例 ↗', 'Back to methods and cases ↗')}</a>
+          </p>
+        </header>
+        <AzIndex />
         <div className="glossary-layout">
           <aside className="glossary-sidebar">
             <nav aria-label={t('词典主题', 'Glossary topics')}>
               {glossaryGroups.map((group, i) => (
-                <a href={'#topic-' + group.id} key={group.id}>
+                <a href={'#topic-' + group.id} key={group.id} aria-current={active === 'topic-' + group.id ? 'true' : undefined}>
                   <span>{String(i + 1).padStart(2, '0')}</span>
                   <span>
                     {t(group.zh, group.en)}
                     <small>{t(group.en, group.zh)}</small>
                   </span>
-                  <em>{group.terms.length}</em>
                 </a>
               ))}
             </nav>
@@ -139,7 +197,7 @@ export function GlossaryView() {
               <section className="glossary-group" id={'topic-' + group.id} key={group.id}>
                 <header>
                   <span className="eyebrow">
-                    {String(i + 1).padStart(2, '0')} / {t(`${group.terms.length} 条`, `${group.terms.length} entries`)}
+                    {String(i + 1).padStart(2, '0')}
                   </span>
                   <h2>
                     {t(group.zh, group.en)}
@@ -169,7 +227,7 @@ export function GlossaryView() {
           </div>
           <details className="source-index">
             <summary>
-              {t(`${usedSources.length} 项定义来源`, `${usedSources.length} definition sources`)} <span>{t('展开 ＋', 'Expand ＋')}</span>
+              {t('全部定义来源', 'All definition sources')} <span>{t('展开 ＋', 'Expand ＋')}</span>
             </summary>
             <ol>
               {usedSources.map((key, i) => (

@@ -82,8 +82,8 @@ const { allTerms, glossaryGroups, glossarySources } = await import(
   'data:text/javascript;base64,' +
     Buffer.from(glossaryModule).toString('base64')
 );
-assert.equal(glossaryGroups.length, 11);
-assert.equal(allTerms.length, 194);
+assert.equal(glossaryGroups.length, 13);
+assert.equal(allTerms.length, 211);
 const termIds = new Set(allTerms.map((term) => term.id));
 assert.equal(termIds.size, allTerms.length, 'Duplicate glossary anchor');
 allTerms.forEach((term) => {
@@ -102,7 +102,7 @@ for (const path of ['app/field-guide.tsx', 'app/learning-content.tsx']) {
 for (const id of ['cases', 'studio', 'sources'])
   assert(content.includes('id="' + id + '"'), 'Legacy anchor missing ' + id);
 console.log(
-  'Glossary checks passed: 194 bilingual entries in 11 groups, ' +
+  'Glossary checks passed: 211 bilingual entries in 13 groups, ' +
     new Set(allTerms.map((t) => t.source)).size +
     ' definition sources, all related links valid; legacy anchors retained.',
 );

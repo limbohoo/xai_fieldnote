@@ -53,7 +53,7 @@ function GlossaryTerm({ term }: { term: Term }) {
       )}
       <dd id={detailsId} hidden={!open}>
         <p>{t(expandedChinese, expandedEnglish)}</p>
-        {term.note && <p className="term-note">{t(term.note, note ?? term.note)}</p>}
+        {term.note && !term.mechanism && <p className="term-note">{t(term.note, note ?? term.note)}</p>}
         <div className="term-links">
           <a href={glossarySources[term.source].url} target="_blank" rel="noreferrer" title={glossarySources[term.source].title}>
             {t('定义参考 ↗', 'Definition source ↗')}

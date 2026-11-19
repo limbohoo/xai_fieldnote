@@ -302,6 +302,8 @@ export const glossaryGroups = [
         'fundamentals',
         ['vector', 'matrix'],
         '自拟例：把“本次抓取用了 2.4 秒”作为一个标量输入，不能直接表达整段运动轨迹。',
+        '只有一个数。',
+        '一个温度读数。',
       ),
       t(
         'vector',
@@ -311,6 +313,8 @@ export const glossaryGroups = [
         'fundamentals',
         ['scalar', 'matrix', 'tensor', 'representation'],
         '自拟例：用 [耳朵角度、眼睛开合、动作幅度] 组成一个向量，模型才能把这三个线索一起处理。',
+        '一列有顺序的数。',
+        '一条记录的 6 个传感器读数；一个词变成的数字。',
       ),
       t(
         'matrix',
@@ -320,6 +324,8 @@ export const glossaryGroups = [
         'fundamentals',
         ['vector', 'tensor', 'objective-function'],
         '自拟例：把 100 个样本的 6 个特征排成 100×6 的矩阵后，线性模型可以一次处理整批数据。',
+        '数排成行和列的表。',
+        '一张数据表，每行是一个样本。',
       ),
       t(
         'tensor',
@@ -329,6 +335,8 @@ export const glossaryGroups = [
         'tensor',
         ['scalar', 'vector', 'matrix', 'multimodal-representation'],
         '自拟例：一批彩色图片可以用“批次×高度×宽度×颜色通道”的张量表示。',
+        '轴可以有很多个的数组：一个轴是向量，两个轴是矩阵。',
+        '一批彩色照片：张数、高、宽、颜色。',
       ),
       t(
         'dimension',
@@ -338,6 +346,8 @@ export const glossaryGroups = [
         'fundamentals',
         ['vector', 'dimensionality-reduction', 'feature-engineering'],
         '自拟例：一个含 300 个特征的向量有 300 个坐标；把它压到 20 维会改变信息的取舍。',
+        '描述数据需要几个坐标，或数组有几个轴。',
+        '“6 个特征”就是 6 维。',
       ),
       t(
         'representation',
@@ -347,6 +357,8 @@ export const glossaryGroups = [
         'representation',
         ['feature', 'embedding', 'multimodal-representation'],
         '自拟例：把一段视频表示成逐帧像素，和表示成动作速度与姿态变化，模型可利用的线索并不相同。',
+        '把原始数据改写成模型读得懂的形式，写法决定模型能看到什么。',
+        '振动信号变成频谱；词变成向量。',
       ),
       t(
         'probability-distribution',
@@ -356,6 +368,8 @@ export const glossaryGroups = [
         'probability',
         ['likelihood', 'uncertainty', 'calibration'],
         '自拟例：模型不只输出“害怕”，还可以给出害怕 0.6、警觉 0.3、平静 0.1 的分布。',
+        '列出每种结果和它的概率，加起来为 1。',
+        '掷骰子：1 到 6 各占 1/6。',
       ),
       t(
         'likelihood',
@@ -365,6 +379,8 @@ export const glossaryGroups = [
         'likelihood',
         ['probability-distribution', 'objective-function'],
         '自拟例：观察到一批硬币结果后，似然比较不同的正面概率，哪一个更能解释这批结果。',
+        '数据固定不动，看哪组参数让它显得最合理。',
+        '抛 10 次硬币 7 次正面，判断硬币偏不偏。',
       ),
       t(
         'entropy',
@@ -374,6 +390,8 @@ export const glossaryGroups = [
         'fundamentals',
         ['probability-distribution', 'dimensionality-reduction'],
         '自拟例：五个类别概率都接近 0.2 时，模型的分类分布比几乎全押在一个类别上更不确定。',
+        '结果越平均越难猜，熵越高。',
+        '公平硬币熵高，几乎总是正面的硬币熵低。',
       ),
       t(
         'expectation',
@@ -383,6 +401,8 @@ export const glossaryGroups = [
         'expectation',
         ['probability-distribution', 'objective-function'],
         '自拟例：若不同维修方案各有发生概率，用各方案成本的概率加权平均可以估计期望成本。',
+        '每种结果乘上概率再相加。',
+        '骰子平均 3.5 点，虽然从来掷不出 3.5。',
       ),
       t(
         'correlation',
@@ -392,6 +412,8 @@ export const glossaryGroups = [
         'correlation',
         ['causation', 'causal-inference', 'feature-engineering'],
         '自拟例：夏天冰淇淋销量与溺水事件都上升，温度可能同时影响二者；销量本身未必造成溺水。',
+        '两个量一起升、一起降。',
+        '气温高的日子，冰淇淋也卖得多。',
       ),
       t(
         'causation',
@@ -401,6 +423,8 @@ export const glossaryGroups = [
         'causation',
         ['correlation', 'causal-inference', 'confounder'],
         '自拟例：把传感器曝光时间调长后，若在其他条件相同的实验中确实改变识别错误率，才有理由讨论因果作用。',
+        '主动改变 A，B 随之改变。',
+        '改了按钮颜色，点击率真的涨了。',
       ),
       t(
         'causal-inference',
@@ -410,6 +434,8 @@ export const glossaryGroups = [
         'causal-inference',
         ['causation', 'confounder', 'intervention'],
         '自拟例：比较“开启提示”和“不开启提示”对完成率的影响时，要说明随机分组或调整混淆因素的方法。',
+        '用实验，或带明确假设的数据，估计一项改动带来的变化。',
+        '新课程是否真的提高了成绩。',
       ),
       t(
         'confounder',
@@ -419,6 +445,8 @@ export const glossaryGroups = [
         'causal-inference',
         ['causal-inference', 'correlation'],
         '自拟例：用户经验同时影响是否开启辅助功能和任务完成率，若不考虑经验，功能效果可能被高估。',
+        '同时推动 A 和 B 的第三个因素。',
+        '天热让冰淇淋销量和游泳人数一起上升。',
       ),
       t(
         'normalization',
@@ -428,6 +456,8 @@ export const glossaryGroups = [
         'preprocessing',
         ['standardization', 'feature-engineering'],
         '自拟例：把像素值从 0–255 映射到 0–1，能避免像素的数值范围压过其他输入特征。',
+        '把数值压到同一个范围，如 0 到 1。',
+        '温度（几十）和压力（几万）放进同一个模型。',
       ),
       t(
         'standardization',
@@ -437,6 +467,8 @@ export const glossaryGroups = [
         'standardization',
         ['normalization', 'data-leakage', 'feature-engineering'],
         '自拟例：标准化时只用训练集统计量；若把测试集均值也算进去，评估信息就提前泄漏了。',
+        '减去训练集均值，再除以训练集标准差。',
+        '把身高、体重变成“比平均高多少、矮多少”。',
       ),
       t(
         'feature-engineering',
@@ -446,6 +478,8 @@ export const glossaryGroups = [
         'feature-engineering',
         ['feature', 'representation', 'normalization'],
         '自拟例：从原始时间戳构造“是否周末”和“距上次事件的小时数”，可能比直接输入日期更有用。',
+        '凭任务经验，造出对模型更有用的输入。',
+        '从一段振动里算出峰值和主频。',
       ),
       t(
         'dimensionality-reduction',
@@ -455,6 +489,8 @@ export const glossaryGroups = [
         'dimensionality-reduction',
         ['dimension', 'representation', 'embedding'],
         '自拟例：把 200 维传感器特征压到 2 维便于画图，但图上相近不等于原任务预测一定相近。',
+        '用更少的坐标重新描述数据。',
+        '把几十个特征压成二维，画图看分组。',
       ),
       t(
         'objective-function',
@@ -464,6 +500,8 @@ export const glossaryGroups = [
         'objective',
         ['loss', 'optimization', 'likelihood'],
         '自拟例：训练分类器时把错误惩罚和模型复杂度一起写入目标，表示“准确且不过度复杂”比单看准确率更好。',
+        '用一个数定义“什么算好”。',
+        '预测误差越小越好。',
       ),
       t(
         'optimization',
@@ -473,6 +511,8 @@ export const glossaryGroups = [
         'optimization',
         ['objective-function', 'gradient-descent', 'learning-rate'],
         '自拟例：梯度下降把训练损失降下去后，还要用未见数据检查是否只是记住了训练样本。',
+        '反复调整参数，让目标函数更好。',
+        '训练时一步步降低误差。',
       ),
       t(
         'bias-variance',
@@ -482,6 +522,8 @@ export const glossaryGroups = [
         'bias-variance',
         ['overfitting', 'underfitting', 'generalization'],
         '自拟例：过于简单的直线可能欠拟合，过于灵活的曲线可能随训练样本摆动，验证集帮助比较这种取舍。',
+        '太简单会系统性出错，太敏感则换一批数据结果就变。',
+        '一条直线硬拟合弯曲数据；一条曲线绕着每个点转。',
       ),
       t(
         'out-of-distribution',
@@ -491,6 +533,8 @@ export const glossaryGroups = [
         'ood',
         ['generalization', 'robustness', 'data-drift'],
         '自拟例：只看室内光线训练的相机模型遇到夜间户外画面，输入可能已分布外，原来的准确率不能直接外推。',
+        '输入和训练时见过的差别很大。',
+        '只用晴天照片训练的模型，遇到大雪。',
       ),
       t(
         'benchmark',
@@ -500,6 +544,8 @@ export const glossaryGroups = [
         'benchmark',
         ['accuracy', 'cross-validation', 'reproducibility'],
         '自拟例：两个模型在同一公开测试集上的分数可比较，但这不等于它们在不同用户或新设备上同样可靠。',
+        '同一套任务和指标，让不同方法公平比较。',
+        '几个模型在同一份测试集上比分数。',
       ),
       t(
         'reproducibility',
@@ -509,6 +555,8 @@ export const glossaryGroups = [
         'reproducibility',
         ['experiment-tracking', 'benchmark', 'model-card'],
         '自拟例：只报告最高分而不记录随机种子、数据划分和预处理，别人就难以复现这次比较。',
+        '别人用你的数据和步骤，能得到相近结果。',
+        '论文附上代码和数据，读者能自己画出同一张图。',
       ),
       t(
         'multimodal-representation',
@@ -518,6 +566,8 @@ export const glossaryGroups = [
         'multimodal',
         ['representation', 'embedding', 'tensor'],
         '自拟例：把一张猫的姿态图和描述“耳朵向后”编码到可比较的表示中，模型才能学习视觉线索与语言描述的对应。',
+        '把文字、图像、声音放进同一个空间，让它们能对应起来。',
+        '输入“海边日落”，搜到对应的照片。',
       ),
     ],
   },

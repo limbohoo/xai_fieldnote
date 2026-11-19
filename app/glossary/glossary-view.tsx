@@ -41,15 +41,15 @@ function GlossaryTerm({ term }: { term: Term }) {
         </div>
         <span className="term-english">{t(term.en, term.zh)}</span>
       </dt>
-      {mechanism && (
-        <div className="term-collapsed-copy">
-          <p className="term-mechanism">{t(term.mechanism ?? term.definition, mechanism)}</p>
-          {goodFor && <p className="term-good-for"><strong>{t('适用于：', 'Good for:')}</strong> {t(term.goodFor ?? '', goodFor)}</p>}
-        </div>
-      )}
+      <p className="term-summary">{t(term.mechanism ?? term.definition, mechanism ?? definition)}</p>
       <dd id={detailsId} className="term-detail" data-open={open} inert={!open} aria-hidden={!open}>
         <div className="term-detail-inner">
-          {showDefinition && <p className="term-definition">{t(term.definition, definition)}</p>}
+          {goodFor && (
+            <p className="term-good-for">
+              <strong>{t('适用于', 'Good for')}</strong> {t(term.goodFor ?? '', goodFor)}
+            </p>
+          )}
+          {term.mechanism && showDefinition && <p className="term-definition">{t(term.definition, definition)}</p>}
           {term.note && <p className="term-note">{t(term.note, note ?? term.note)}</p>}
           <div className="term-links">
             <a className="term-source" href={glossarySources[term.source].url} target="_blank" rel="noreferrer" title={glossarySources[term.source].title}>

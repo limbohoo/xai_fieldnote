@@ -2320,3 +2320,47 @@ main.glossary-page .term-entry .term-toggle { position: absolute; right: 4px; to
 main.glossary-page .term-entry .term-trigger::after { content: ''; position: absolute; inset: 0; }
 main.glossary-page .term-entry .term-collapsed-copy, main.glossary-page .term-entry dd { position: relative; z-index: 1; }
 main.glossary-page .term-detail-inner > :first-child { margin-top: 16px; padding-top: 14px; border-top: 1px solid #f0f2f6; }
+
+/* Glossary v4: reading-first, one line per entry, details on demand (after PAIR Guidebook). */
+main.glossary-page .term-grid { display: grid; gap: 10px; margin-top: 18px; }
+main.glossary-page .term-entry {
+  display: grid; grid-template-columns: minmax(200px, 0.75fr) minmax(0, 1.6fr); column-gap: 40px;
+  padding: 22px 56px 22px 26px; background: #f6f8fb; border: 0; border-radius: 10px;
+  transition: background-color .2s;
+}
+main.glossary-page .term-entry:hover { background: #eef2f8; }
+main.glossary-page .term-entry[data-open="true"] { background: #fff; box-shadow: inset 0 0 0 1px #dfe4eb; }
+main.glossary-page .term-entry dt { grid-column: 1; grid-row: 1 / span 2; margin: 0; font-size: 21px; font-weight: 400; line-height: 1.35; letter-spacing: -0.01em; }
+main.glossary-page .term-entry .term-name { font-weight: 400; }
+main.glossary-page .term-english { font-size: 13px; color: #8591a5; margin-top: 6px; }
+.term-summary { grid-column: 2; grid-row: 1; margin: 0; font-size: 16.5px; line-height: 1.7; color: #141923; max-width: 60ch; }
+main.glossary-page .term-entry dd.term-detail { grid-column: 2; grid-row: 2; max-width: 60ch; }
+main.glossary-page .term-entry .term-toggle { right: 24px; top: 30px; }
+main.glossary-page .term-detail-inner > :first-child { margin-top: 18px; padding-top: 16px; border-top: 1px solid #e7ebf1; }
+main.glossary-page .term-good-for { font-size: 15px; line-height: 1.7; color: #141923; margin: 0 0 10px; }
+main.glossary-page .term-good-for strong { display: block; font-size: 12px; font-weight: 500; letter-spacing: .04em; color: #234fe5; margin-bottom: 2px; }
+main.glossary-page .term-definition { font-size: 15px; line-height: 1.8; color: #4c586a; margin: 0 0 10px; }
+main.glossary-page .term-entry dd .term-note { margin: 0 0 4px; }
+main.glossary-page .glossary-group { padding-bottom: 72px; }
+main.glossary-page .glossary-group > header { border-bottom: 1px solid #141923; padding-bottom: 20px; }
+main.glossary-page .glossary-group h2 { font-size: 34px; font-weight: 400; letter-spacing: -0.02em; }
+@media (max-width: 1100px) {
+  main.glossary-page .term-entry { grid-template-columns: minmax(160px, 0.7fr) minmax(0, 1.5fr); column-gap: 24px; }
+}
+@media (max-width: 760px) {
+  main.glossary-page .term-entry { grid-template-columns: 1fr; row-gap: 8px; padding: 18px 48px 18px 18px; }
+  main.glossary-page .term-entry dt, .term-summary, main.glossary-page .term-entry dd.term-detail { grid-column: 1; grid-row: auto; }
+  main.glossary-page .term-entry dt { font-size: 19px; }
+  .term-summary { font-size: 15.5px; }
+  main.glossary-page .term-entry .term-toggle { right: 18px; top: 26px; }
+}
+
+/* v4b: two-column card grid, stacked content inside each card. */
+main.glossary-page .term-grid { grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 12px; align-items: start; }
+main.glossary-page .term-entry { display: block; padding: 22px 52px 22px 24px; }
+main.glossary-page .term-entry dt { display: block; font-size: 21px; }
+main.glossary-page .term-entry .term-summary { margin-top: 12px; max-width: none; font-size: 16px; }
+main.glossary-page .term-entry dd.term-detail { max-width: none; }
+main.glossary-page .term-entry .term-toggle { right: 22px; top: 30px; }
+main.glossary-page .term-entry[data-open="true"] { grid-column: 1 / -1; }
+@media (max-width: 900px) { main.glossary-page .term-grid { grid-template-columns: minmax(0, 1fr); } }

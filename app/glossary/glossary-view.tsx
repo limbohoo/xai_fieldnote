@@ -166,13 +166,6 @@ export function GlossaryView() {
           <h1>
             {t('术语词典', 'Glossary')} <span>{t('Glossary', '术语词典')}</span>
           </h1>
-          <p className="glossary-lede">
-            {t('从最基础的 AI，到论文里反复出现的词。按主题顺着读，或沿相关词条继续查。', 'From the most basic AI terms to the words that keep recurring in papers. Read by topic, or follow related entries.')}
-          </p>
-          <p className="glossary-note">
-            {t('定义为入门释义，链接到原始论文或官方资料；例子为本页自拟。', 'Definitions are introductory and link to the original papers or official sources; examples are written for this page.')}{' '}
-            <a href="/#methods">{t('回看方法与案例 ↗', 'Back to methods and cases ↗')}</a>
-          </p>
         </header>
         <AzIndex />
         <div className="glossary-layout">
